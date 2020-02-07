@@ -13,66 +13,111 @@ import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.treewalk.TreeWalk;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
 import satd_detector.core.utils.SATDDetector;
 import se.rit.edu.satd.SATDDifference;
+import se.rit.edu.satd.SATDInstance;
 
 public class RepositoryCommitReference {
 
     private String commit;
-    private String gitPath;
     private Git gitInstance;
+    private String tag;
+    private String projectName;
+    private int nPulls = 0;
+    private Map<String, List<String>> SATDOccurances = null;
 
-    private static boolean ONLY_JAVA_FILES = true;
-
-    public RepositoryCommitReference(Git gitInstance, String gitPath, String commitHash) {
+    RepositoryCommitReference(Git gitInstance, String projectName, String commitHash, String tag) {
         this.commit = commitHash;
+        this.projectName = projectName;
         this.gitInstance = gitInstance;
-        this.gitPath = gitPath;
+        this.tag = tag;
     }
 
     public SATDDifference diffAgainstNewerRepository(RepositoryCommitReference newerRepository, SATDDetector detector) {
 
-        Map<String, Integer> olderSATD = this.getFilesToSAIDOccurrences(detector);
-        System.out.println("Old Repo scan finished");
-        Map<String, Integer> newerSATD = newerRepository.getFilesToSAIDOccurrences(detector);
-        System.out.println("New Repo scan finished");
+        Map<String, List<String>> olderSATD = this.getFilesToSAIDOccurrences(detector);
+        Map<String, List<String>> newerSATD = newerRepository.getFilesToSAIDOccurrences(detector);
 
         Map<String, String> fileMapping = RepositoryFileMapping.getFileMapping(olderSATD.keySet(), newerSATD.keySet());
-        System.out.println("File Mapping Finished");
 
-        SATDDifference difference = new SATDDifference();
+        SATDDifference difference = new SATDDifference(this.projectName, this.tag, newerRepository.tag);
 
         for( String oldKey : olderSATD.keySet() ) {
             String newKey = fileMapping.get(oldKey);
-            difference.addTotalSATD(olderSATD.get(oldKey));
             if( newKey.equals(RepositoryFileMapping.NOT_FOUND) ) {
-                difference.addFileRemovedSATD(olderSATD.get(oldKey));
+                difference.addFileRemovedSATD(olderSATD.get(oldKey).stream()
+                        .map(comment -> new SATDInstance(oldKey, "Removed", comment))
+                        .collect(Collectors.toList()));
             } else {
-                int oldSATDCount = olderSATD.get(oldKey);
-                int newSATDCount = newerSATD.get(newKey);
-                if( oldSATDCount > newSATDCount ) {
-                    difference.addAddressedSATD(oldSATDCount - newSATDCount);
-                }
+                // See which strings in each file are present here
+                // TODO Check if the SATD was moved
+                final List<MappedSATDComment> oldSATDStrings = olderSATD.get(oldKey).stream()
+                        .map(MappedSATDComment::new)
+                        .collect(Collectors.toList());
+                // TODO account for SATD string being altered but not addressed
+                // This may be a manual process
+                // Maybe it can be sped up though?
+                final List<MappedSATDComment> newSATDStrings = newerSATD.get(newKey).stream()
+                        .map(MappedSATDComment::new)
+                        .collect(Collectors.toList());
+
+                newSATDStrings.forEach(newerSATDMapping -> {
+                    oldSATDStrings.forEach(olderSATDMapping -> {
+                        if( !olderSATDMapping.isMapped() && !newerSATDMapping.isMapped() &&
+                                olderSATDMapping.getComment().equals(newerSATDMapping.getComment()) ) {
+                            olderSATDMapping.setMapped();
+                            newerSATDMapping.setMapped();
+                        }
+                    });
+                });
+                // SATD that appears identically in both new and old files
+                List<SATDInstance> untouchedSATD = oldSATDStrings.stream()
+                        .filter(MappedSATDComment::isMapped)
+                        .map(MappedSATDComment::getComment)
+                        .map(comment -> new SATDInstance(oldKey, newKey, comment))
+                        .collect(Collectors.toList());
+                // SATD that was not in the new file, but was in the old
+                List<SATDInstance> changedOrRemovedSATD = oldSATDStrings.stream()
+                        .filter(mc -> !mc.isMapped())
+                        .map(MappedSATDComment::getComment)
+                        .map(comment -> new SATDInstance(oldKey, "Unknown", comment))
+                        .collect(Collectors.toList());
+                // SATD that was not in the old file, but was in the new
+                List<SATDInstance> changedOrAddedSATD = newSATDStrings.stream()
+                        .filter(mc -> !mc.isMapped())
+                        .map(MappedSATDComment::getComment)
+                        .map(comment -> new SATDInstance("Unknown", newKey, comment))
+                        .collect(Collectors.toList());
+
+                difference.addUnaddressedSATD(untouchedSATD);
+                difference.addAddressedOrChangedSATD(changedOrRemovedSATD);
+                difference.addChangedOrAddedSATD(changedOrAddedSATD);
             }
         }
         return difference;
     }
 
-    public Map<String, Integer> getFilesToSAIDOccurrences(SATDDetector detector){
+    private Map<String, List<String>> getFilesToSAIDOccurrences(SATDDetector detector){
+
+        if( this.SATDOccurances != null ) {
+            return this.SATDOccurances;
+        }
+
         Repository repository = null;
+        // Checkout a new branch based off the base commit of this instance
         try {
             gitInstance.checkout()
                     .setCreateBranch(true)
-                    .setName("SATD_STUDY_temp_" + this.commit)
+                    .setName("SATD_STUDY_temp_" + this.commit + nPulls++)
                     .setStartPoint(this.commit)
                     .call();
             repository = gitInstance.getRepository();
@@ -80,8 +125,9 @@ public class RepositoryCommitReference {
             System.err.println("Git API Exception in git checkout");
         }
 
+        // Walk through each Java file
         TreeWalk thisRepoWalker = this.getTreeWalker(repository);
-        Map<String, Integer> filesToSATDMap = new HashMap<>();
+        Map<String, List<String>> filesToSATDMap = new HashMap<>();
         JavaParser parser = new JavaParser();
         try {
             while (thisRepoWalker.next()) {
@@ -90,16 +136,14 @@ public class RepositoryCommitReference {
                 // Parse Java file for comments
                 ParseResult parsedFile = parser.parse(fileLoader.openStream());
                 if( parsedFile.getCommentsCollection().isPresent() ) {
+                    // Check each comment for being SATD
                     CommentsCollection comments = (CommentsCollection)parsedFile.getCommentsCollection().get();
-                    // Count SATD occurrences in file
-                    Integer totalSATD = 0;
-                    for(Comment comment : comments.getComments()) {
-                        if( !comment.isJavadocComment() && detector.isSATD(comment.getContent()) ) {
-                            System.out.println("---------\n" + comment.getContent());
-                            totalSATD++;
-                        }
-                    }
-                    filesToSATDMap.put(fileName, totalSATD);
+                    List<String> fileSATD = comments.getComments().stream()
+                            .filter(comment -> !comment.isJavadocComment())
+                            .map(Comment::getContent)
+                            .filter(detector::isSATD)
+                            .collect(Collectors.toList());
+                    filesToSATDMap.put(fileName, fileSATD);
                 }
             }
         } catch (MissingObjectException | IncorrectObjectTypeException | CorruptObjectException e) {
@@ -108,6 +152,9 @@ public class RepositoryCommitReference {
             System.err.println("IOException in getting tree walker.");
         }
 
+        this.SATDOccurances = filesToSATDMap;
+
+        System.out.println("Finished finding SATD in " + this.projectName + "/" + this.tag);
         return filesToSATDMap;
     }
 
@@ -118,9 +165,7 @@ public class RepositoryCommitReference {
             RevCommit commit = revWalk.parseCommit(repository.resolve(this.commit));
             treeWalk.addTree(commit.getTree());
             treeWalk.setRecursive(true);
-            if (ONLY_JAVA_FILES) {
-                treeWalk.setFilter(PathSuffixFilter.create(".java"));
-            }
+            treeWalk.setFilter(PathSuffixFilter.create(".java"));
         } catch (MissingObjectException | IncorrectObjectTypeException | CorruptObjectException e) {
             System.err.println("Exception in getting tree walker.");
         } catch (IOException e) {
@@ -129,5 +174,27 @@ public class RepositoryCommitReference {
             revWalk.dispose();
         }
         return treeWalk;
+    }
+
+    private class MappedSATDComment {
+
+        private String comment;
+        private boolean isMapped = false;
+
+        private MappedSATDComment(String oldComment) {
+            this.comment = oldComment;
+        }
+
+        private String getComment() {
+            return this.comment;
+        }
+
+        private boolean isMapped() {
+            return this.isMapped;
+        }
+
+        private void setMapped() {
+            this.isMapped = true;
+        }
     }
 }

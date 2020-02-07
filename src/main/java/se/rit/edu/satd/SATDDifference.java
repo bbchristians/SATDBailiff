@@ -1,34 +1,82 @@
 package se.rit.edu.satd;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class SATDDifference {
 
-    private int fileRemovedSATD = 0;
-    private int addressedSATD = 0;
-    private int totalSATD = 0;
+    private String oldTag;
+    private String newTag;
+    private String projectName;
 
-    public SATDDifference() { }
+    private List<SATDInstance> fileRemovedSATD = new ArrayList<>();
+    private List<SATDInstance> addressedOrChangedSATD = new ArrayList<>();
+    private List<SATDInstance> changedOrAddedSATD = new ArrayList<>();
+    private List<SATDInstance> unaddressedSATD = new ArrayList<>();
 
-    public void addFileRemovedSATD(int count) {
-        this.fileRemovedSATD += count;
+    public SATDDifference(String projectName, String oldTag, String newTag) {
+        this.projectName = projectName;
+        this.oldTag = oldTag;
+        this.newTag = newTag;
     }
 
-    public void addAddressedSATD(int count) {
-        this.addressedSATD += count;
+    public void addFileRemovedSATD(List<SATDInstance> satd) {
+        this.fileRemovedSATD.addAll(satd);
     }
 
-    public void addTotalSATD(int count) {
-        this.totalSATD += count;
+    public void addAddressedOrChangedSATD(List<SATDInstance> satd) {
+        this.addressedOrChangedSATD.addAll(satd);
     }
 
-    public int getFileRemovedSATD() {
-        return this.fileRemovedSATD;
+    public void addChangedOrAddedSATD(List<SATDInstance> satd) {
+        this.changedOrAddedSATD.addAll(satd);
     }
 
-    public int getAddressedSATD() {
-        return this.addressedSATD;
+    public void addUnaddressedSATD(List<SATDInstance> satd) {
+        this.unaddressedSATD.addAll(satd);
     }
 
-    public int getTotalSATD() {
-        return totalSATD;
+    public List<SATDInstance> getFileRemovedSATD() {
+        return fileRemovedSATD;
+    }
+
+    public List<SATDInstance> getAddressedOrChangedSATD() {
+        return addressedOrChangedSATD;
+    }
+
+    public List<SATDInstance> getChangedOrAddedSATD() {
+        return changedOrAddedSATD;
+    }
+
+    public List<SATDInstance> getUnaddressedSATD() {
+        return unaddressedSATD;
+    }
+
+    public String getProjectName() {
+        return this.projectName;
+    }
+
+    public List<String[]> toCSV() {
+        List<String[]> allCSVEntries = new ArrayList<>();
+        allCSVEntries.addAll(instanceListToCSV(this.fileRemovedSATD));
+        allCSVEntries.addAll(instanceListToCSV(this.unaddressedSATD));
+        allCSVEntries.addAll(instanceListToCSV(this.addressedOrChangedSATD));
+        allCSVEntries.addAll(instanceListToCSV(this.changedOrAddedSATD));
+        return allCSVEntries;
+    }
+
+    private List<String[]> instanceListToCSV(List<SATDInstance> list) {
+        return list.stream()
+                .map(SATDInstance::toCSV)
+                .map(csv -> new String[] {
+                        this.projectName,
+                        this.oldTag,
+                        this.newTag,
+                        csv[0],
+                        csv[1],
+                        csv[2]
+                })
+                .collect(Collectors.toList());
     }
 }

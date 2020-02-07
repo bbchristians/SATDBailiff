@@ -3,3 +3,5 @@ lib/
 repos/
 target/
 satd_analyzer.iml
+out/
+repos.txt

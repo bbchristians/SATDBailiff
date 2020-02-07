@@ -3,7 +3,6 @@ package se.rit.edu.git;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -11,7 +10,6 @@ import org.eclipse.jgit.revwalk.RevWalk;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -21,10 +19,12 @@ public class RepositoryInitializer {
     private static final String ORIGIN = "origin";
 
     private String repoDir;
+    private String gitURI;
     private Git repoRef;
 
     public RepositoryInitializer(String uri, String baseName) {
         this.repoDir = "repos/" + baseName + "/master";
+        this.gitURI = uri;
         File newGitRepo = new File(this.repoDir);
         if( newGitRepo.exists() ) {
             try {
@@ -40,11 +40,9 @@ public class RepositoryInitializer {
                     .setDirectory(newGitRepo)
                     .setCloneAllBranches(false)
                     .call();
-            System.out.println("Completed master clone.");
             StoredConfig config = this.repoRef.getRepository().getConfig();
             config.setString("remote", ORIGIN, "url", uri);
             config.save();
-            System.out.println("Completed remote config update.");
         } catch (GitAPIException e) {
             System.err.println("Git API error in se.rit.edu.git init.");
         } catch (IOException e) {
@@ -74,24 +72,27 @@ public class RepositoryInitializer {
                     : new Date();
 
             // Map all valid commits to the date they were made
-            final List<CommitDatePair> commitDatePairs = remoteRefs.stream().map(ref -> {
+            final List<CommitData> commitData = remoteRefs.stream().map(ref -> {
                 try {
-                    return revWalk.parseCommit(ref.getObjectId());
+                    RevCommit commit =  revWalk.parseCommit(ref.getObjectId());
+                    String[] refNameSplit = ref.getName().split("/");
+                    return new CommitData(commit.getName(), commit.getAuthorIdent().getWhen(),
+                            refNameSplit[refNameSplit.length-1]);
                 } catch (IOException e) {
-                    System.err.println("Error when parsing se.rit.edu.git tags");
+                    System.err.println("Error when parsing git tags");
                     e.printStackTrace();
                     return null;
                 }
-            }).filter(commit -> commit != null && commit.getAuthorIdent().getWhen().before(latestDate))
-            .map(commit -> new CommitDatePair(commit.getName(), commit.getAuthorIdent().getWhen()))
+            }).filter(commit -> commit != null && commit.getDate().before(latestDate))
             .sorted()
             .collect(Collectors.toList());
 
-            return IntStream.range(0, commitDatePairs.size())
-                    .filter(n -> n % Math.min(eachN, commitDatePairs.size() - 1) == 0)
-                    .mapToObj(commitDatePairs::get)
-                    .map(commitDatePair -> new RepositoryCommitReference(
-                            this.repoRef, this.repoDir, commitDatePair.getCommit()))
+            return IntStream.range(0, commitData.size())
+                    .filter(n -> n % Math.min(eachN, commitData.size() - 1) == 0)
+                    .mapToObj(commitData::get)
+                    .map(commitDataObject -> new RepositoryCommitReference(
+                            this.repoRef, GitUtil.getRepoNameFromGitURI(this.gitURI),
+                            commitDataObject.getCommit(), commitDataObject.getTag()))
                     .collect(Collectors.toList());
 
         } catch (GitAPIException e) {
@@ -103,12 +104,14 @@ public class RepositoryInitializer {
     }
 
 
-    private class CommitDatePair implements Comparable {
+    private class CommitData implements Comparable {
         private String commit;
         private Date date;
-        private CommitDatePair(String commit, Date date) {
+        private String tag;
+        private CommitData(String commit, Date date, String tag) {
             this.commit = commit;
             this.date = date;
+            this.tag = tag;
         }
 
         private String getCommit() {
@@ -117,14 +120,17 @@ public class RepositoryInitializer {
         private Date getDate() {
             return this.date;
         }
+        private String getTag() {
+            return this.tag;
+        }
 
         @Override
         public int compareTo(Object o) {
-            if( o instanceof CommitDatePair ) {
+            if( o instanceof CommitData) {
                 if( o.equals(this) ) {
                     return 0;
                 }
-                if( ((CommitDatePair) o).getDate().before(this.getDate()) ) {
+                if( ((CommitData) o).getDate().before(this.getDate()) ) {
                     return 1;
                 }
                 return -1;

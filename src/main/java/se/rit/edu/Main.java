@@ -1,33 +1,52 @@
 package se.rit.edu;
 
+import com.opencsv.CSVWriter;
+import org.apache.commons.io.FileUtils;
 import se.rit.edu.git.RepositoryInitializer;
 import se.rit.edu.git.RepositoryCommitReference;
 import se.rit.edu.satd.SATDDifference;
 import satd_detector.core.utils.SATDDetector;
 import se.rit.edu.satd.SATDMiner;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.util.List;
+import java.util.Scanner;
 
 
 public class Main {
 
+    private static final String reposFile = "repos.txt";
+    private static final String OUT_DIR = "out";
+
     public static void main(String[] args) throws Exception {
 
-        List<RepositoryCommitReference> repos = new SATDMiner("https://github.com/spring-projects/spring-boot.git")
-                .getTaggedCommits(10);
-        System.out.println("Done Cloning Repositories.");
+        File inFile = new File(reposFile);
+        Scanner inFileReader = new Scanner(inFile);
 
+        File outDir = new File(OUT_DIR);
+        FileUtils.deleteDirectory(outDir);
+        outDir.mkdirs();
 
-//        RepositoryCommitReference repo = new RepositoryCommitReference("bootOld",
-//                "https://github.com/spring-projects/spring-boot.git",
-//                "5d89311a899d1099ef57d65fa147783da7a5b54c");
-//        RepositoryCommitReference repo2 = new RepositoryCommitReference("bootNew",
-//                "https://github.com/spring-projects/spring-boot.git",
-//                "9aea0568077bb1c75feaeec5fc2e4bd4b196407a");
-        SATDDetector detector = new SATDDetector();
-        SATDDifference diff = repos.get(0).diffAgainstNewerRepository(repos.get(1), detector);
-        System.out.println("Total:        " + diff.getTotalSATD());
-        System.out.println("Addressed:    " + diff.getAddressedSATD());
-        System.out.println("File Removed: " + diff.getFileRemovedSATD());
+        while( inFileReader.hasNext() ) {
+
+            String repo = inFileReader.next();
+
+            List<RepositoryCommitReference> repos = new SATDMiner(repo)
+                    .getTaggedCommits(10);
+
+            SATDDetector detector = new SATDDetector();
+            for (int i = 1; i < repos.size(); i++) {
+                SATDDifference diff = repos.get(i-1).diffAgainstNewerRepository(repos.get(i), detector);
+                File outFile = new File(OUT_DIR + "/" + diff.getProjectName() + ".csv");
+                BufferedWriter writer = new BufferedWriter(new FileWriter(outFile, true));
+                CSVWriter csvWriter = new CSVWriter(writer);
+
+                csvWriter.writeAll(diff.toCSV());
+
+                csvWriter.close();
+            }
+        }
     }
 }
