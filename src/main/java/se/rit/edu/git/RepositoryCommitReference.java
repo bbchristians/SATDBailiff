@@ -1,4 +1,4 @@
-package git;
+package se.rit.edu.git;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
@@ -23,8 +23,9 @@ import java.util.Map;
 
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
 import satd_detector.core.utils.SATDDetector;
+import se.rit.edu.satd.SATDDifference;
 
-public class GitRepository {
+public class RepositoryCommitReference {
 
     private String commit;
     private String gitPath;
@@ -32,13 +33,13 @@ public class GitRepository {
 
     private static boolean ONLY_JAVA_FILES = true;
 
-    public GitRepository(Git gitInstance, String gitPath, String name, String url, String commitHash) {
+    public RepositoryCommitReference(Git gitInstance, String gitPath, String commitHash) {
         this.commit = commitHash;
         this.gitInstance = gitInstance;
         this.gitPath = gitPath;
     }
 
-    public SATDDifference diffAgainstNewerRepository(GitRepository newerRepository, SATDDetector detector) {
+    public SATDDifference diffAgainstNewerRepository(RepositoryCommitReference newerRepository, SATDDetector detector) {
 
         Map<String, Integer> olderSATD = this.getFilesToSAIDOccurrences(detector);
         System.out.println("Old Repo scan finished");
@@ -74,19 +75,12 @@ public class GitRepository {
                     .setName("SATD_STUDY_temp_" + this.commit)
                     .setStartPoint(this.commit)
                     .call();
-            FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder();
-            repository = repositoryBuilder.setGitDir(new File(this.gitPath))
-                    .readEnvironment() // scan environment GIT_* variables
-                    .findGitDir() // scan up the file system tree
-                    .setMustExist(true)
-                    .build();
-        } catch (IOException e) {
-            System.err.println("Error reading from git in commit: " + this.commit);
+            repository = gitInstance.getRepository();
         } catch (GitAPIException e) {
-            System.err.println("Git API Exception");
+            System.err.println("Git API Exception in git checkout");
         }
 
-        TreeWalk thisRepoWalker = this.getTreeWalker(repository );
+        TreeWalk thisRepoWalker = this.getTreeWalker(repository);
         Map<String, Integer> filesToSATDMap = new HashMap<>();
         JavaParser parser = new JavaParser();
         try {

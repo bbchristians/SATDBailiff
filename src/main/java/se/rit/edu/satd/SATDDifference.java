@@ -1,4 +1,4 @@
-package git;
+package se.rit.edu.satd;
 
 public class SATDDifference {
 

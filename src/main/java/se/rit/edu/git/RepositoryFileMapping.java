@@ -1,4 +1,4 @@
-package git;
+package se.rit.edu.git;
 
 import java.util.HashMap;
 import java.util.HashSet;
