@@ -7,6 +7,7 @@ import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
+import se.rit.edu.util.ElapsedTimer;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,11 +31,13 @@ public class RepositoryInitializer {
             try {
                 FileUtils.deleteDirectory(newGitRepo);
             } catch (IOException e) {
-                System.err.println("Error deleting se.rit.edu.git repo");
+                System.err.println("Error deleting git repo");
             }
         }
         newGitRepo.mkdirs();
         try {
+            ElapsedTimer timer = new ElapsedTimer();
+            timer.start();
             this.repoRef = Git.cloneRepository()
                     .setURI(uri)
                     .setDirectory(newGitRepo)
@@ -43,6 +46,9 @@ public class RepositoryInitializer {
             StoredConfig config = this.repoRef.getRepository().getConfig();
             config.setString("remote", ORIGIN, "url", uri);
             config.save();
+            timer.end();
+            System.out.println(String.format("Finished cloning: %s in %6dms",
+                    GitUtil.getRepoNameFromGitURI(gitURI), timer.readMS()));
         } catch (GitAPIException e) {
             System.err.println("Git API error in se.rit.edu.git init.");
         } catch (IOException e) {
@@ -57,6 +63,8 @@ public class RepositoryInitializer {
 
     public List<RepositoryCommitReference> getComparableRepositories(String startCommit, int eachN) {
         try {
+            ElapsedTimer timer = new ElapsedTimer();
+            timer.start();
             // Get remote reference
             Collection<Ref> remoteRefs = this.repoRef.lsRemote()
                     .setRemote(ORIGIN)
@@ -86,6 +94,9 @@ public class RepositoryInitializer {
             }).filter(commit -> commit != null && commit.getDate().before(latestDate))
             .sorted()
             .collect(Collectors.toList());
+            timer.end();
+            System.out.println(String.format("Finished gathering tags for %s in %6dms",
+                    GitUtil.getRepoNameFromGitURI(this.gitURI), timer.readMS()));
 
             return IntStream.range(0, commitData.size())
                     .filter(n -> n % Math.min(eachN, commitData.size() - 1) == 0)

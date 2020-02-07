@@ -25,6 +25,7 @@ import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
 import satd_detector.core.utils.SATDDetector;
 import se.rit.edu.satd.SATDDifference;
 import se.rit.edu.satd.SATDInstance;
+import se.rit.edu.util.ElapsedTimer;
 
 public class RepositoryCommitReference {
 
@@ -55,7 +56,7 @@ public class RepositoryCommitReference {
             String newKey = fileMapping.get(oldKey);
             if( newKey.equals(RepositoryFileMapping.NOT_FOUND) ) {
                 difference.addFileRemovedSATD(olderSATD.get(oldKey).stream()
-                        .map(comment -> new SATDInstance(oldKey, "Removed", comment))
+                        .map(comment -> new SATDInstance(oldKey, "File Removed", comment))
                         .collect(Collectors.toList()));
             } else {
                 // See which strings in each file are present here
@@ -112,6 +113,8 @@ public class RepositoryCommitReference {
             return this.SATDOccurances;
         }
 
+        ElapsedTimer timer = new ElapsedTimer();
+        timer.start();
         Repository repository = null;
         // Checkout a new branch based off the base commit of this instance
         try {
@@ -153,8 +156,8 @@ public class RepositoryCommitReference {
         }
 
         this.SATDOccurances = filesToSATDMap;
-
-        System.out.println("Finished finding SATD in " + this.projectName + "/" + this.tag);
+        timer.end();
+        System.out.println(String.format("Finished finding SATD in %s/%s in %6dms", this.projectName, this.tag, timer.readMS()));
         return filesToSATDMap;
     }
 
