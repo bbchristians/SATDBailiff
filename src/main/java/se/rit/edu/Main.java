@@ -1,8 +1,6 @@
 package se.rit.edu;
 
 import com.opencsv.CSVWriter;
-import org.apache.commons.io.FileUtils;
-import se.rit.edu.git.RepositoryInitializer;
 import se.rit.edu.git.RepositoryCommitReference;
 import se.rit.edu.satd.SATDDifference;
 import satd_detector.core.utils.SATDDetector;
@@ -17,7 +15,7 @@ import java.util.Scanner;
 
 public class Main {
 
-    private static final String reposFile = "repos.txt";
+    private static final String reposFile = "repos_remaining.txt";
     private static final String OUT_DIR = "out";
 
     public static void main(String[] args) throws Exception {
@@ -26,15 +24,18 @@ public class Main {
         Scanner inFileReader = new Scanner(inFile);
 
         File outDir = new File(OUT_DIR);
-        FileUtils.deleteDirectory(outDir);
         outDir.mkdirs();
 
         while( inFileReader.hasNext() ) {
 
             String repo = inFileReader.next();
 
-            List<RepositoryCommitReference> repos = new SATDMiner(repo)
-                    .getTaggedCommits(10);
+            if( !repo.endsWith(".git") ) {
+                repo += ".git";
+            }
+
+            SATDMiner miner = new SATDMiner(repo);
+            List<RepositoryCommitReference> repos = miner.getTaggedCommits(10);
 
             SATDDetector detector = new SATDDetector();
             for (int i = 1; i < repos.size(); i++) {
@@ -47,6 +48,8 @@ public class Main {
 
                 csvWriter.close();
             }
+
+            miner.cleanRepo();
         }
     }
 }

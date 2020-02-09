@@ -120,12 +120,13 @@ public class RepositoryCommitReference {
         try {
             gitInstance.checkout()
                     .setCreateBranch(true)
-                    .setName("SATD_STUDY_temp_" + this.commit + nPulls++)
+                    .setName("SATD_STUDY_temp_" + this.commit + nPulls++ + System.currentTimeMillis())
                     .setStartPoint(this.commit)
+                    .addPath("**/*.java")
                     .call();
             repository = gitInstance.getRepository();
         } catch (GitAPIException e) {
-            System.err.println("Git API Exception in git checkout");
+            System.err.println("Tried to create branch that already exists");
         }
 
         // Walk through each Java file

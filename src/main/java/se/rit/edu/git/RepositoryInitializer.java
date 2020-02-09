@@ -28,11 +28,7 @@ public class RepositoryInitializer {
         this.gitURI = uri;
         File newGitRepo = new File(this.repoDir);
         if( newGitRepo.exists() ) {
-            try {
-                FileUtils.deleteDirectory(newGitRepo);
-            } catch (IOException e) {
-                System.err.println("Error deleting git repo");
-            }
+            this.cleanRepo();
         }
         newGitRepo.mkdirs();
         try {
@@ -61,7 +57,7 @@ public class RepositoryInitializer {
         return getComparableRepositories(null, eachN);
     }
 
-    public List<RepositoryCommitReference> getComparableRepositories(String startCommit, int eachN) {
+    public List<RepositoryCommitReference> getComparableRepositories(String startCommit, int maxCount) {
         try {
             ElapsedTimer timer = new ElapsedTimer();
             timer.start();
@@ -98,11 +94,13 @@ public class RepositoryInitializer {
             System.out.println(String.format("Finished gathering tags for %s in %6dms",
                     GitUtil.getRepoNameFromGitURI(this.gitURI), timer.readMS()));
 
+            revWalk.dispose();
+
             return IntStream.range(0, commitData.size())
-                    .filter(n -> n % Math.min(eachN, commitData.size() - 1) == 0)
+//                    .filter(n -> commitData.size() < 2 || n % Math.min(eachN, commitData.size() - 1) == 0)
                     .mapToObj(commitData::get)
                     .map(commitDataObject -> new RepositoryCommitReference(
-                            this.repoRef, GitUtil.getRepoNameFromGitURI(this.gitURI),
+                            this.repoRef, GitUtil.getRepoNameFromGithubURI(this.gitURI),
                             commitDataObject.getCommit(), commitDataObject.getTag()))
                     .collect(Collectors.toList());
 
@@ -112,6 +110,18 @@ public class RepositoryInitializer {
             System.err.println("Error when fetching start commit date.");
         }
         return new ArrayList<>();
+    }
+
+    public void cleanRepo() {
+        if( this.repoRef != null ) {
+            this.repoRef.getRepository().close();
+        }
+        File repo = new File(this.repoDir);
+        try {
+            FileUtils.deleteDirectory(repo);
+        } catch (IOException e) {
+            System.err.println("Error deleting git repo");
+        }
     }
 
 

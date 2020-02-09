@@ -1,6 +1,5 @@
 package se.rit.edu.satd;
 
-import org.eclipse.jgit.lib.Repository;
 import se.rit.edu.git.GitUtil;
 import se.rit.edu.git.RepositoryCommitReference;
 import se.rit.edu.git.RepositoryInitializer;
@@ -16,19 +15,19 @@ public class SATDMiner {
         this.repositoryURI = repositoryURI;
     }
 
-    public List<RepositoryCommitReference> getTaggedCommits(int everyN, String mostRecentCommit) {
+    public List<RepositoryCommitReference> getTaggedCommits(int maxCount, String mostRecentCommit) {
         if( repo == null ) {
             this.initializeRepo();
         }
-        return this.repo.getComparableRepositories(mostRecentCommit, everyN);
+        return this.repo.getComparableRepositories(mostRecentCommit, maxCount);
     }
 
-    public List<RepositoryCommitReference> getTaggedCommits(int everyN) {
-        return getTaggedCommits(everyN, null);
+    public List<RepositoryCommitReference> getTaggedCommits(int maxCount) {
+        return getTaggedCommits(maxCount, null);
     }
 
     public void cleanRepo() {
-
+        this.repo.cleanRepo();
     }
 
     private void initializeRepo() {
