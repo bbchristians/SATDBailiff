@@ -5,6 +5,7 @@ import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.comments.CommentsCollection;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.LogCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.errors.CorruptObjectException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
@@ -34,7 +35,7 @@ public class RepositoryCommitReference {
     private String tag;
     private String projectName;
     private int nPulls = 0;
-    private Map<String, List<String>> SATDOccurances = null;
+    private Map<String, List<String>> satdOccurrences = null;
 
     RepositoryCommitReference(Git gitInstance, String projectName, String commitHash, String tag) {
         this.commit = commitHash;
@@ -104,13 +105,14 @@ public class RepositoryCommitReference {
                 difference.addChangedOrAddedSATD(changedOrAddedSATD);
             }
         }
+
         return difference;
     }
 
     private Map<String, List<String>> getFilesToSAIDOccurrences(SATDDetector detector){
 
-        if( this.SATDOccurances != null ) {
-            return this.SATDOccurances;
+        if( this.satdOccurrences != null ) {
+            return this.satdOccurrences;
         }
 
         ElapsedTimer timer = new ElapsedTimer();
@@ -156,7 +158,7 @@ public class RepositoryCommitReference {
             System.err.println("IOException in getting tree walker.");
         }
 
-        this.SATDOccurances = filesToSATDMap;
+        this.satdOccurrences = filesToSATDMap;
         timer.end();
         System.out.println(String.format("Finished finding SATD in %s/%s in %6dms", this.projectName, this.tag, timer.readMS()));
         return filesToSATDMap;

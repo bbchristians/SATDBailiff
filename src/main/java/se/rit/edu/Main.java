@@ -35,7 +35,9 @@ public class Main {
             }
 
             SATDMiner miner = new SATDMiner(repo);
-            List<RepositoryCommitReference> repos = miner.getTaggedCommits(10);
+            List<RepositoryCommitReference> repos = miner.getReposAtReleases(SATDMiner.ReleaseSortType.RELEASE_PARSE);
+
+            System.out.println(String.format("%d tags found in repository.", repos.size()));
 
             SATDDetector detector = new SATDDetector();
             for (int i = 1; i < repos.size(); i++) {
