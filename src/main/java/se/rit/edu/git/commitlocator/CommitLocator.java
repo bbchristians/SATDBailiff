@@ -7,5 +7,5 @@ public interface CommitLocator {
 
     String findCommitIntroduced(Git gitInstance, SATDInstance satdInstance, String v1, String v2);
 
-    String findCommitRemoved(Git gitInstance, SATDInstance satdInstance, String v1, String v2);
+    String findCommitAddressed(Git gitInstance, SATDInstance satdInstance, String v1, String v2);
 }

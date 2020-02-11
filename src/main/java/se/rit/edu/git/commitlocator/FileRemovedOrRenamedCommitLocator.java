@@ -26,12 +26,12 @@ public class FileRemovedOrRenamedCommitLocator implements CommitLocator {
      * @param satdInstance SATD Instance object
      * @param v1 first commit bound for finding SATD
      * @param v2 second commit bound for finding SATD
-     * @return
+     * @return a String of the commit hash where the SATD was removed or renamed
      *
      * Code partially copied from https://stackoverflow.com/questions/17296278/jgit-detect-rename-in-working-copy
      */
     @Override
-    public String findCommitRemoved(Git gitInstance, SATDInstance satdInstance, String v1, String v2) {
+    public String findCommitAddressed(Git gitInstance, SATDInstance satdInstance, String v1, String v2) {
         try {
             List<RevCommit> commitsBetween = CommitLocatorUtil.getCommitsBetween(gitInstance,
                     gitInstance.getRepository().resolve(v1), gitInstance.getRepository().resolve(v2));

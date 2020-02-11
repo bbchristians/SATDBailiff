@@ -52,7 +52,7 @@ public class Main {
                             "v1_tag",
                             "v2_tag",
                             "commit_added",
-                            "commit_removed",
+                            "commit_addressed",
                             "v1_file",
                             "v2_file",
                             "file_when_addressed",

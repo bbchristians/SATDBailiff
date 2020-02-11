@@ -113,7 +113,7 @@ public class RepositoryCommitReference {
             satd.setCommitAdded(
                     removedLocator.findCommitIntroduced(this.gitInstance, satd, this.commit, newerRepository.commit));
             satd.setCommitRemoved(
-                    removedLocator.findCommitRemoved(this.gitInstance, satd, this.commit, newerRepository.commit));
+                    removedLocator.findCommitAddressed(this.gitInstance, satd, this.commit, newerRepository.commit));
         });
 
         return difference;
