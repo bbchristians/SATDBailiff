@@ -75,7 +75,11 @@ public class SATDDifference {
                         this.newTag,
                         csv[0],
                         csv[1],
-                        csv[2]
+                        csv[2],
+                        csv[3],
+                        csv[4],
+                        csv[5],
+                        csv[6]
                 })
                 .collect(Collectors.toList());
     }

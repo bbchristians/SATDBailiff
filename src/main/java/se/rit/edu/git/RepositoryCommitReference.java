@@ -5,7 +5,6 @@ import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.comments.CommentsCollection;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.LogCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.errors.CorruptObjectException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
@@ -24,6 +23,8 @@ import java.util.stream.Collectors;
 
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
 import satd_detector.core.utils.SATDDetector;
+import se.rit.edu.git.commitlocator.CommitLocator;
+import se.rit.edu.git.commitlocator.FileRemovedOrRenamedCommitLocator;
 import se.rit.edu.satd.SATDDifference;
 import se.rit.edu.satd.SATDInstance;
 import se.rit.edu.util.ElapsedTimer;
@@ -105,6 +106,15 @@ public class RepositoryCommitReference {
                 difference.addChangedOrAddedSATD(changedOrAddedSATD);
             }
         }
+
+        // Get commits for File Removed SATD
+        CommitLocator removedLocator = new FileRemovedOrRenamedCommitLocator();
+        difference.getFileRemovedSATD().stream().forEach(satd -> {
+            satd.setCommitAdded(
+                    removedLocator.findCommitIntroduced(this.gitInstance, satd, this.commit, newerRepository.commit));
+            satd.setCommitRemoved(
+                    removedLocator.findCommitRemoved(this.gitInstance, satd, this.commit, newerRepository.commit));
+        });
 
         return difference;
     }

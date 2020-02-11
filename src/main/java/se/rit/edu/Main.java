@@ -44,7 +44,22 @@ public class Main {
                 SATDDifference diff = repos.get(i-1).diffAgainstNewerRepository(repos.get(i), detector);
                 File outFile = new File(OUT_DIR + "/" + diff.getProjectName() + ".csv");
                 BufferedWriter writer = new BufferedWriter(new FileWriter(outFile, true));
+
                 CSVWriter csvWriter = new CSVWriter(writer);
+                if( i == 1 ) {
+                    csvWriter.writeNext(new String[]{
+                            "project",
+                            "v1_tag",
+                            "v2_tag",
+                            "commit_added",
+                            "commit_removed",
+                            "v1_file",
+                            "v2_file",
+                            "file_when_addressed",
+                            "resolution",
+                            "satd"
+                    });
+                }
 
                 csvWriter.writeAll(diff.toCSV());
 

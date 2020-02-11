@@ -14,10 +14,10 @@ public class RepositoryFileMapping {
         for( String filePath : from ) {
             String[] dirTree = filePath.split("/");
             Set<String> possibleMatches = new HashSet<>(to);
-            for( int i = 1; i < dirTree.length && possibleMatches.size() > 1; i++ ) {
+            for( int i = 1; i <= dirTree.length && possibleMatches.size() > 1; i++ ) {
                 String curPathSearch = "/" + String.join("/", getLastNEntries(dirTree, i));
                 for( String toPath : new HashSet<>(possibleMatches) ) {
-                    if( !toPath.endsWith(curPathSearch) ) {
+                    if( !("/" + toPath).endsWith(curPathSearch) ) {
                         possibleMatches.remove(toPath);
                     }
                 }
