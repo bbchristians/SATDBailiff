@@ -128,6 +128,10 @@ public class RepositoryInitializer {
         }
     }
 
+    public String getRepoDir() {
+        return this.repoDir;
+    }
+
 
     private class CommitData implements Comparable {
         private String commit;

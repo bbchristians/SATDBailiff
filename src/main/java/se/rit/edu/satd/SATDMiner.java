@@ -1,12 +1,13 @@
 package se.rit.edu.satd;
 
+import org.apache.commons.io.FileUtils;
 import se.rit.edu.git.GitUtil;
 import se.rit.edu.git.RepositoryCommitReference;
 import se.rit.edu.git.RepositoryInitializer;
 
-import java.util.Comparator;
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class SATDMiner {
 
@@ -35,12 +36,18 @@ public class SATDMiner {
 
     public void cleanRepo() {
         this.repo.cleanRepo();
+        try {
+            FileUtils.deleteDirectory(new File(repo.getRepoDir()));
+        } catch (IOException e) {
+            System.err.println("Error in deleting cleaned git repo.");
+        }
     }
 
     private void initializeRepo() {
         this.repo = new RepositoryInitializer(this.repositoryURI, GitUtil.getRepoNameFromGitURI(this.repositoryURI));
     }
 
+    // TODO can we sort the repos based on chronological vs. Some kind of release parsing?
     public enum ReleaseSortType {
         CHRONOLOGICAL,
         RELEASE_PARSE

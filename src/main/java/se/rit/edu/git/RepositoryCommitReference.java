@@ -58,17 +58,13 @@ public class RepositoryCommitReference {
             String newKey = fileMapping.get(oldKey);
             if( newKey.equals(RepositoryFileMapping.NOT_FOUND) ) {
                 difference.addFileRemovedSATD(olderSATD.get(oldKey).stream()
-                        .map(comment -> new SATDInstance(oldKey, "File Removed", comment))
+                        .map(comment -> new SATDInstance(oldKey, "dev/null", comment))
                         .collect(Collectors.toList()));
             } else {
                 // See which strings in each file are present here
-                // TODO Check if the SATD was moved
                 final List<MappedSATDComment> oldSATDStrings = olderSATD.get(oldKey).stream()
                         .map(MappedSATDComment::new)
                         .collect(Collectors.toList());
-                // TODO account for SATD string being altered but not addressed
-                // This may be a manual process
-                // Maybe it can be sped up though?
                 final List<MappedSATDComment> newSATDStrings = newerSATD.get(newKey).stream()
                         .map(MappedSATDComment::new)
                         .collect(Collectors.toList());
@@ -109,7 +105,7 @@ public class RepositoryCommitReference {
 
         // Get commits for File Removed SATD
         CommitLocator removedLocator = new FileRemovedOrRenamedCommitLocator();
-        difference.getFileRemovedSATD().stream().forEach(satd -> {
+        difference.getFileRemovedSATD().forEach(satd -> {
             satd.setCommitAdded(
                     removedLocator.findCommitIntroduced(this.gitInstance, satd, this.commit, newerRepository.commit));
             satd.setCommitRemoved(

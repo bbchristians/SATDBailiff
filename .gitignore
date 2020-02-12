@@ -3,6 +3,6 @@ lib/
 repos/
 target/
 satd_analyzer.iml
-out/
+*out*/
 repos.txt
 *.txt
