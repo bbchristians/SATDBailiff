@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 public abstract class CommitLocator {
 
@@ -29,6 +28,9 @@ public abstract class CommitLocator {
             String blameResultJavaCode =
                     IntStream.range(0, blameResult.getResultContents().size())
                             .mapToObj(i -> blameResult.getResultContents().getString(i))
+                            // Some files use different carriage returns, which construes git line numbers
+                            // Due to OS-specific editors, so replace all of them with \n
+                            // see: https://github.com/apache/maven-surefire/blob/93687b7c61f373ae6c9423c6e612f6901a7732ad/surefire-api/src/main/java/org/apache/maven/surefire/util/internal/ObjectUtils.java
                             .map(i -> i.replace('\r', ' '))
                             .collect(Collectors.joining("\n"));
             // Parse file as Java
@@ -45,11 +47,7 @@ public abstract class CommitLocator {
                         soughtComment.get(0).getRange().isPresent() ) {
                     // TODO Blame all lines of the comment in case two lines blame to different commits
                     int commentLineNumber = soughtComment.get(0).getRange().get().begin.line;
-                    try {
-                        return blameResult.getSourceCommit(commentLineNumber).getName();
-                    } catch (IndexOutOfBoundsException e) {
-                        return blameResult.getSourceCommit(commentLineNumber).getName();
-                    }
+                    return blameResult.getSourceCommit(commentLineNumber).getName();
                 }
                 return SATDInstance.COMMIT_UNKNOWN;
             }
@@ -61,5 +59,14 @@ public abstract class CommitLocator {
         return null;
     }
 
+    /**
+     * Gets the commit hash of the commit which addressed the SATD
+     * Also, updates the SATD with a resolution type
+     * @param gitInstance a git instance
+     * @param satdInstance a SATD instance
+     * @param v1 the first version of the code (Commit hash)
+     * @param v2 the second version of the code (Commit hash)
+     * @return A commit hash (String) of the commit which addressed the SATD
+     */
     public abstract String findCommitAddressed(Git gitInstance, SATDInstance satdInstance, String v1, String v2);
 }
