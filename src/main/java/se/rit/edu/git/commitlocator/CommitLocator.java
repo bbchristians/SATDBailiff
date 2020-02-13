@@ -47,7 +47,8 @@ public abstract class CommitLocator {
                         soughtComment.get(0).getRange().isPresent() ) {
                     // TODO Blame all lines of the comment in case two lines blame to different commits
                     int commentLineNumber = soughtComment.get(0).getRange().get().begin.line;
-                    return blameResult.getSourceCommit(commentLineNumber).getName();
+                    // Comment line is not indexed
+                    return blameResult.getSourceCommit(commentLineNumber - 1).getName();
                 }
                 return SATDInstance.COMMIT_UNKNOWN;
             }
@@ -61,7 +62,7 @@ public abstract class CommitLocator {
 
     /**
      * Gets the commit hash of the commit which addressed the SATD
-     * Also, updates the SATD with a resolution type
+     * Also, updates the SATD with a resolution type, fileWhenAddressed, and v2 file if needed
      * @param gitInstance a git instance
      * @param satdInstance a SATD instance
      * @param v1 the first version of the code (Commit hash)

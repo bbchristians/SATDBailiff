@@ -22,6 +22,7 @@ public class FileRemovedOrRenamedCommitLocator extends CommitLocator {
      * @return a String of the commit hash where the SATD was removed or renamed
      *
      * Code partially copied from https://stackoverflow.com/questions/17296278/jgit-detect-rename-in-working-copy
+     * TODO Check if the SATD in the removed file was moved to a different file
      */
     @Override
     public String findCommitAddressed(Git gitInstance, SATDInstance satdInstance, String v1, String v2) {

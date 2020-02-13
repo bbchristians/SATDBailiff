@@ -3,7 +3,9 @@ package se.rit.edu.satd;
 public class SATDInstance {
 
     public static final String COMMIT_UNKNOWN = "Commit Unknown";
+    public static final String NO_COMMIT = "None";
     public static final String FILE_UNKNOWN = "File Unknown";
+    public static final String FILE_NONE = "None";
 
     private String oldFile;
     private String newFile;
@@ -77,6 +79,10 @@ public class SATDInstance {
     public enum SATDResolution {
         UNKNOWN,
         FILE_REMOVED,
-        FILE_RENAMED
+        FILE_RENAMED,
+        SATD_REMOVED,
+        SATD_CHANGED,
+        SATD_ADDED,
+        SATD_UNADDRESSED
     }
 }

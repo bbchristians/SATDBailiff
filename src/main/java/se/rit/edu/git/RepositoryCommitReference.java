@@ -108,7 +108,7 @@ public class RepositoryCommitReference {
                         this.commit, newerRepository.commit));
 
         difference.getAddressedOrChangedSATD().forEach( satd ->
-                getCommitsForSATD(satd, new SATDRemovedCommitLocator(), true,
+                getCommitsForSATD(satd, new SATDRemovedChangedMovedCommitLocator(), true,
                         this.commit, newerRepository.commit));
 
         difference.getUnaddressedSATD().forEach( satd ->
