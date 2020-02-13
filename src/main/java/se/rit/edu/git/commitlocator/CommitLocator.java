@@ -1,6 +1,7 @@
 package se.rit.edu.git.commitlocator;
 
 import com.github.javaparser.JavaParser;
+import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.comments.CommentsCollection;
 import org.eclipse.jgit.api.BlameCommand;
@@ -14,22 +15,26 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public abstract class CommitLocator {
 
-    public String findCommitIntroduced(Git gitInstance, SATDInstance satdInstance, String v1, String v2) {
+    public String findCommitIntroduced(Git gitInstance, SATDInstance satdInstance, String commitToStart, String file) {
         try {
             BlameCommand blameCommand = gitInstance.blame()
-                    .setFilePath(satdInstance.getOldFile())
-                    .setStartCommit(gitInstance.getRepository().resolve(v1));
+                    .setFilePath(file)
+                    .setStartCommit(gitInstance.getRepository().resolve(commitToStart));
             BlameResult blameResult = blameCommand.call();
-            // Parse file as Java
-            JavaParser parser = new JavaParser();
-            Optional<CommentsCollection> comments = parser.parse(
+            // Get blame result
+            String blameResultJavaCode =
                     IntStream.range(0, blameResult.getResultContents().size())
                             .mapToObj(i -> blameResult.getResultContents().getString(i))
-                            .collect(Collectors.joining("\n")))
-                    .getCommentsCollection();
+                            .map(i -> i.replace('\r', ' '))
+                            .collect(Collectors.joining("\n"));
+            // Parse file as Java
+            JavaParser parser = new JavaParser();
+            ParseResult parsedBlameOutput = parser.parse(blameResultJavaCode);
+            Optional<CommentsCollection> comments = parsedBlameOutput.getCommentsCollection();
             if( comments.isPresent() ) {
                 List<Comment> soughtComment = comments.get()
                         .getComments()
@@ -40,7 +45,11 @@ public abstract class CommitLocator {
                         soughtComment.get(0).getRange().isPresent() ) {
                     // TODO Blame all lines of the comment in case two lines blame to different commits
                     int commentLineNumber = soughtComment.get(0).getRange().get().begin.line;
-                    return blameResult.getSourceCommit(commentLineNumber).getName();
+                    try {
+                        return blameResult.getSourceCommit(commentLineNumber).getName();
+                    } catch (IndexOutOfBoundsException e) {
+                        return blameResult.getSourceCommit(commentLineNumber).getName();
+                    }
                 }
                 return SATDInstance.COMMIT_UNKNOWN;
             }

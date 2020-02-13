@@ -23,8 +23,7 @@ import java.util.stream.Collectors;
 
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
 import satd_detector.core.utils.SATDDetector;
-import se.rit.edu.git.commitlocator.CommitLocator;
-import se.rit.edu.git.commitlocator.FileRemovedOrRenamedCommitLocator;
+import se.rit.edu.git.commitlocator.*;
 import se.rit.edu.satd.SATDDifference;
 import se.rit.edu.satd.SATDInstance;
 import se.rit.edu.util.ElapsedTimer;
@@ -104,15 +103,32 @@ public class RepositoryCommitReference {
         }
 
         // Get commits for File Removed SATD
-        CommitLocator removedLocator = new FileRemovedOrRenamedCommitLocator();
-        difference.getFileRemovedSATD().forEach(satd -> {
-            satd.setCommitAdded(
-                    removedLocator.findCommitIntroduced(this.gitInstance, satd, this.commit, newerRepository.commit));
-            satd.setCommitRemoved(
-                    removedLocator.findCommitAddressed(this.gitInstance, satd, this.commit, newerRepository.commit));
-        });
+        difference.getFileRemovedSATD().forEach( satd ->
+                getCommitsForSATD(satd, new FileRemovedOrRenamedCommitLocator(), true,
+                        this.commit, newerRepository.commit));
+
+        difference.getAddressedOrChangedSATD().forEach( satd ->
+                getCommitsForSATD(satd, new SATDRemovedCommitLocator(), true,
+                        this.commit, newerRepository.commit));
+
+        difference.getUnaddressedSATD().forEach( satd ->
+                getCommitsForSATD(satd, new SATDUnaddressedCommitLocator(), true,
+                        this.commit, newerRepository.commit));
+
+        difference.getChangedOrAddedSATD().forEach( satd ->
+                getCommitsForSATD(satd, new SATDAddedCommitLocator(), false,
+                        this.commit, newerRepository.commit));
 
         return difference;
+    }
+
+    private void getCommitsForSATD(SATDInstance satd, CommitLocator locator, boolean useOldFilePath, String startCommit, String endCommit) {
+        satd.setCommitAdded(
+                locator.findCommitIntroduced(this.gitInstance, satd,
+                        useOldFilePath ? startCommit : endCommit,
+                        useOldFilePath ? satd.getOldFile() : satd.getNewFile()));
+        satd.setCommitRemoved(
+                locator.findCommitAddressed(this.gitInstance, satd, startCommit, endCommit));
     }
 
     private Map<String, List<String>> getFilesToSAIDOccurrences(SATDDetector detector){
