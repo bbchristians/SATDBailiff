@@ -8,9 +8,14 @@ import org.eclipse.jgit.api.BlameCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.blame.BlameResult;
+import org.eclipse.jgit.diff.DiffEntry;
+import org.eclipse.jgit.diff.RenameDetector;
+import org.eclipse.jgit.revwalk.RevTree;
+import org.eclipse.jgit.treewalk.TreeWalk;
 import se.rit.edu.satd.SATDInstance;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -70,4 +75,21 @@ public abstract class CommitLocator {
      * @return A commit hash (String) of the commit which addressed the SATD
      */
     public abstract String findCommitAddressed(Git gitInstance, SATDInstance satdInstance, String v1, String v2);
+
+    static List<DiffEntry> getDiffEntries(Git gitInstance, RevTree tree1, RevTree tree2) {
+        try {
+            TreeWalk tw = new TreeWalk(gitInstance.getRepository());
+            tw.setRecursive(true);
+            tw.addTree(tree1);
+            tw.addTree(tree2);
+
+            RenameDetector rd = new RenameDetector(gitInstance.getRepository());
+            rd.addAll(DiffEntry.scan(tw));
+
+            return rd.compute(tw.getObjectReader(), null);
+        } catch (IOException e) {
+            System.err.println("Error diffing trees.");
+        }
+        return new ArrayList<>();
+    }
 }

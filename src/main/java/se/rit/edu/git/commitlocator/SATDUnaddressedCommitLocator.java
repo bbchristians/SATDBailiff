@@ -9,6 +9,7 @@ public class SATDUnaddressedCommitLocator extends CommitLocator {
     public String findCommitAddressed(Git gitInstance, SATDInstance satdInstance, String v1, String v2) {
         // SATD not addressed, so no commit
         satdInstance.setResolution(SATDInstance.SATDResolution.SATD_UNADDRESSED);
+        satdInstance.setNameOfFileWhenAddressed(SATDInstance.FILE_NONE);
         return SATDInstance.NO_COMMIT;
     }
 

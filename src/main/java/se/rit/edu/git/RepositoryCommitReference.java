@@ -49,6 +49,9 @@ public class RepositoryCommitReference {
         Map<String, List<String>> olderSATD = this.getFilesToSAIDOccurrences(detector);
         Map<String, List<String>> newerSATD = newerRepository.getFilesToSAIDOccurrences(detector);
 
+        ElapsedTimer timer = new ElapsedTimer();
+        timer.start();
+
         Map<String, String> fileMapping = RepositoryFileMapping.getFileMapping(olderSATD.keySet(), newerSATD.keySet());
 
         SATDDifference difference = new SATDDifference(this.projectName, this.tag, newerRepository.tag);
@@ -118,6 +121,9 @@ public class RepositoryCommitReference {
         difference.getChangedOrAddedSATD().forEach( satd ->
                 getCommitsForSATD(satd, new SATDAddedCommitLocator(), false,
                         this.commit, newerRepository.commit));
+
+        timer.end();
+        System.out.println(String.format("Finished diffing against previous version in %6dms", timer.readMS()));
 
         return difference;
     }

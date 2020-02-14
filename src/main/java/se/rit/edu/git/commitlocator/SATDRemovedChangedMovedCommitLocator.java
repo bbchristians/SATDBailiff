@@ -4,7 +4,6 @@ import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.comments.CommentsCollection;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.diff.DiffEntry;
-import org.eclipse.jgit.diff.RenameDetector;
 import org.eclipse.jgit.errors.CorruptObjectException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.MissingObjectException;
@@ -29,29 +28,18 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
                     gitInstance.getRepository().resolve(v1), gitInstance.getRepository().resolve(v2));
             String curSATDFile = satdInstance.getOldFile();
             for( int i = 1; i < commitsBetween.size(); i++ ) {
-                TreeWalk tw = new TreeWalk(gitInstance.getRepository());
-                tw.setRecursive(true);
-                tw.addTree(commitsBetween.get(i-1).getTree());
-                tw.addTree(commitsBetween.get(i).getTree());
-
-                RenameDetector rd = new RenameDetector(gitInstance.getRepository());
-                rd.addAll(DiffEntry.scan(tw));
-
-                List<DiffEntry> lde = rd.compute(tw.getObjectReader(), null);
+                // Get diff for commits
+                List<DiffEntry> lde = CommitLocator.getDiffEntries(gitInstance,
+                        commitsBetween.get(i-1).getTree(), commitsBetween.get(i).getTree());
                 for (DiffEntry de : lde) {
-                    // If the file was removed and is the file we're looking for,
-                    // Then return the commit which removed the file
                     String thisCommit = commitsBetween.get(i).getName();
                     if (de.getChangeType().equals(DiffEntry.ChangeType.MODIFY) &&
                             de.getOldPath().equals(curSATDFile)) {
-//                        gitInstance.checkout()
-//                                .setStartPoint(thisCommit)
-//                                .addPath(curSATDFile)
-//                                .call();
                         // Walk through each Java file
                         TreeWalk thisRepoWalker = getTreeWalker(gitInstance.getRepository(), thisCommit);
                         JavaParser parser = new JavaParser();
                         while ( thisRepoWalker.next() ) {
+                            // If the file is the one we care about
                             if( thisRepoWalker.getPathString().equals(curSATDFile) ) {
                                 ObjectLoader fileLoader = gitInstance.getRepository()
                                         .open(thisRepoWalker.getObjectId(0));
@@ -59,12 +47,14 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
                                 Optional<CommentsCollection> comments = parser.parse(fileLoader.openStream())
                                         .getCommentsCollection();
                                 if (comments.isPresent()) {
+                                    // See if the comment that is SATD is still in the file
                                     // FIXME use case: File contains multiple of the same SATD comment
                                     boolean satdIsAbsent = comments.get().getComments().stream().noneMatch(comment ->
                                             comment.getContent()
                                                     .trim()
                                                     .equals(satdInstance.getSATDComment().trim()));
                                     if (satdIsAbsent) {
+                                        // TODO check if SATD is changed
                                         // TODO check if the SATD was moved to another file
                                         satdInstance.setResolution(SATDInstance.SATDResolution.SATD_REMOVED);
                                         satdInstance.setNewFile(SATDInstance.FILE_NONE);
@@ -79,9 +69,7 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
                         }
                     }
                     // If the file was renamed, and is the file we're looking for,
-                    // Update the name so we can find when the renamed file was removed
-                    // Keep note of the last commit that renamed the file, to be returned
-                    // if we do not find that the file was removed
+                    // Update the name so we can search for the renamed file
                     if( de.getChangeType().equals(DiffEntry.ChangeType.RENAME) &&
                             de.getOldPath().equals(curSATDFile)) {
                         // Start checking for the renamed file

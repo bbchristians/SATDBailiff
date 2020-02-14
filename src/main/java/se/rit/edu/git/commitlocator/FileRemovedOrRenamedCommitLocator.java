@@ -2,10 +2,8 @@ package se.rit.edu.git.commitlocator;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.diff.DiffEntry;
-import org.eclipse.jgit.diff.RenameDetector;
 import org.eclipse.jgit.errors.CorruptObjectException;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.treewalk.TreeWalk;
 import se.rit.edu.satd.SATDInstance;
 
 import java.io.IOException;
@@ -32,15 +30,8 @@ public class FileRemovedOrRenamedCommitLocator extends CommitLocator {
             String fileToFindDeletion = satdInstance.getOldFile();
             String commitIfRenamed = null;
             for( int i = 1; i < commitsBetween.size(); i++ ) {
-                TreeWalk tw = new TreeWalk(gitInstance.getRepository());
-                tw.setRecursive(true);
-                tw.addTree(commitsBetween.get(i-1).getTree());
-                tw.addTree(commitsBetween.get(i).getTree());
-
-                RenameDetector rd = new RenameDetector(gitInstance.getRepository());
-                rd.addAll(DiffEntry.scan(tw));
-
-                List<DiffEntry> lde = rd.compute(tw.getObjectReader(), null);
+                List<DiffEntry> lde = CommitLocator.getDiffEntries(gitInstance,
+                        commitsBetween.get(i-1).getTree(), commitsBetween.get(i).getTree());
                 for (DiffEntry de : lde) {
                     // If the file was removed and is the file we're looking for,
                     // Then return the commit which removed the file
@@ -56,7 +47,7 @@ public class FileRemovedOrRenamedCommitLocator extends CommitLocator {
                     // if we do not find that the file was removed
                     if( de.getChangeType().equals(DiffEntry.ChangeType.RENAME) &&
                         de.getOldPath().equals(fileToFindDeletion)) {
-                        satdInstance.setResolution(SATDInstance.SATDResolution.FILE_RENAMED);
+                        satdInstance.setResolution(SATDInstance.SATDResolution.FILE_PATH_CHANGED);
                         // Name gets set here in the case of rename being the only operation
                         satdInstance.setNameOfFileWhenAddressed(fileToFindDeletion);
                         fileToFindDeletion = de.getNewPath();
