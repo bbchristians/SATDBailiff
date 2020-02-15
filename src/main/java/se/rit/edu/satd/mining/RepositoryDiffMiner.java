@@ -124,6 +124,8 @@ public class RepositoryDiffMiner {
         difference.getChangedOrAddedSATD().forEach( satd ->
                 getCommitsForSATD(satd, new SATDAddedCommitLocator(), false));
 
+        difference.alignRemovedAndAddedForOverlaps();
+
         timer.end();
         System.out.println(String.format("Finished diffing against previous version in %6dms", timer.readMS()));
 

@@ -17,7 +17,8 @@ public class CSVOutputWriter implements OutputWriter {
             "v2_file",
             "file_when_addressed",
             "resolution",
-            "satd"
+            "satd",
+            "updated_satd"
     };
 
     private File outFile;

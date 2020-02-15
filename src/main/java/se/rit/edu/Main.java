@@ -15,7 +15,7 @@ import java.util.Scanner;
 public class Main {
 
     private static final String reposFile = "repos_remaining.txt";
-    private static final String OUT_DIR = "writer";
+    private static final String OUT_DIR = "out";
 
     public static void main(String[] args) throws Exception {
 

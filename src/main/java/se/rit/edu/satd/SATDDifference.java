@@ -1,10 +1,14 @@
 package se.rit.edu.satd;
 
+import org.apache.commons.text.similarity.LevenshteinDistance;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class SATDDifference {
+
+    private static final double LEVENSHTEIN_DISTANCE_MIN = 0.75;
 
     private String oldTag;
     private String newTag;
@@ -66,6 +70,35 @@ public class SATDDifference {
         return allCSVEntries;
     }
 
+    public void alignRemovedAndAddedForOverlaps() {
+        this.addressedOrChangedSATD.stream()
+                .filter(satd -> satd.getResolution().equals(SATDInstance.SATDResolution.SATD_POSSIBLY_REMOVED))
+                .forEach(satd -> {
+                    List<SATDInstance> match = this.changedOrAddedSATD.stream()
+                            .filter(coaSATD ->
+                                    coaSATD.getCommitAdded().equals(satd.getCommitRemoved()) &&
+                                            coaSATD.getNewFile().equals(satd.getNameOfFileWhenAddressed()) &&
+                                            commentsAreSimilar(coaSATD.getSATDComment(), satd.getSATDComment()))
+                            .collect(Collectors.toList());
+                    if( !match.isEmpty() ) {
+                        // Set the updated comment
+                        satd.setCommentChangedTo(match.get(0).getSATDComment());
+                        satd.setResolution(SATDInstance.SATDResolution.SATD_CHANGED);
+                        satd.setNewFile(match.get(0).getNewFile());
+                        // Removed the comment because it wasn't really added, and it's now accounted for
+                        this.changedOrAddedSATD.remove(match.get(0));
+                    }
+                });
+    }
+
+    private static boolean commentsAreSimilar(String comment1, String comment2) {
+        if( comment1.isEmpty() && comment2.isEmpty() ) {
+            return true;
+        }
+        return LEVENSHTEIN_DISTANCE_MIN >=
+                new LevenshteinDistance().apply(comment1, comment2) / (double)Integer.max(comment1.length(), comment2.length());
+    }
+
     private List<String[]> instanceListToCSV(List<SATDInstance> list) {
         return list.stream()
                 .map(SATDInstance::toCSV)
@@ -79,7 +112,8 @@ public class SATDDifference {
                         csv[3],
                         csv[4],
                         csv[5],
-                        csv[6]
+                        csv[6],
+                        csv[7]
                 })
                 .collect(Collectors.toList());
     }

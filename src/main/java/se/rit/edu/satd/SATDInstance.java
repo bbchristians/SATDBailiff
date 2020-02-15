@@ -6,6 +6,7 @@ public class SATDInstance {
     public static final String NO_COMMIT = "None";
     public static final String FILE_UNKNOWN = "File Unknown";
     public static final String FILE_NONE = "None";
+    public static final String COMMENT_NONE = "None";
 
     private String oldFile;
     private String newFile;
@@ -15,6 +16,7 @@ public class SATDInstance {
     private String nameOfFileWhenAddressed = FILE_UNKNOWN;
 
     private String commitRemoved = COMMIT_UNKNOWN;
+    private String commentChangedTo = COMMENT_NONE;
 
     private SATDResolution resolution = SATDResolution.UNKNOWN;
 
@@ -56,6 +58,14 @@ public class SATDInstance {
         this.resolution = resolution;
     }
 
+    public String getCommentChangedTo() {
+        return this.commentChangedTo;
+    }
+
+    public void setCommentChangedTo(String comment) {
+        this.commentChangedTo = comment;
+    }
+
     public String getOldFile() {
         return this.oldFile;
     }
@@ -73,7 +83,15 @@ public class SATDInstance {
     }
 
     public String[] toCSV() {
-        return new String[] {this.commitAdded, this.commitRemoved, this.oldFile, this.newFile, this.nameOfFileWhenAddressed, this.resolution.name(), satdComment };
+        return new String[] {
+                this.commitAdded,
+                this.commitRemoved,
+                this.oldFile,
+                this.newFile,
+                this.nameOfFileWhenAddressed,
+                this.resolution.name(),
+                this.satdComment,
+                this.commentChangedTo};
     }
 
     public enum SATDResolution {
@@ -81,6 +99,7 @@ public class SATDInstance {
         FILE_REMOVED,
         FILE_PATH_CHANGED,
         SATD_REMOVED,
+        SATD_POSSIBLY_REMOVED,
         SATD_CHANGED,
         SATD_ADDED,
         SATD_UNADDRESSED
