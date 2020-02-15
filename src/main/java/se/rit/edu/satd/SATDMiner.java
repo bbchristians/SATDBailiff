@@ -4,6 +4,9 @@ import org.apache.commons.io.FileUtils;
 import se.rit.edu.git.GitUtil;
 import se.rit.edu.git.RepositoryCommitReference;
 import se.rit.edu.git.RepositoryInitializer;
+import se.rit.edu.satd.detector.SATDDetector;
+import se.rit.edu.satd.mining.RepositoryDiffMiner;
+import se.rit.edu.satd.writer.OutputWriter;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,6 +16,8 @@ public class SATDMiner {
 
     private String repositoryURI;
     private RepositoryInitializer repo;
+
+    private SATDDetector satdDetector = null;
 
     public SATDMiner(String repositoryURI) {
         this.repositoryURI = repositoryURI;
@@ -32,6 +37,29 @@ public class SATDMiner {
 
     public List<RepositoryCommitReference> getReposAtReleases(ReleaseSortType sortType) {
         return getReposAtReleases(null, sortType);
+    }
+
+    public void setSatdDetector(SATDDetector detector) {
+        this.satdDetector = detector;
+    }
+
+    public void writeRepoSATD(List<RepositoryCommitReference> commitRefs, OutputWriter writer) {
+        if( this.satdDetector == null ) {
+            System.err.println("Miner does not have SATD Detector set. Please call setSatdDetector() on the Miner object.");
+            return;
+        }
+        for (int i = 1; i < commitRefs.size(); i++) {
+            SATDDifference diff = RepositoryDiffMiner.ofFirstRepository(commitRefs.get(i-1))
+                                        .andSecondRepository(commitRefs.get(i))
+                                        .usingDetector(this.satdDetector)
+                                        .mineDiff();
+            try {
+                writer.writeDiff(diff);
+            } catch (IOException e) {
+                System.err.println("IOException while writing diff: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
     }
 
     public void cleanRepo() {
