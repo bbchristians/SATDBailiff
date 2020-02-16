@@ -71,6 +71,7 @@ public class SATDDifference {
     }
 
     public void alignRemovedAndAddedForOverlaps() {
+        // If it might have been removed, check if it was just changed slightly instead
         this.addressedOrChangedSATD.stream()
                 .filter(satd -> satd.getResolution().equals(SATDInstance.SATDResolution.SATD_POSSIBLY_REMOVED))
                 .forEach(satd -> {
@@ -89,6 +90,19 @@ public class SATDDifference {
                         this.changedOrAddedSATD.remove(match.get(0));
                     }
                 });
+        // TODO is this something that is common enough to enable?
+//        // If the file was removed, see if the code was placed elsewhere
+//        this.fileRemovedSATD
+//                .forEach(satd -> {
+//                    List<SATDInstance> match = this.changedOrAddedSATD.stream()
+//                            .filter(coaSATD -> coaSATD.getSATDComment().equals(satd.getSATDComment()))
+//                            .collect(Collectors.toList());
+//                    if( !match.isEmpty() ) {
+//                        this.changedOrAddedSATD.remove(match.get(0));
+//                        satd.setResolution(SATDInstance.SATDResolution.SATD_MOVED_FILE);
+//                        satd.setNewFile(match.get(0).getNewFile());
+//                    }
+//                });
     }
 
     private static boolean commentsAreSimilar(String comment1, String comment2) {

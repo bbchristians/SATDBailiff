@@ -102,6 +102,7 @@ public class SATDInstance {
         SATD_POSSIBLY_REMOVED,
         SATD_CHANGED,
         SATD_ADDED,
-        SATD_UNADDRESSED
+        SATD_UNADDRESSED,
+        SATD_MOVED_FILE // Is this common enough?
     }
 }
