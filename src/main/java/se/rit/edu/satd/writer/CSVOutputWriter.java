@@ -2,8 +2,12 @@ package se.rit.edu.satd.writer;
 
 import com.opencsv.CSVWriter;
 import se.rit.edu.satd.SATDDifference;
+import se.rit.edu.satd.SATDInstance;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class CSVOutputWriter implements OutputWriter {
 
@@ -39,7 +43,7 @@ public class CSVOutputWriter implements OutputWriter {
         Writer writer = new BufferedWriter(new FileWriter(this.outFile, true));
         CSVWriter csvWriter = new CSVWriter(writer);
 
-        csvWriter.writeAll(diff.toCSV());
+        csvWriter.writeAll(diffToCSV(diff));
 
         csvWriter.close();
     }
@@ -52,5 +56,45 @@ public class CSVOutputWriter implements OutputWriter {
         headerWriter.writeNext(HEADERS);
 
         headerWriter.close();
+    }
+
+    private static List<String[]> diffToCSV(SATDDifference diff) {
+        List<String[]> allCSVEntries = new ArrayList<>();
+        allCSVEntries.addAll(instanceListToCSV(diff, diff.getFileRemovedSATD()));
+        allCSVEntries.addAll(instanceListToCSV(diff, diff.getUnaddressedSATD()));
+        allCSVEntries.addAll(instanceListToCSV(diff, diff.getAddressedOrChangedSATD()));
+        allCSVEntries.addAll(instanceListToCSV(diff, diff.getChangedOrAddedSATD()));
+        return allCSVEntries;
+    }
+
+    private static List<String[]> instanceListToCSV(SATDDifference diff, List<SATDInstance> list) {
+        return list.stream()
+                .map(CSVOutputWriter::instanceToCSV)
+                .map(csv -> new String[] {
+                        diff.getProjectName(),
+                        diff.getOldTag(),
+                        diff.getNewTag(),
+                        csv[0],
+                        csv[1],
+                        csv[2],
+                        csv[3],
+                        csv[4],
+                        csv[5],
+                        csv[6],
+                        csv[7]
+                })
+                .collect(Collectors.toList());
+    }
+
+    private static String[] instanceToCSV(SATDInstance satdInstance) {
+        return new String[] {
+                satdInstance.getCommitAdded(),
+                satdInstance.getCommitRemoved(),
+                satdInstance.getOldFile(),
+                satdInstance.getNewFile(),
+                satdInstance.getNameOfFileWhenAddressed(),
+                satdInstance.getResolution().name(),
+                satdInstance.getSATDComment(),
+                satdInstance.getCommentChangedTo()};
     }
 }

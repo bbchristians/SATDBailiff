@@ -1,5 +1,9 @@
 package se.rit.edu.util;
 
+/**
+ * A utility class which provides performance reporting on the
+ * runtime duration of various activities done by the system
+ */
 public class ElapsedTimer {
 
     private long startTime = -1;

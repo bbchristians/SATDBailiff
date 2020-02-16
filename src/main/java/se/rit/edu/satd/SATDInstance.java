@@ -1,26 +1,32 @@
 package se.rit.edu.satd;
 
+import com.sun.istack.internal.NotNull;
+
+/**
+ * Data class which stores information about the SATD Instance
+ */
 public class SATDInstance {
 
+    // String constants for output
     public static final String COMMIT_UNKNOWN = "Commit Unknown";
     public static final String NO_COMMIT = "None";
     public static final String FILE_UNKNOWN = "File Unknown";
     public static final String FILE_NONE = "None";
     public static final String COMMENT_NONE = "None";
 
+    // SATD Instance mandatory fields
     private String oldFile;
     private String newFile;
     private String satdComment;
 
+    // SATD Instance other fields that maintain defaults
     private String commitAdded = COMMIT_UNKNOWN;
     private String nameOfFileWhenAddressed = FILE_UNKNOWN;
-
     private String commitRemoved = COMMIT_UNKNOWN;
     private String commentChangedTo = COMMENT_NONE;
-
     private SATDResolution resolution = SATDResolution.UNKNOWN;
 
-    public SATDInstance(String oldFile, String newFile, String satdComment) {
+    public SATDInstance(@NotNull String oldFile, @NotNull String newFile, @NotNull String satdComment) {
         this.oldFile = oldFile;
         this.newFile = newFile;
         this.satdComment = satdComment;
@@ -30,40 +36,20 @@ public class SATDInstance {
         return commitAdded;
     }
 
-    public void setCommitAdded(String commitAdded) {
-        this.commitAdded = commitAdded;
-    }
-
     public String getCommitRemoved() {
         return commitRemoved;
-    }
-
-    public void setCommitRemoved(String commitRemoved) {
-        this.commitRemoved = commitRemoved;
     }
 
     public String getNameOfFileWhenAddressed() {
         return nameOfFileWhenAddressed;
     }
 
-    public void setNameOfFileWhenAddressed(String nameOfFileWhenAddressed) {
-        this.nameOfFileWhenAddressed = nameOfFileWhenAddressed;
-    }
-
     public SATDResolution getResolution() {
         return resolution;
     }
 
-    public void setResolution(SATDResolution resolution) {
-        this.resolution = resolution;
-    }
-
     public String getCommentChangedTo() {
         return this.commentChangedTo;
-    }
-
-    public void setCommentChangedTo(String comment) {
-        this.commentChangedTo = comment;
     }
 
     public String getOldFile() {
@@ -74,24 +60,32 @@ public class SATDInstance {
         return this.newFile;
     }
 
-    public void setNewFile(String newFile) {
-        this.newFile = newFile;
-    }
-
     public String getSATDComment() {
         return this.satdComment;
     }
 
-    public String[] toCSV() {
-        return new String[] {
-                this.commitAdded,
-                this.commitRemoved,
-                this.oldFile,
-                this.newFile,
-                this.nameOfFileWhenAddressed,
-                this.resolution.name(),
-                this.satdComment,
-                this.commentChangedTo};
+    public void setCommitAdded(String commitAdded) {
+        this.commitAdded = commitAdded;
+    }
+
+    public void setCommitRemoved(String commitRemoved) {
+        this.commitRemoved = commitRemoved;
+    }
+
+    public void setNameOfFileWhenAddressed(String nameOfFileWhenAddressed) {
+        this.nameOfFileWhenAddressed = nameOfFileWhenAddressed;
+    }
+
+    public void setResolution(SATDResolution resolution) {
+        this.resolution = resolution;
+    }
+
+    public void setCommentChangedTo(String comment) {
+        this.commentChangedTo = comment;
+    }
+
+    public void setNewFile(String newFile) {
+        this.newFile = newFile;
     }
 
     public enum SATDResolution {
@@ -102,7 +96,6 @@ public class SATDInstance {
         SATD_POSSIBLY_REMOVED,
         SATD_CHANGED,
         SATD_ADDED,
-        SATD_UNADDRESSED,
-        SATD_MOVED_FILE // Is this common enough?
+        SATD_UNADDRESSED
     }
 }
