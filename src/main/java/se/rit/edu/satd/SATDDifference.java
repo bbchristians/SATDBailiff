@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 public class SATDDifference {
 
-    private static final double LEVENSHTEIN_DISTANCE_MIN = 0.75;
+    private static final double LEVENSHTEIN_DISTANCE_MIN = 0.50;
 
     private String oldTag;
     private String newTag;
@@ -111,6 +111,12 @@ public class SATDDifference {
         }
         return LEVENSHTEIN_DISTANCE_MIN >=
                 new LevenshteinDistance().apply(comment1, comment2) / (double)Integer.max(comment1.length(), comment2.length());
+    }
+
+    public static void main(String[] args) {
+        String comment1 = " blahhhh... this really wants to be ASTImportDeclaration to be polymorphic...";
+        String comment2 = " This really is a duplicate import";
+        System.out.println(new LevenshteinDistance().apply(comment1, comment2) / (double)Integer.max(comment1.length(), comment2.length()));
     }
 
     private List<String[]> instanceListToCSV(List<SATDInstance> list) {

@@ -96,13 +96,13 @@ public class RepositoryDiffMiner {
                 List<SATDInstance> changedOrRemovedSATD = oldSATDStrings.stream()
                         .filter(mc -> !mc.isMapped())
                         .map(MappedSATDComment::getComment)
-                        .map(comment -> new SATDInstance(oldKey, "Unknown", comment))
+                        .map(comment -> new SATDInstance(oldKey, SATDInstance.FILE_UNKNOWN, comment))
                         .collect(Collectors.toList());
                 // SATD that was not in the old file, but was in the new
                 List<SATDInstance> changedOrAddedSATD = newSATDStrings.stream()
                         .filter(mc -> !mc.isMapped())
                         .map(MappedSATDComment::getComment)
-                        .map(comment -> new SATDInstance("Unknown", newKey, comment))
+                        .map(comment -> new SATDInstance("dev/null", newKey, comment))
                         .collect(Collectors.toList());
 
                 difference.addUnaddressedSATD(untouchedSATD);
