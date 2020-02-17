@@ -1,9 +1,6 @@
 package se.rit.edu.git;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.comments.Comment;
-import com.github.javaparser.ast.comments.CommentsCollection;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.errors.CorruptObjectException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
@@ -13,6 +10,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
+import se.rit.edu.java.JavaParseUtil;
 import se.rit.edu.satd.detector.SATDDetector;
 import se.rit.edu.util.ElapsedTimer;
 
@@ -65,26 +63,20 @@ public class RepositoryCommitReference {
 
         final TreeWalk thisRepoWalker = this.getTreeWalker();
         final Map<String, List<String>> filesToSATDMap = new HashMap<>();
-        final JavaParser parser = new JavaParser();
         try {
             // Walk through each Java file in the repository at the time of the commit
             while (thisRepoWalker.next()) {
                 // Get loader to load file contents into memory
-                final String fileName = thisRepoWalker.getPathString();
-                final ObjectLoader fileLoader = this.gitInstance.getRepository().open(thisRepoWalker.getObjectId(0));
-                // Parse Java file for comments
-                final ParseResult parsedFile = parser.parse(fileLoader.openStream());
-                if( parsedFile.getCommentsCollection().isPresent() ) {
-                    // Check each comment for being SATD
-                    final List<String> fileSATD = ((CommentsCollection) parsedFile.getCommentsCollection().get())
-                            .getComments()
-                            .stream()
-                            .filter(comment -> !comment.isJavadocComment())
-                            .map(Comment::getContent)
-                            .filter(detector::isSATD)
-                            .collect(Collectors.toList());
-                    filesToSATDMap.put(fileName, fileSATD);
-                }
+                final ObjectLoader fileLoader = this.gitInstance.getRepository()
+                        .open(thisRepoWalker.getObjectId(0));
+                // Parse Java file for SATD and add it to the map
+                filesToSATDMap.put(
+                        thisRepoWalker.getPathString(),
+                        JavaParseUtil.parseFileForComments(fileLoader.openStream()).stream()
+                                .map(Comment::getContent)
+                                .filter(detector::isSATD)
+                                .collect(Collectors.toList())
+                );
             }
         } catch (MissingObjectException | IncorrectObjectTypeException | CorruptObjectException e) {
             System.err.println("Exception in getting tree walker.");

@@ -1,9 +1,7 @@
 package se.rit.edu.git.commitlocator;
 
-import com.github.javaparser.JavaParser;
 import com.github.javaparser.Range;
 import com.github.javaparser.ast.comments.Comment;
-import com.github.javaparser.ast.comments.CommentsCollection;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
@@ -17,6 +15,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
+import se.rit.edu.java.JavaParseUtil;
 import se.rit.edu.satd.SATDInstance;
 
 import java.io.ByteArrayOutputStream;
@@ -49,57 +48,51 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
                     if (de.getChangeType().equals(DiffEntry.ChangeType.MODIFY) &&
                             de.getOldPath().equals(curSATDFile)) {
                         // Walk through each Java file
-                        TreeWalk thisRepoWalker = getTreeWalker(gitInstance.getRepository(), thisCommit);
-                        JavaParser parser = new JavaParser();
+                        final TreeWalk thisRepoWalker = getTreeWalker(gitInstance.getRepository(), thisCommit);
                         while ( thisRepoWalker.next() ) {
                             // If the file is the one we care about
                             if( thisRepoWalker.getPathString().equals(curSATDFile) ) {
-                                ObjectLoader fileLoader = gitInstance.getRepository()
+                                final ObjectLoader fileLoader = gitInstance.getRepository()
                                         .open(thisRepoWalker.getObjectId(0));
-                                // Parse Java file for comments
-                                Optional<CommentsCollection> comments = parser.parse(fileLoader.openStream())
-                                        .getCommentsCollection();
-                                if (comments.isPresent()) {
-                                    // See if the comment that is SATD is still in the file
-                                    // FIXME use case: File contains multiple of the same SATD comment
-                                    List<Comment> filteredComments = comments.get().getComments().stream().filter(comment ->
-                                            comment.getContent()
-                                                    .trim()
-                                                    .equals(satdInstance.getSATDComment().trim()))
-                                            .collect(Collectors.toList());
-                                    if (filteredComments.isEmpty()) {
-                                        // Check if the SATD comment was modified to another comment
-                                        final int curStartLine = commentStartLine;
-                                        final int curEndLine = commentEndLine;
-                                        List<Edit> thisCommentEdit = formatter.toFileHeader(de).toEditList().stream()
-                                                .filter(edit ->
-                                                        edit.getBeginA() <= curStartLine &&
-                                                        edit.getEndA() >= curEndLine)
+                                // See if the comment that is SATD is still in the file
+                                // FIXME use case: File contains multiple of the same SATD comment
+                                final List<Comment> filteredComments =
+                                        JavaParseUtil.parseFileForComments(fileLoader.openStream()).stream()
+                                                .filter(comment -> comment.getContent().trim()
+                                                        .equals(satdInstance.getSATDComment().trim()))
                                                 .collect(Collectors.toList());
-                                        if( !thisCommentEdit.isEmpty() && thisCommentEdit.get(0).getLengthB() == 0 ) {
-                                            // We know SATD was removed
-                                            satdInstance.setResolution(SATDInstance.SATDResolution.SATD_REMOVED);
-                                            satdInstance.setNewFile(SATDInstance.FILE_NONE);
-                                        } else if( !thisCommentEdit.isEmpty() && thisCommentEdit.get(0).getLengthB() > 0 ) {
-                                            // We the SATD may have only been modified
-                                            satdInstance.setResolution(SATDInstance.SATDResolution.SATD_POSSIBLY_REMOVED);
-                                            satdInstance.setNewFile(SATDInstance.FILE_UNKNOWN);
-                                        }
-
-                                        // TODO check if the SATD was moved to another file --
-                                                // This is probably better done after all SATD is analyzed.
-                                        satdInstance.setNameOfFileWhenAddressed(curSATDFile);
-                                        return thisCommit;
-                                    } else {
-                                        // Update the lines the comments were found
-                                        Optional<Range> commentLineRange = filteredComments.get(0).getRange();
-                                        if( commentLineRange.isPresent() ) {
-                                            commentStartLine = commentLineRange.get().begin.line;
-                                            commentEndLine = commentLineRange.get().end.line;
-                                        }
-                                        // SATD still in this commit, so we continue the search
-                                        break;
+                                if (filteredComments.isEmpty()) {
+                                    // Check if the SATD comment was modified to another comment
+                                    final int curStartLine = commentStartLine;
+                                    final int curEndLine = commentEndLine;
+                                    List<Edit> thisCommentEdit = formatter.toFileHeader(de).toEditList().stream()
+                                            .filter(edit ->
+                                                    edit.getBeginA() <= curStartLine &&
+                                                    edit.getEndA() >= curEndLine)
+                                            .collect(Collectors.toList());
+                                    if( !thisCommentEdit.isEmpty() && thisCommentEdit.get(0).getLengthB() == 0 ) {
+                                        // We know SATD was removed
+                                        satdInstance.setResolution(SATDInstance.SATDResolution.SATD_REMOVED);
+                                        satdInstance.setNewFile(SATDInstance.FILE_NONE);
+                                    } else if( !thisCommentEdit.isEmpty() && thisCommentEdit.get(0).getLengthB() > 0 ) {
+                                        // We the SATD may have only been modified
+                                        satdInstance.setResolution(SATDInstance.SATDResolution.SATD_POSSIBLY_REMOVED);
+                                        satdInstance.setNewFile(SATDInstance.FILE_UNKNOWN);
                                     }
+
+                                    // TODO check if the SATD was moved to another file --
+                                            // This is probably better done after all SATD is analyzed.
+                                    satdInstance.setNameOfFileWhenAddressed(curSATDFile);
+                                    return thisCommit;
+                                } else {
+                                    // Update the lines the comments were found
+                                    Optional<Range> commentLineRange = filteredComments.get(0).getRange();
+                                    if( commentLineRange.isPresent() ) {
+                                        commentStartLine = commentLineRange.get().begin.line;
+                                        commentEndLine = commentLineRange.get().end.line;
+                                    }
+                                    // SATD still in this commit, so we continue the search
+                                    break;
                                 }
                             }
                         }
