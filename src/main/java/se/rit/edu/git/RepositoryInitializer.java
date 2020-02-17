@@ -12,7 +12,10 @@ import se.rit.edu.util.ElapsedTimer;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.IllegalCharsetNameException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**

@@ -12,16 +12,15 @@ import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
+import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
+import se.rit.edu.satd.detector.SATDDetector;
+import se.rit.edu.util.ElapsedTimer;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
-import se.rit.edu.satd.detector.SATDDetector;
-import se.rit.edu.util.ElapsedTimer;
 
 public class RepositoryCommitReference {
 
