@@ -44,12 +44,12 @@ public class Main {
             miner.setSatdDetector(new SATDDetectorImpl());
 
             miner.writeRepoSATD(repos, new CSVOutputWriter(
-                    new File(OUT_DIR + "/" + GitUtil.getRepoNameFromGithubURI(repo) + ".csv")));
+                    new File(String.join(File.separator, OUT_DIR, GitUtil.getRepoNameFromGithubURI(repo) + ".csv"))));
 
             miner.cleanRepo();
 
             timer.end();
-            System.out.println(String.format("Finished analyzing SATD in %s in %7dms",
+            System.out.println(String.format("Finished analyzing SATD in %s in %,dms",
                     GitUtil.getRepoNameFromGithubURI(repo), timer.readMS()));
         }
     }
