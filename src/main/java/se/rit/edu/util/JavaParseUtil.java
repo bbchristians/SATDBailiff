@@ -1,4 +1,4 @@
-package se.rit.edu.java;
+package se.rit.edu.util;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
