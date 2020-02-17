@@ -1,5 +1,9 @@
 package se.rit.edu.satd.detector;
 
+/**
+ * Maintains a wrapper implementation for the SATDDetector project:
+ * https://github.com/Tbabm/SATDDetector-Core
+ */
 public class SATDDetectorImpl implements SATDDetector {
 
     // Wrapper implementation for this implementation

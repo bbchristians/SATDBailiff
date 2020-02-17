@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 public class CSVOutputWriter implements OutputWriter {
 
+    // Headers for the CSV file
     private static final String[] HEADERS = new String[]{
             "project",
             "v1_tag",

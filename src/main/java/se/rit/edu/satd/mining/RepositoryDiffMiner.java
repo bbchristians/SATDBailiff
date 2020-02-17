@@ -1,6 +1,5 @@
 package se.rit.edu.satd.mining;
 
-import org.eclipse.jgit.api.Git;
 import se.rit.edu.git.RepositoryCommitReference;
 import se.rit.edu.git.RepositoryFileMapping;
 import se.rit.edu.git.commitlocator.*;
@@ -13,127 +12,187 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Mines the differences in SATD between repositories
+ */
 public class RepositoryDiffMiner {
 
+    // Required fields
     private RepositoryCommitReference firstRepo;
     private RepositoryCommitReference secondRepo = null;
     private SATDDetector satdDetector = null;
 
+    // Timer for metrics reporting
+    private ElapsedTimer timer = null;
+
     private RepositoryDiffMiner() {}
 
-    public RepositoryDiffMiner andSecondRepository(RepositoryCommitReference repo) {
-        this.secondRepo = repo;
-        return this;
-    }
-
+    /**
+     * Generates an initial RepositoryDiffMiner Object
+     * @param repo The earlier of the repository commit references
+     * @return a RepositoryDiffMiner object
+     */
     public static RepositoryDiffMiner ofFirstRepository(RepositoryCommitReference repo) {
         RepositoryDiffMiner miner = new RepositoryDiffMiner();
         miner.firstRepo = repo;
         return miner;
     }
 
+    /**
+     * Adds a second repository to the repository diff miner
+     * @param repo The later of the repository commit references
+     * @return a RepositoryDiffMiner object
+     */
+    public RepositoryDiffMiner andSecondRepository(RepositoryCommitReference repo) {
+        this.secondRepo = repo;
+        return this;
+    }
+
+    /**
+     * Adds an SATDDetector to the diff miner
+     * @param detector an SATDDetector
+     * @return a RepositoryDiffMiner object
+     */
     public RepositoryDiffMiner usingDetector(SATDDetector detector) {
         this.satdDetector = detector;
         return this;
     }
 
-    public SATDDifference mineDiff() {
+    /**
+     * Mines the differences in SATD between the two repositories set during generation
+     * of the DiffMiner object
+     * @return a SATDDifference object representing the SATD as it was changed between the
+     * earlier and the latter tags
+     * @throws IllegalStateException thrown if the DiffMiner object has not been fully
+     * configured before running
+     */
+    public SATDDifference mineDiff() throws IllegalStateException {
         if( this.secondRepo == null ) {
-            System.err.println("Second repo to diff not set, please call andSecondRepository() to set the second repo.");
+            throw new IllegalStateException(
+                    "Second repo to diff not set, please call andSecondRepository() to set the second repo.");
         }
         if( this.satdDetector == null ) {
-            System.err.println("SATD Detector not set, please call usingDetector() to set the SATD Detector.");
+            throw new IllegalStateException(
+                    "SATD Detector not set, please call usingDetector() to set the SATD Detector.");
         }
 
-        // Get the SATD occurances for each repo
-        Map<String, List<String>> olderSATD = this.firstRepo.getFilesToSAIDOccurrences(this.satdDetector);
-        Map<String, List<String>> newerSATD = this.secondRepo.getFilesToSAIDOccurrences(this.satdDetector);
+        // Get the SATD occurrences for each repo
+        final Map<String, List<String>> olderSATD = this.firstRepo.getFilesToSAIDOccurrences(this.satdDetector);
+        final Map<String, List<String>> newerSATD = this.secondRepo.getFilesToSAIDOccurrences(this.satdDetector);
 
-        // Timer for reporting
-        ElapsedTimer timer = new ElapsedTimer();
-        timer.start();
+        this.startSATDDiffTimer();
 
         // Get file mapping for renamed files
-        // TODO does this still need to be done now that we're using git diff?
-        Map<String, String> fileMapping = RepositoryFileMapping.getFileMapping(olderSATD.keySet(), newerSATD.keySet());
+        // The idea here is that SATD that is mapped will not require
+        // Additional, more costly, processing using Git tools
+        final Map<String, String> fileMapping =
+                RepositoryFileMapping.getFileMapping(olderSATD.keySet(), newerSATD.keySet());
 
         // Create base diff object
-        SATDDifference difference = new SATDDifference(this.firstRepo.getProjectName(),
-                this.firstRepo.getTag(), this.secondRepo.getTag());
+        final SATDDifference difference = new SATDDifference(
+                this.firstRepo.getProjectName(),
+                this.firstRepo.getTag(),
+                this.secondRepo.getTag());
 
         // Iterate through all SATD occurrences and determine what to classify it as
-        for( String oldKey : olderSATD.keySet() ) {
-            String newKey = fileMapping.get(oldKey);
+        olderSATD.keySet().forEach(oldKey -> {
+            final String newKey = fileMapping.get(oldKey);
             if( newKey.equals(RepositoryFileMapping.NOT_FOUND) ) {
                 difference.addFileRemovedSATD(olderSATD.get(oldKey).stream()
-                        .map(comment -> new SATDInstance(oldKey, "dev/null", comment))
+                        .map(comment -> new SATDInstance(oldKey, SATDInstance.FILE_DEV_NULL, comment))
                         .collect(Collectors.toList()));
             } else {
                 // See which strings in each file are present here
-                final List<MappedSATDComment> oldSATDStrings = olderSATD.get(oldKey).stream()
+                final List<MappedSATDComment> mappedOlderSATD = olderSATD.get(oldKey).stream()
                         .map(MappedSATDComment::new)
                         .collect(Collectors.toList());
-                final List<MappedSATDComment> newSATDStrings = newerSATD.get(newKey).stream()
+                final List<MappedSATDComment> mappedNewerSATD = newerSATD.get(newKey).stream()
                         .map(MappedSATDComment::new)
                         .collect(Collectors.toList());
+                // See what SATD can be mapped between files
+                mappedNewerSATD.forEach(newerSATDMapping ->
+                        mappedOlderSATD.stream()
+                                .filter(MappedSATDComment::isNotMapped)
+                                .filter(s -> s.getComment().equals(newerSATDMapping.getComment()))
+                                .findFirst()
+                                .ifPresent(s -> {
+                                    s.setMapped();
+                                    newerSATDMapping.setMapped();
+                                })
+                );
 
-                newSATDStrings.forEach(newerSATDMapping -> {
-                    oldSATDStrings.forEach(olderSATDMapping -> {
-                        if( !olderSATDMapping.isMapped() && !newerSATDMapping.isMapped() &&
-                                olderSATDMapping.getComment().equals(newerSATDMapping.getComment()) ) {
-                            olderSATDMapping.setMapped();
-                            newerSATDMapping.setMapped();
-                        }
-                    });
-                });
-                // SATD that appears identically in both new and old files
-                List<SATDInstance> untouchedSATD = oldSATDStrings.stream()
+                // SATD that appears identically in both new and old repos
+                // Means that it is has not been touched, and no further resources and
+                // no resources should be spent determining whether the SATD was addressed
+                List<SATDInstance> untouchedSATD = mappedOlderSATD.stream()
                         .filter(MappedSATDComment::isMapped)
                         .map(MappedSATDComment::getComment)
                         .map(comment -> new SATDInstance(oldKey, newKey, comment))
                         .collect(Collectors.toList());
-                // SATD that was not in the new file, but was in the old
-                List<SATDInstance> changedOrRemovedSATD = oldSATDStrings.stream()
-                        .filter(mc -> !mc.isMapped())
+                // SATD that was not in the new repo, but was in the old repo
+                // We will need to determine whether the SATD was changed or removed
+                // We also ignore the case where the SATD was removed in one file, and transferred
+                // to another file
+                List<SATDInstance> changedOrRemovedSATD = mappedOlderSATD.stream()
+                        .filter(MappedSATDComment::isNotMapped)
                         .map(MappedSATDComment::getComment)
                         .map(comment -> new SATDInstance(oldKey, SATDInstance.FILE_UNKNOWN, comment))
                         .collect(Collectors.toList());
-                // SATD that was not in the old file, but was in the new
-                List<SATDInstance> changedOrAddedSATD = newSATDStrings.stream()
-                        .filter(mc -> !mc.isMapped())
+                // SATD that was not in the old repo, but was in the repo
+                // We will need to determine whether the SATD was changed from another
+                // SATD instance, or added to the project
+                List<SATDInstance> changedOrAddedSATD = mappedNewerSATD.stream()
+                        .filter(MappedSATDComment::isNotMapped)
                         .map(MappedSATDComment::getComment)
-                        .map(comment -> new SATDInstance("dev/null", newKey, comment))
+                        .map(comment -> new SATDInstance(SATDInstance.FILE_DEV_NULL, newKey, comment))
                         .collect(Collectors.toList());
 
+                // Add these processed instances to the difference object
                 difference.addUnaddressedSATD(untouchedSATD);
                 difference.addAddressedOrChangedSATD(changedOrRemovedSATD);
                 difference.addChangedOrAddedSATD(changedOrAddedSATD);
             }
-        }
+        });
 
         // Get commits for File Removed SATD
-        difference.getFileRemovedSATD().forEach( satd ->
-                getCommitsForSATD(satd, new FileRemovedOrRenamedCommitLocator(), true));
+        this.setCommitsInDiff(difference);
 
-        difference.getAddressedOrChangedSATD().forEach( satd ->
-                getCommitsForSATD(satd, new SATDRemovedChangedMovedCommitLocator(), true));
-
-        difference.getUnaddressedSATD().forEach( satd ->
-                getCommitsForSATD(satd, new SATDUnaddressedCommitLocator(), true));
-
-        difference.getChangedOrAddedSATD().forEach( satd ->
-                getCommitsForSATD(satd, new SATDAddedCommitLocator(), false));
-
-        difference.alignRemovedAndAddedForOverlaps();
-
-        timer.end();
-        System.out.println(String.format("Finished diffing against previous version in %6dms", timer.readMS()));
+        this.endSATDDiffTimer();
 
         return difference;
     }
 
+    /**
+     * Sets the commits for each SATD instance in a SATDDifference
+     * @param diff a SATDDifference object
+     */
+    private void setCommitsInDiff(SATDDifference diff) {
+        diff.getFileRemovedSATD().forEach( satd ->
+                getCommitsForSATD(satd, new FileRemovedOrRenamedCommitLocator(), true));
 
+        diff.getAddressedOrChangedSATD().forEach( satd ->
+                getCommitsForSATD(satd, new SATDRemovedChangedMovedCommitLocator(), true));
 
+        diff.getUnaddressedSATD().forEach( satd ->
+                getCommitsForSATD(satd, new SATDUnaddressedCommitLocator(), true));
+
+        diff.getChangedOrAddedSATD().forEach( satd ->
+                getCommitsForSATD(satd, new SATDAddedCommitLocator(), false));
+
+        diff.alignRemovedAndAddedForOverlaps();
+    }
+
+    /**
+     * For a specific SATD instance, find the commits pertinent to it
+     * @param satd an SATD instance
+     * @param locator a CommitLocator object that contains the logic of how
+     *                to locate the pertinent commits for the SATD instance
+     * @param useOldFilePath True if the SATD instance should use the file path
+     *                       of the older repository when locating the commit added,
+     *                       else False if it should use the newer. This should always
+     *                       be true unless the SATD instance does not have a valid
+     *                       original file reference.
+     */
     private void getCommitsForSATD(SATDInstance satd, CommitLocator locator, boolean useOldFilePath) {
         satd.setCommitAdded(
                 locator.findCommitIntroduced(this.firstRepo.getGitInstance(), satd,
@@ -144,6 +203,27 @@ public class RepositoryDiffMiner {
                         this.firstRepo.getCommit(), this.secondRepo.getCommit()));
     }
 
+    /**
+     * Starts the elapsed timer for determining the time it took to diff the
+     * repositories.
+     */
+    private void startSATDDiffTimer() {
+        this.timer = new ElapsedTimer();
+        this.timer.start();
+    }
+
+    /**
+     * Ends the elapsed time for determining the time it took to diff the
+     * repositories, and also outputs the execution time.
+     */
+    private void endSATDDiffTimer() {
+        this.timer.end();
+        System.out.println(String.format("Finished diffing against previous version in %,dms", this.timer.readMS()));
+    }
+
+    /**
+     * A data class to store meta-data on whether a commit has been mapped between a new and old SATD instance
+     */
     private class MappedSATDComment {
 
         private String comment;
@@ -161,7 +241,15 @@ public class RepositoryDiffMiner {
             return this.isMapped;
         }
 
+        private boolean isNotMapped() {
+            return !this.isMapped;
+        }
+
         private void setMapped() {
+            if( this.isMapped ) {
+                System.err.println("It is likely that an SATD instance was unintentionally mapped twice. " +
+                                "This will throw off output data.");
+            }
             this.isMapped = true;
         }
     }

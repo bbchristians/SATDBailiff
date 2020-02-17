@@ -12,6 +12,7 @@ public class SATDInstance {
     public static final String NO_COMMIT = "None";
     public static final String FILE_UNKNOWN = "File Unknown";
     public static final String FILE_NONE = "None";
+    public static final String FILE_DEV_NULL = "dev/null";
     public static final String COMMENT_NONE = "None";
 
     // SATD Instance mandatory fields
