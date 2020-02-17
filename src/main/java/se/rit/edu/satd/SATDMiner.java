@@ -11,6 +11,7 @@ import se.rit.edu.satd.writer.OutputWriter;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -41,8 +42,11 @@ public class SATDMiner {
      * @return a list of repository references at all tags in the repository
      */
     public List<RepositoryCommitReference> getReposAtReleases(String mostRecentCommit, ReleaseSortType sortType) {
-        if( repo == null ) {
-            this.initializeRepo();
+        if( repo == null || !repo.didInitialize() ) {
+            if( !this.initializeRepo() ) {
+                System.err.println("Repository failed to initialize");
+                return new ArrayList<>();
+            }
         }
         List<RepositoryCommitReference> refs =  this.repo.getComparableRepositories(mostRecentCommit);
         if( sortType == ReleaseSortType.CHRONOLOGICAL ) {
@@ -99,8 +103,9 @@ public class SATDMiner {
         }
     }
 
-    private void initializeRepo() {
+    private boolean initializeRepo() {
         this.repo = new RepositoryInitializer(this.repositoryURI, GitUtil.getRepoNameFromGitURI(this.repositoryURI));
+        return repo.initRepo();
     }
 
     // TODO can we sort the repos based on chronological vs. Some kind of release parsing?
