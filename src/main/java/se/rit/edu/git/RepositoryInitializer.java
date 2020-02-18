@@ -188,7 +188,7 @@ public class RepositoryInitializer {
     private void endCloneElapsedTimer() {
         this.cloneTimer.end();
         System.out.println(String.format("Finished cloning: %s in %,dms",
-                GitUtil.getRepoNameFromGitURI(this.gitURI), this.cloneTimer.readMS()));
+                GitUtil.getRepoNameFromGithubURI(this.gitURI), this.cloneTimer.readMS()));
     }
 
     private void startGetTagsElapsedTimer() {
@@ -199,7 +199,7 @@ public class RepositoryInitializer {
     private void endGetTagsElapsedTimer() {
         this.tagsTimer.end();
         System.out.println(String.format("Finished gathering tags for %s in %,dms",
-                GitUtil.getRepoNameFromGitURI(this.gitURI), this.tagsTimer.readMS()));
+                GitUtil.getRepoNameFromGithubURI(this.gitURI), this.tagsTimer.readMS()));
     }
 
 

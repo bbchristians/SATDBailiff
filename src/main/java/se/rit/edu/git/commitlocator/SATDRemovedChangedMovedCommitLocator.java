@@ -19,6 +19,7 @@ import se.rit.edu.util.JavaParseUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.security.acl.Group;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -56,8 +57,8 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
                                 // FIXME use case: File contains multiple of the same SATD comment
                                 final List<GroupedComment> filteredComments =
                                         JavaParseUtil.parseFileForComments(fileLoader.openStream()).stream()
-                                                .filter(comment -> comment.getComment()
-                                                        .equals(satdInstance.getSATDComment().trim()))
+                                                .filter(comment ->
+                                                        compareComments(comment, satdInstance.getSATDComment()))
                                                 .collect(Collectors.toList());
                                 if (filteredComments.isEmpty()) {
                                     // Check if the SATD comment was modified to another comment
@@ -78,8 +79,7 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
                                         satdInstance.setNewFile(SATDInstance.FILE_UNKNOWN);
                                     }
 
-                                    // TODO check if the SATD was moved to another file --
-                                            // This is probably better done after all SATD is analyzed.
+                                    // TODO can we check if the SATD was moved to another file?
                                     satdInstance.setNameOfFileWhenAddressed(curSATDFile);
                                     return thisCommit;
                                 } else {
@@ -108,7 +108,15 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
         return SATDInstance.COMMIT_UNKNOWN;
     }
 
-
+    private static boolean compareComments(GroupedComment comment1, String comment2) {
+        return comment1.getComment()
+                .replace("\n", " ")
+                .trim()
+                .equals(
+                        comment2.replace("\n", " ")
+                            .trim()
+                );
+    }
 
     private TreeWalk getTreeWalker(Repository repository, String commit) {
         TreeWalk treeWalk = new TreeWalk(repository);

@@ -1,9 +1,5 @@
 package se.rit.edu.git.commitlocator;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ParseResult;
-import com.github.javaparser.ast.comments.Comment;
-import com.github.javaparser.ast.comments.CommentsCollection;
 import org.eclipse.jgit.api.BlameCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -13,11 +9,13 @@ import org.eclipse.jgit.diff.RenameDetector;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import se.rit.edu.satd.SATDInstance;
+import se.rit.edu.util.GroupedComment;
+import se.rit.edu.util.JavaParseUtil;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -39,24 +37,19 @@ public abstract class CommitLocator {
                             .map(i -> i.replace('\r', ' '))
                             .collect(Collectors.joining("\n"));
             // Parse file as Java
-            JavaParser parser = new JavaParser();
-            ParseResult parsedBlameOutput = parser.parse(blameResultJavaCode);
-            Optional<CommentsCollection> comments = parsedBlameOutput.getCommentsCollection();
-            if( comments.isPresent() ) {
-                List<Comment> soughtComment = comments.get()
-                        .getComments()
-                        .stream()
-                        .filter(comment -> comment.getContent().trim().equals(satdInstance.getSATDComment().trim()))
-                        .collect(Collectors.toList());
-                if( !soughtComment.isEmpty() &&
-                        soughtComment.get(0).getRange().isPresent() ) {
-                    // TODO Blame all lines of the comment in case two lines blame to different commits
-                    int commentLineNumber = soughtComment.get(0).getRange().get().begin.line;
-                    // Comment line is not indexed
-                    return blameResult.getSourceCommit(commentLineNumber - 1).getName();
-                }
-                return SATDInstance.COMMIT_UNKNOWN;
+            List<GroupedComment> parsedBlameOutput = JavaParseUtil.parseFileForComments(
+                    new ByteArrayInputStream(blameResultJavaCode.getBytes()));
+            List<GroupedComment> soughtComment = parsedBlameOutput
+                    .stream()
+                    .filter(comment -> comment.getComment().equals(satdInstance.getSATDComment()))
+                    .collect(Collectors.toList());
+            if( !soughtComment.isEmpty() ) {
+                // TODO Blame all lines of the comment in case two lines blame to different commits
+                int commentLineNumber = soughtComment.get(0).getStartLine();
+                // Comment line is not indexed
+                return blameResult.getSourceCommit(commentLineNumber - 1).getName();
             }
+            return SATDInstance.COMMIT_UNKNOWN;
         } catch (GitAPIException e) {
             System.err.println("Git API error while blaming file.");
         } catch (IOException e) {

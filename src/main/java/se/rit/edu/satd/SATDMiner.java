@@ -104,7 +104,7 @@ public class SATDMiner {
     }
 
     private boolean initializeRepo() {
-        this.repo = new RepositoryInitializer(this.repositoryURI, GitUtil.getRepoNameFromGitURI(this.repositoryURI));
+        this.repo = new RepositoryInitializer(this.repositoryURI, GitUtil.getRepoNameFromGithubURI(this.repositoryURI));
         return repo.initRepo();
     }
 

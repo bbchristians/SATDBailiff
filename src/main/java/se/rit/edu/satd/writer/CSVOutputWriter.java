@@ -37,6 +37,7 @@ public class CSVOutputWriter implements OutputWriter {
     public void writeDiff(SATDDifference diff) throws IOException {
 
         if( this.isFirstWriteToFile ) {
+            this.outFile.getParentFile().mkdirs();
             this.firstWrite();
             this.isFirstWriteToFile = false;
         }
