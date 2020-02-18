@@ -1,6 +1,5 @@
 package se.rit.edu.git;
 
-import com.github.javaparser.ast.comments.Comment;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.errors.CorruptObjectException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
@@ -10,9 +9,10 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
-import se.rit.edu.util.JavaParseUtil;
 import se.rit.edu.satd.detector.SATDDetector;
 import se.rit.edu.util.ElapsedTimer;
+import se.rit.edu.util.GroupedComment;
+import se.rit.edu.util.JavaParseUtil;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -73,7 +73,7 @@ public class RepositoryCommitReference {
                 filesToSATDMap.put(
                         thisRepoWalker.getPathString(),
                         JavaParseUtil.parseFileForComments(fileLoader.openStream()).stream()
-                                .map(Comment::getContent)
+                                .map(GroupedComment::getComment)
                                 .filter(detector::isSATD)
                                 .collect(Collectors.toList())
                 );

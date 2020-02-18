@@ -1,7 +1,5 @@
 package se.rit.edu.git.commitlocator;
 
-import com.github.javaparser.Range;
-import com.github.javaparser.ast.comments.Comment;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
@@ -15,13 +13,13 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
-import se.rit.edu.util.JavaParseUtil;
 import se.rit.edu.satd.SATDInstance;
+import se.rit.edu.util.GroupedComment;
+import se.rit.edu.util.JavaParseUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
@@ -56,9 +54,9 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
                                         .open(thisRepoWalker.getObjectId(0));
                                 // See if the comment that is SATD is still in the file
                                 // FIXME use case: File contains multiple of the same SATD comment
-                                final List<Comment> filteredComments =
+                                final List<GroupedComment> filteredComments =
                                         JavaParseUtil.parseFileForComments(fileLoader.openStream()).stream()
-                                                .filter(comment -> comment.getContent().trim()
+                                                .filter(comment -> comment.getComment()
                                                         .equals(satdInstance.getSATDComment().trim()))
                                                 .collect(Collectors.toList());
                                 if (filteredComments.isEmpty()) {
@@ -86,11 +84,8 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
                                     return thisCommit;
                                 } else {
                                     // Update the lines the comments were found
-                                    Optional<Range> commentLineRange = filteredComments.get(0).getRange();
-                                    if( commentLineRange.isPresent() ) {
-                                        commentStartLine = commentLineRange.get().begin.line;
-                                        commentEndLine = commentLineRange.get().end.line;
-                                    }
+                                    commentStartLine = filteredComments.get(0).getStartLine();
+                                    commentEndLine = filteredComments.get(0).getEndLine();
                                     // SATD still in this commit, so we continue the search
                                     break;
                                 }
