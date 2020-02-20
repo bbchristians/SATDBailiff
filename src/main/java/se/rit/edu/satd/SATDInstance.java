@@ -10,9 +10,11 @@ public class SATDInstance {
     // String constants for output
     public static final String COMMIT_UNKNOWN = "Commit Unknown";
     public static final String NO_COMMIT = "None";
+    public static final String ERROR_FINDING_COMMIT = "ERROR_FINDING";
     public static final String FILE_UNKNOWN = "File Unknown";
     public static final String FILE_NONE = "None";
     public static final String FILE_DEV_NULL = "dev/null";
+    public static final String ERROR_FINDING_FILE = "ERROR_FINDING";
     public static final String COMMENT_NONE = "None";
 
     // SATD Instance mandatory fields

@@ -64,6 +64,6 @@ public class FileRemovedOrRenamedCommitLocator extends CommitLocator {
         } catch (IOException e) {
             System.err.println("Error when diffing files");
         }
-        return null;
+        return SATDInstance.ERROR_FINDING_COMMIT;
     }
 }

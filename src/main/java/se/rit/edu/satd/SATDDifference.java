@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static se.rit.edu.satd.SATDInstance.COMMIT_UNKNOWN;
+
 /**
  * A class which stores and categorizes different SATD instances
  * and maintains logic to merge appropriate entries
@@ -121,6 +123,9 @@ public class SATDDifference {
      * @return True if it is likely that the SATD instances share an origin, else False
      */
     private boolean satdIsLikelyChangedTo(SATDInstance from, SATDInstance to) {
+        if( to.getCommitAdded().equals(COMMIT_UNKNOWN) || from.getCommitRemoved().equals(COMMIT_UNKNOWN) ) {
+            return false;
+        }
         return to.getCommitAdded().equals(from.getCommitRemoved()) &&
                 to.getNewFile().equals(from.getNameOfFileWhenAddressed()) &&
                 commentsAreSimilar(to.getSATDComment().trim(), from.getSATDComment().trim());

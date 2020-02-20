@@ -14,6 +14,7 @@ import se.rit.edu.util.JavaParseUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.IllegalCharsetNameException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,8 +55,10 @@ public abstract class CommitLocator {
             System.err.println("Git API error while blaming file.");
         } catch (IOException e) {
             System.err.println("Error resolving commit hash in repository.");
+        } catch (IllegalCharsetNameException e) {
+            System.err.println("Illegal charset name: " + e.getCharsetName());
         }
-        return null;
+        return SATDInstance.COMMIT_UNKNOWN;
     }
 
     /**
