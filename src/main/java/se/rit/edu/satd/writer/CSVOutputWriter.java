@@ -90,7 +90,9 @@ public class CSVOutputWriter implements OutputWriter {
 
     private static String[] instanceToCSV(SATDInstance satdInstance) {
         return new String[] {
-                satdInstance.getCommitAdded(),
+                satdInstance.getContributingCommits().isEmpty() ?
+                        SATDInstance.COMMIT_UNKNOWN
+                        : String.join(", ", satdInstance.getContributingCommits()),
                 satdInstance.getCommitRemoved(),
                 satdInstance.getOldFile(),
                 satdInstance.getNewFile(),

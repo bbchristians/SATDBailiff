@@ -194,13 +194,11 @@ public class RepositoryDiffMiner {
      *                       original file reference.
      */
     private void getCommitsForSATD(SATDInstance satd, CommitLocator locator, boolean useOldFilePath) {
-        satd.setCommitAdded(
-                locator.findCommitIntroduced(this.firstRepo.getGitInstance(), satd,
-                        useOldFilePath ? this.firstRepo.getCommit() : this.secondRepo.getCommit(),
-                        useOldFilePath ? satd.getOldFile() : satd.getNewFile()));
-        satd.setCommitRemoved(
-                locator.findCommitAddressed(this.firstRepo.getGitInstance(), satd,
-                        this.firstRepo.getCommit(), this.secondRepo.getCommit()));
+        locator.findContributingCommits(this.firstRepo.getGitInstance(), satd,
+                useOldFilePath ? this.firstRepo.getCommit() : this.secondRepo.getCommit(),
+                useOldFilePath ? satd.getOldFile() : satd.getNewFile());
+        locator.findCommitAddressed(this.firstRepo.getGitInstance(), satd,
+                this.firstRepo.getCommit(), this.secondRepo.getCommit());
     }
 
     /**

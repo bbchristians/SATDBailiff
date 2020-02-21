@@ -6,6 +6,7 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.blame.BlameResult;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.RenameDetector;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import se.rit.edu.satd.SATDInstance;
@@ -15,6 +16,7 @@ import se.rit.edu.util.JavaParseUtil;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.IllegalCharsetNameException;
+import java.security.acl.Group;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,14 +24,15 @@ import java.util.stream.IntStream;
 
 public abstract class CommitLocator {
 
-    public String findCommitIntroduced(Git gitInstance, SATDInstance satdInstance, String commitToStart, String file) {
+    public void findContributingCommits(Git gitInstance, SATDInstance satdInstance, String commitToStart, String file) {
         try {
-            BlameCommand blameCommand = gitInstance.blame()
+            // Make and call git blame for the specified file at the start commit
+            final BlameResult blameResult = gitInstance.blame()
                     .setFilePath(file)
-                    .setStartCommit(gitInstance.getRepository().resolve(commitToStart));
-            BlameResult blameResult = blameCommand.call();
+                    .setStartCommit(gitInstance.getRepository().resolve(commitToStart))
+                    .call();
             // Get blame result
-            String blameResultJavaCode =
+            final String blameResultJavaCode =
                     IntStream.range(0, blameResult.getResultContents().size())
                             .mapToObj(i -> blameResult.getResultContents().getString(i))
                             // Some files use different carriage returns, which construes git line numbers
@@ -37,20 +40,22 @@ public abstract class CommitLocator {
                             // see: https://github.com/apache/maven-surefire/blob/93687b7c61f373ae6c9423c6e612f6901a7732ad/surefire-api/src/main/java/org/apache/maven/surefire/util/internal/ObjectUtils.java
                             .map(i -> i.replace('\r', ' '))
                             .collect(Collectors.joining("\n"));
-            // Parse file as Java
-            List<GroupedComment> parsedBlameOutput = JavaParseUtil.parseFileForComments(
-                    new ByteArrayInputStream(blameResultJavaCode.getBytes()));
-            List<GroupedComment> soughtComment = parsedBlameOutput
-                    .stream()
+            // Parse file as Java, and try to find the comment we're looking for
+            final List<GroupedComment> soughtComment = JavaParseUtil.parseFileForComments(
+                    new ByteArrayInputStream(blameResultJavaCode.getBytes())).stream()
                     .filter(comment -> comment.getComment().equals(satdInstance.getSATDComment()))
                     .collect(Collectors.toList());
+            // TODO don't always blame the first occurrence -- multiple of same SATD in one file w/ diff commits
+            //  Will produce an error
             if( !soughtComment.isEmpty() ) {
-                // TODO Blame all lines of the comment in case two lines blame to different commits
-                int commentLineNumber = soughtComment.get(0).getStartLine();
-                // Comment line is not indexed
-                return blameResult.getSourceCommit(commentLineNumber - 1).getName();
+                final GroupedComment singleComment = soughtComment.get(0);
+                IntStream.range(singleComment.getStartLine() - 1,
+                        singleComment.getStartLine() + singleComment.getNumLines())
+                        .mapToObj(blameResult::getSourceCommit)
+                        .map(RevCommit::getName)
+                        .distinct()
+                        .forEach(satdInstance::addContributingCommit);
             }
-            return SATDInstance.COMMIT_UNKNOWN;
         } catch (GitAPIException e) {
             System.err.println("Git API error while blaming file.");
         } catch (IOException e) {
@@ -58,7 +63,6 @@ public abstract class CommitLocator {
         } catch (IllegalCharsetNameException e) {
             System.err.println("Illegal charset name: " + e.getCharsetName());
         }
-        return SATDInstance.COMMIT_UNKNOWN;
     }
 
     /**
@@ -70,7 +74,7 @@ public abstract class CommitLocator {
      * @param v2 the second version of the code (Commit hash)
      * @return A commit hash (String) of the commit which addressed the SATD
      */
-    public abstract String findCommitAddressed(Git gitInstance, SATDInstance satdInstance, String v1, String v2);
+    public abstract void findCommitAddressed(Git gitInstance, SATDInstance satdInstance, String v1, String v2);
 
     static List<DiffEntry> getDiffEntries(Git gitInstance, RevTree tree1, RevTree tree2) {
         try {

@@ -31,15 +31,17 @@ public class JavaParseUtil {
             if( previousComment != null && previousComment.precedesDirectly(thisComment) ) {
                 previousComment = previousComment.joinWith(thisComment);
             } else {
-                groupedComments.add(previousComment);
+                // Previous comment was the last of the group, so add it to the list
+                if( previousComment != null ) {
+                    groupedComments.add(previousComment);
+                }
+                // restart grouping with the current comment
                 previousComment = thisComment;
             }
         }
-        if( !groupedComments.contains(previousComment) ) {
+        if( previousComment != null && !groupedComments.contains(previousComment) ) {
             groupedComments.add(previousComment);
         }
-        return allComments.stream()
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+        return new ArrayList<>(groupedComments);
     }
 }

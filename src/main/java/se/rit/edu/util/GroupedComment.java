@@ -47,7 +47,7 @@ public class GroupedComment implements Comparable {
     }
 
     public boolean precedesDirectly(GroupedComment other) {
-        return this.getEndLine() == other.getStartLine() + 1;
+        return this.getEndLine() + 1 == other.getStartLine();
     }
 
     public int getStartLine() {
@@ -60,6 +60,10 @@ public class GroupedComment implements Comparable {
 
     public String getComment() {
         return comment;
+    }
+
+    public int getNumLines() {
+        return this.endLine - this.startLine;
     }
 
     @Override

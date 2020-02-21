@@ -17,13 +17,12 @@ public class FileRemovedOrRenamedCommitLocator extends CommitLocator {
      * @param satdInstance SATD Instance object
      * @param v1 first commit bound for finding SATD
      * @param v2 second commit bound for finding SATD
-     * @return a String of the commit hash where the SATD was removed or renamed
      *
      * Code partially copied from https://stackoverflow.com/questions/17296278/jgit-detect-rename-in-working-copy
      * TODO Check if the SATD in the removed file was moved to a different file
      */
     @Override
-    public String findCommitAddressed(Git gitInstance, SATDInstance satdInstance, String v1, String v2) {
+    public void findCommitAddressed(Git gitInstance, SATDInstance satdInstance, String v1, String v2) {
         try {
             List<RevCommit> commitsBetween = CommitLocatorUtil.getCommitsBetween(gitInstance,
                     gitInstance.getRepository().resolve(v1), gitInstance.getRepository().resolve(v2));
@@ -39,7 +38,8 @@ public class FileRemovedOrRenamedCommitLocator extends CommitLocator {
                         de.getOldPath().equals(fileToFindDeletion)) {
                         satdInstance.setNameOfFileWhenAddressed(fileToFindDeletion);
                         satdInstance.setResolution(SATDInstance.SATDResolution.FILE_REMOVED);
-                        return commitsBetween.get(i).getName();
+                        satdInstance.setCommitRemoved(commitsBetween.get(i).getName());
+                        return;
                     }
                     // If the file was renamed, and is the file we're looking for,
                     // Update the name so we can find when the renamed file was removed
@@ -57,13 +57,16 @@ public class FileRemovedOrRenamedCommitLocator extends CommitLocator {
             }
             if( commitIfRenamed != null ) {
                 satdInstance.setNewFile(fileToFindDeletion);
+                satdInstance.setCommitRemoved(commitIfRenamed);
             }
-            return commitIfRenamed;
         } catch (CorruptObjectException e) {
             System.err.println("Corrupted tree when parsing files in repository.");
+            satdInstance.setResolution(SATDInstance.SATDResolution.ERROR_UNKNOWN);
+            satdInstance.setCommitRemoved(SATDInstance.ERROR_FINDING_COMMIT);
         } catch (IOException e) {
             System.err.println("Error when diffing files");
+            satdInstance.setResolution(SATDInstance.SATDResolution.ERROR_UNKNOWN);
+            satdInstance.setCommitRemoved(SATDInstance.ERROR_FINDING_COMMIT);
         }
-        return SATDInstance.ERROR_FINDING_COMMIT;
     }
 }

@@ -2,6 +2,9 @@ package se.rit.edu.satd;
 
 import com.sun.istack.internal.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Data class which stores information about the SATD Instance
  */
@@ -23,7 +26,7 @@ public class SATDInstance {
     private String satdComment;
 
     // SATD Instance other fields that maintain defaults
-    private String commitAdded = COMMIT_UNKNOWN;
+    private List<String> contributingCommits = new ArrayList<>();
     private String nameOfFileWhenAddressed = FILE_UNKNOWN;
     private String commitRemoved = COMMIT_UNKNOWN;
     private String commentChangedTo = COMMENT_NONE;
@@ -35,8 +38,8 @@ public class SATDInstance {
         this.satdComment = satdComment;
     }
 
-    public String getCommitAdded() {
-        return commitAdded;
+    public List<String> getContributingCommits() {
+        return this.contributingCommits;
     }
 
     public String getCommitRemoved() {
@@ -67,8 +70,8 @@ public class SATDInstance {
         return this.satdComment;
     }
 
-    public void setCommitAdded(String commitAdded) {
-        this.commitAdded = commitAdded;
+    public void addContributingCommit(String contributingCommit) {
+        this.contributingCommits.add(contributingCommit);
     }
 
     public void setCommitRemoved(String commitRemoved) {
@@ -99,6 +102,7 @@ public class SATDInstance {
         SATD_POSSIBLY_REMOVED,
         SATD_CHANGED,
         SATD_ADDED,
-        SATD_UNADDRESSED
+        SATD_UNADDRESSED,
+        ERROR_UNKNOWN
     }
 }

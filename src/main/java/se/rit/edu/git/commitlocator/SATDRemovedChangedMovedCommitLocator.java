@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
 
     @Override
-    public String findCommitAddressed(Git gitInstance, SATDInstance satdInstance, String v1, String v2) {
+    public void findCommitAddressed(Git gitInstance, SATDInstance satdInstance, String v1, String v2) {
         try {
             final List<RevCommit> commitsBetween = CommitLocatorUtil.getCommitsBetween(gitInstance,
                     gitInstance.getRepository().resolve(v1), gitInstance.getRepository().resolve(v2));
@@ -111,7 +111,8 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
 
                                 // TODO can we check if the SATD was moved to another file?
                                 satdInstance.setNameOfFileWhenAddressed(fileToSearchFor);
-                                return thisCommit;
+                                satdInstance.setCommitRemoved(thisCommit);
+                                return;
                             }
                             // If the identical comment was still present in the file
                             else {
@@ -137,9 +138,10 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
             }
         } catch (IOException e) {
             System.err.println("Error resolving commit strings when finding addressed commit in SATDRemovedChangedMovedCommitLocator");
+            satdInstance.setCommitRemoved(SATDInstance.ERROR_FINDING_COMMIT);
+            satdInstance.setResolution(SATDInstance.SATDResolution.ERROR_UNKNOWN);
         }
-        return SATDInstance.ERROR_FINDING_COMMIT;
-    }
+     }
 
     private TreeWalk getTreeWalker(Repository repository, String commit) {
         TreeWalk treeWalk = new TreeWalk(repository);
