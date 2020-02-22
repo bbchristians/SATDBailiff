@@ -19,6 +19,8 @@ public class CSVOutputWriter implements OutputWriter {
             "commit_added",
             "commit_addressed",
             "v1_file",
+            "start_line",
+            "end_line",
             "v2_file",
             "file_when_addressed",
             "resolution",
@@ -83,7 +85,9 @@ public class CSVOutputWriter implements OutputWriter {
                         csv[4],
                         csv[5],
                         csv[6],
-                        csv[7]
+                        csv[7],
+                        csv[8],
+                        csv[9]
                 })
                 .collect(Collectors.toList());
     }
@@ -95,6 +99,8 @@ public class CSVOutputWriter implements OutputWriter {
                         : String.join(", ", satdInstance.getContributingCommits()),
                 satdInstance.getCommitRemoved(),
                 satdInstance.getOldFile(),
+                "" + satdInstance.getStartLineNumberOldFile(),
+                "" + satdInstance.getEndLineNumberOldFile(),
                 satdInstance.getNewFile(),
                 satdInstance.getNameOfFileWhenAddressed(),
                 satdInstance.getResolution().name(),
