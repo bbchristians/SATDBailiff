@@ -101,9 +101,7 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
                                         })
                                         .map(FileHeader::toEditList)
                                         .flatMap(Collection::stream) // Here we have all edits in the file
-                                        .filter(edit ->
-                                                (edit.getBeginA() <= curStartLine && edit.getEndA() >= curStartLine ) ||
-                                                        (edit.getBeginA() <= curEndLine && edit.getEndA() >= curEndLine))
+                                        .filter(edit -> editOccursBetweenLines(edit, curStartLine, curEndLine))
                                         .collect(Collectors.toList());
                                 final int numLinesAddedInSATDRange = editsInsideSATDBlock.stream()
                                         .mapToInt(Edit::getLengthB)
@@ -121,7 +119,7 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
                                 else if( !editsInsideSATDBlock.isEmpty() && numLinesAddedInSATDRange > 0 ) {
                                     // We the SATD may have only been modified
                                     satdInstance.setResolution(SATDInstance.SATDResolution.SATD_POSSIBLY_REMOVED);
-                                    satdInstance.setNewFile(SATDInstance.FILE_UNKNOWN);
+                                    satdInstance.setNewFile(fileToSearchForAfterRename);
                                 }
                                 // If no changes were made to the SATD comment, but the file was changed
                                 else if( !fileToSearchForBeforeRename.equals(fileToSearchForAfterRename) ) {
@@ -187,6 +185,16 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
                         comment2.replace("\n", " ")
                                 .trim()
                 );
+    }
+
+    private static boolean editOccursBetweenLines(Edit edit, int startLine, int endLine) {
+        return
+                // Starts before the start and ends after the start
+                (edit.getBeginA() <= startLine && edit.getEndA() >= startLine ) ||
+                // Starts before the end, and ends after the end
+                (edit.getBeginA() <= endLine && edit.getEndA() >= endLine) ||
+                // Starts after the start and ends before the end
+                (edit.getBeginA() >= startLine && edit.getEndA() <= endLine);
     }
 
 }
