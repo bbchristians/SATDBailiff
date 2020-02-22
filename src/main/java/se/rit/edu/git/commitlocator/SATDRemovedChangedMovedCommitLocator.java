@@ -84,7 +84,7 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
                             final List<GroupedComment> filteredComments =
                                     JavaParseUtil.parseFileForComments(fileLoader.openStream()).stream()
                                             .filter(comment ->
-                                                    compareComments(comment, satdInstance.getSATDComment()))
+                                                    compareComments(comment, satdInstance.getCommentOld()))
                                             .collect(Collectors.toList());
                             // If this commit did not contain an identical SATD String to the one we're
                             // searching for

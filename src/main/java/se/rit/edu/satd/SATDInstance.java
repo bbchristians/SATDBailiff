@@ -18,35 +18,28 @@ public class SATDInstance {
     public static final String FILE_UNKNOWN = "File Unknown";
     public static final String FILE_NONE = "None";
     public static final String FILE_DEV_NULL = "dev/null";
-    public static final String ERROR_FINDING_FILE = "ERROR_FINDING";
     public static final String COMMENT_NONE = "None";
 
     // SATD Instance mandatory fields
     private String oldFile;
     private String newFile;
-    private GroupedComment satdCommentBlock;
-
-    @Deprecated
-    private String satdComment;
+    private GroupedComment commentOld = null;
+    private GroupedComment commentNew = null;
 
     // SATD Instance other fields that maintain defaults
     private List<String> contributingCommits = new ArrayList<>();
     private String nameOfFileWhenAddressed = FILE_UNKNOWN;
     private String commitRemoved = COMMIT_UNKNOWN;
-    private String commentChangedTo = COMMENT_NONE;
     private SATDResolution resolution = SATDResolution.UNKNOWN;
-
-    @Deprecated
-    public SATDInstance(@NotNull String oldFile, @NotNull String newFile, @NotNull String satdComment) {
-        this.oldFile = oldFile;
-        this.newFile = newFile;
-        this.satdComment = satdComment;
-    }
 
     public SATDInstance(@NotNull String oldFile, @NotNull String newFile, @NotNull GroupedComment satdComment) {
         this.oldFile = oldFile;
         this.newFile = newFile;
-        this.satdCommentBlock = satdComment;
+        if( oldFile.equals(FILE_DEV_NULL) ) {
+            this.commentNew = satdComment;
+        } else {
+            this.commentOld = satdComment;
+        }
     }
 
     public List<String> getContributingCommits() {
@@ -65,8 +58,11 @@ public class SATDInstance {
         return resolution;
     }
 
-    public String getCommentChangedTo() {
-        return this.commentChangedTo;
+    public String getCommentNew() {
+        if( this.commentNew == null ) {
+            return COMMENT_NONE;
+        }
+        return this.commentNew.getComment();
     }
 
     public String getOldFile() {
@@ -77,16 +73,43 @@ public class SATDInstance {
         return this.newFile;
     }
 
-    public String getSATDComment() {
-        return this.satdCommentBlock.getComment();
+    public String getCommentOld() {
+        if( this.commentOld == null ) {
+            return COMMENT_NONE;
+        }
+        return this.commentOld.getComment();
+    }
+
+    public GroupedComment getCommentGroupOld() {
+        return this.commentOld;
     }
 
     public int getStartLineNumberOldFile() {
-        return this.satdCommentBlock.getStartLine();
+        if( this.commentOld == null ) {
+            return 0;
+        }
+        return this.commentOld.getStartLine();
     }
 
     public int getEndLineNumberOldFile() {
-        return this.satdCommentBlock.getEndLine();
+        if( this.commentOld == null ) {
+            return 0;
+        }
+        return this.commentOld.getEndLine();
+    }
+
+    public int getStartLineNumberNewFile() {
+        if( this.commentNew == null ) {
+            return 0;
+        }
+        return this.commentNew.getStartLine();
+    }
+
+    public int getEndLineNumberNewFile() {
+        if( this.commentNew == null ) {
+            return 0;
+        }
+        return this.commentNew.getEndLine();
     }
 
     public void addContributingCommit(String contributingCommit) {
@@ -105,8 +128,8 @@ public class SATDInstance {
         this.resolution = resolution;
     }
 
-    public void setCommentChangedTo(String comment) {
-        this.commentChangedTo = comment;
+    public void setCommentNew(GroupedComment comment) {
+        this.commentNew = comment;
     }
 
     public void setNewFile(String newFile) {

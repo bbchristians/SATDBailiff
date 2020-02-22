@@ -5,7 +5,6 @@ import se.rit.edu.satd.SATDDifference;
 import se.rit.edu.satd.SATDInstance;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,7 +46,7 @@ public class CSVOutputWriter implements OutputWriter {
         Writer writer = new BufferedWriter(new FileWriter(this.outFile, true));
         CSVWriter csvWriter = new CSVWriter(writer);
 
-        csvWriter.writeAll(diffToCSV(diff));
+        csvWriter.writeAll(instanceListToCSV(diff, diff.getAllSATDInstances()));
 
         csvWriter.close();
     }
@@ -60,15 +59,6 @@ public class CSVOutputWriter implements OutputWriter {
         headerWriter.writeNext(HEADERS);
 
         headerWriter.close();
-    }
-
-    private static List<String[]> diffToCSV(SATDDifference diff) {
-        List<String[]> allCSVEntries = new ArrayList<>();
-        allCSVEntries.addAll(instanceListToCSV(diff, diff.getFileRemovedSATD()));
-        allCSVEntries.addAll(instanceListToCSV(diff, diff.getUnaddressedSATD()));
-        allCSVEntries.addAll(instanceListToCSV(diff, diff.getAddressedOrChangedSATD()));
-        allCSVEntries.addAll(instanceListToCSV(diff, diff.getChangedOrAddedSATD()));
-        return allCSVEntries;
     }
 
     private static List<String[]> instanceListToCSV(SATDDifference diff, List<SATDInstance> list) {
@@ -104,7 +94,7 @@ public class CSVOutputWriter implements OutputWriter {
                 satdInstance.getNewFile(),
                 satdInstance.getNameOfFileWhenAddressed(),
                 satdInstance.getResolution().name(),
-                satdInstance.getSATDComment(),
-                satdInstance.getCommentChangedTo()};
+                satdInstance.getCommentOld(),
+                satdInstance.getCommentNew()};
     }
 }

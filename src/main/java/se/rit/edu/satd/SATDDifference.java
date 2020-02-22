@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static se.rit.edu.satd.SATDInstance.COMMIT_UNKNOWN;
 
 /**
  * A class which stores and categorizes different SATD instances
@@ -82,6 +81,15 @@ public class SATDDifference {
         return this.newTag;
     }
 
+    public List<SATDInstance> getAllSATDInstances() {
+        List<SATDInstance> allInstances = new ArrayList<>();
+        allInstances.addAll(this.getFileRemovedSATD());
+        allInstances.addAll(this.getAddressedOrChangedSATD());
+        allInstances.addAll(this.getChangedOrAddedSATD());
+        allInstances.addAll(this.getUnaddressedSATD());
+        return allInstances;
+    }
+
     public void alignRemovedAndAddedForOverlaps() {
         // If it might have been removed, check if it was just changed slightly instead
         this.addressedOrChangedSATD.stream()
@@ -107,7 +115,7 @@ public class SATDDifference {
         // It is also likely in this case that the SATD was duplicated within the same file
         if( match.size() == 1 ) {
             // Set the updated comment
-            satd.setCommentChangedTo(match.get(0).getSATDComment());
+            satd.setCommentNew(match.get(0).getCommentGroupOld());
             satd.setResolution(SATDInstance.SATDResolution.SATD_CHANGED);
             satd.setNewFile(match.get(0).getNewFile());
             // Removed the comment because it wasn't really added, and it's now accounted for
@@ -128,7 +136,7 @@ public class SATDDifference {
         allFromCommits.add(from.getCommitRemoved());
         return !Collections.disjoint(to.getContributingCommits(), allFromCommits) &&
                 to.getNewFile().equals(from.getNameOfFileWhenAddressed()) &&
-                commentsAreSimilar(to.getSATDComment().trim(), from.getSATDComment().trim());
+                commentsAreSimilar(to.getCommentOld().trim(), from.getCommentOld().trim());
     }
 
     /**

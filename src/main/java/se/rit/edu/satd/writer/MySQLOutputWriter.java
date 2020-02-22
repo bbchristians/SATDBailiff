@@ -1,11 +1,9 @@
 package se.rit.edu.satd.writer;
 
 import se.rit.edu.satd.SATDDifference;
+import se.rit.edu.satd.SATDInstance;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.sql.*;
 import java.util.Properties;
 
@@ -38,7 +36,18 @@ public class MySQLOutputWriter implements OutputWriter {
     public void writeDiff(SATDDifference diff) throws IOException {
         try {
             final Connection conn = DriverManager.getConnection(this.dbURI, this.user, this.pass);
+            // TODO add URL to the SATDInstance so it can be referenced here
             final int projectId = this.getProjectId(conn, diff.getProjectName(), "TODO -- GET URL");
+            final int oldProjectTagId = this.getTagId(conn, diff.getOldTag(), projectId);
+            final int newProjectTagId = this.getTagId(conn, diff.getNewTag(), projectId);
+            diff.getAllSATDInstances().forEach(satdInstance -> {
+                try {
+                    final int oldCommentId = this.getSATDInFileId(conn, satdInstance, true);
+                    final int newCommentId = this.getSATDInFileId(conn, satdInstance, false);
+                } catch (SQLException e) {
+                    throw new UncheckedIOException(new IOException(e));
+                }
+            });
         } catch (SQLException e) {
             // Issues with SQL will be wrapped in an IOException to maintain interface consistency
             throw new IOException(e);
@@ -66,7 +75,7 @@ public class MySQLOutputWriter implements OutputWriter {
         } else {
             // Otherwise, add it and then return the newly generated key
             final PreparedStatement updateStmt = conn.prepareStatement(
-                    "INSERT INTO Projects(p_name, p_url) VALUES(?, ?);",
+                    "INSERT INTO Projects(p_name, p_url) VALUES (?, ?);",
                     Statement.RETURN_GENERATED_KEYS);
             updateStmt.setString(1, projectName); // p_name
             updateStmt.setString(2, projectUrl); // p_url
@@ -78,5 +87,70 @@ public class MySQLOutputWriter implements OutputWriter {
         }
         // Some unpredicted issue was encountered, so just throw a new exception
         throw new SQLException("Could not obtain the project ID.");
+    }
+
+    /**
+     * Gets the ID for the given tag in the given project, and inserts a new entry
+     * if one does not already exist
+     * @param conn The DB Connection
+     * @param tag The string tag to add to the DB
+     * @param projectId The ID of the project, FK to Projects
+     * @return The ID for the given tag
+     * @throws SQLException thrown if there is an error while executing any SQL logic
+     */
+    private int getTagId(Connection conn, String tag, int projectId) throws SQLException {
+        final PreparedStatement queryStmt = conn.prepareStatement(
+                "SELECT Tags.t_id FROM Tags WHERE Tags.tag=? AND Tags.p_id=?");
+        queryStmt.setString(1, tag); // tag
+        queryStmt.setInt(2, projectId); // p_id
+        final ResultSet res = queryStmt.executeQuery();
+        if( res.next() ) {
+            // Return the result if one was found
+            return res.getInt(1);
+        } else {
+            // Otherwise, add it and then return the newly generated key
+            final PreparedStatement updateStmt = conn.prepareStatement(
+                    "INSERT INTO Tags(tag, p_id) VALUES (?, ?);",
+                    Statement.RETURN_GENERATED_KEYS);
+            updateStmt.setString(1, tag); // tag
+            updateStmt.setInt(2, projectId); // p_id
+            updateStmt.executeUpdate();
+            final ResultSet updateRes = updateStmt.getGeneratedKeys();
+            if (updateRes.next()) {
+                return updateRes.getInt(1);
+            }
+        }
+        throw new SQLException("Could not obtain the tag ID for tag: " + tag);
+    }
+
+    private int getSATDInFileId(Connection conn, SATDInstance satdInstance, boolean useOld) throws SQLException {
+        final PreparedStatement queryStmt = conn.prepareStatement(
+                "SELECT SATDInFile.f_id FROM SATDInFile WHERE " +
+                "SATDInFile.f_comment=? AND SATDInFile.f_path=? AND " +
+                "SATDInFile.start_line=? AND SATDInFile.end_line=?");
+        queryStmt.setString(1, satdInstance.getCommentOld()); // f_comment
+        queryStmt.setString(2, useOld ? satdInstance.getOldFile() : satdInstance.getNewFile()); // f_path
+        queryStmt.setInt(3, useOld ? satdInstance.getStartLineNumberOldFile() : satdInstance.getStartLineNumberNewFile()); // start_line
+        queryStmt.setInt(4, useOld ? satdInstance.getEndLineNumberOldFile() : satdInstance.getEndLineNumberNewFile()); // end_line
+        final ResultSet res = queryStmt.executeQuery();
+        if( res.next() ) {
+            // Return the result if one was found
+            return res.getInt(1);
+        } else {
+            // Otherwise, add it and then return the newly generated key
+            final PreparedStatement updateStmt = conn.prepareStatement(
+                    "INSERT INTO SATDInFile(f_comment, f_path, start_line, end_line) VALUES (?, ?, ?, ?);",
+                    Statement.RETURN_GENERATED_KEYS);
+            updateStmt.setString(1, satdInstance.getCommentOld()); // f_comment
+            updateStmt.setString(2, useOld ? satdInstance.getOldFile() : satdInstance.getNewFile()); // f_path
+            updateStmt.setInt(3, useOld ? satdInstance.getStartLineNumberOldFile() : satdInstance.getStartLineNumberNewFile()); // start_line
+            updateStmt.setInt(4, useOld ? satdInstance.getEndLineNumberOldFile() : satdInstance.getEndLineNumberNewFile()); // end_line
+            updateStmt.executeUpdate();
+            final ResultSet updateRes = updateStmt.getGeneratedKeys();
+            if (updateRes.next()) {
+                return updateRes.getInt(1);
+            }
+        }
+        throw new SQLException("Could not obtain a file instance ID.");
     }
 }

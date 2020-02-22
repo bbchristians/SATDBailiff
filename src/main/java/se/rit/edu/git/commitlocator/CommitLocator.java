@@ -1,6 +1,5 @@
 package se.rit.edu.git.commitlocator;
 
-import org.eclipse.jgit.api.BlameCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.blame.BlameResult;
@@ -16,7 +15,6 @@ import se.rit.edu.util.JavaParseUtil;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.IllegalCharsetNameException;
-import java.security.acl.Group;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,7 +41,7 @@ public abstract class CommitLocator {
             // Parse file as Java, and try to find the comment we're looking for
             final List<GroupedComment> soughtComment = JavaParseUtil.parseFileForComments(
                     new ByteArrayInputStream(blameResultJavaCode.getBytes())).stream()
-                    .filter(comment -> comment.getComment().equals(satdInstance.getSATDComment()))
+                    .filter(comment -> comment.getComment().equals(satdInstance.getCommentOld()))
                     .collect(Collectors.toList());
             // TODO don't always blame the first occurrence -- multiple of same SATD in one file w/ diff commits
             //  Will produce an error

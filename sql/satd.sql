@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS satd.Commits, satd.SATD, satd.Files, satd.Comments, satd.Tags, satd.Projects;
+DROP TABLE IF EXISTS satd.CommitMetaData, satd.Commits, satd.SATD, satd.SATDInFile, satd.Tags, satd.Projects;
 
 CREATE TABLE IF NOT EXISTS satd.Projects (
 	p_id INT AUTO_INCREMENT,
@@ -15,20 +15,13 @@ CREATE TABLE IF NOT EXISTS satd.Tags (
     FOREIGN KEY (p_id) REFERENCES satd.Projects(p_id)
 );
 
-CREATE TABLE IF NOT EXISTS satd.Comments (
-	c_id INT AUTO_INCREMENT,
-    c_comment VARCHAR(2048),
-    PRIMARY KEY (c_id)
-);
-
-CREATE TABLE IF NOT EXISTS satd.Files (
+CREATE TABLE IF NOT EXISTS satd.SATDInFile (
 	f_id INT AUTO_INCREMENT,
-    comment_id INT,
+    f_comment BLOB,
     f_path VARCHAR(256),
     start_line INT,
     end_line INT,
-    PRIMARY KEY (f_id),
-    FOREIGN KEY (comment_id) REFERENCES satd.Comments(c_id)
+    PRIMARY KEY (f_id)
 );
 
 CREATE TABLE IF NOT EXISTS satd.SATD (
@@ -41,13 +34,20 @@ CREATE TABLE IF NOT EXISTS satd.SATD (
     PRIMARY KEY (satd_id),
     FOREIGN KEY (first_tag_id) REFERENCES satd.Tags(t_id),
     FOREIGN KEY (second_tag_id) REFERENCES satd.Tags(t_id),
-    FOREIGN KEY (first_file) REFERENCES satd.Files(f_id),
-    FOREIGN KEY (second_file) REFERENCES satd.Files(f_id)
+    FOREIGN KEY (first_file) REFERENCES satd.SATDInFile(f_id),
+    FOREIGN KEY (second_file) REFERENCES satd.SATDInFile(f_id)
+);
+
+CREATE TABLE IF NOT EXISTS satd.CommitMetaData(
+	commit_hash varchar(256),
+    # TODO add more metadata
+    PRIMARY KEY (commit_hash)
 );
 
 CREATE TABLE IF NOT EXISTS satd.Commits (
 	satd_id INT,
     commit_hash varchar(256),
     commit_type ENUM('BEFORE', 'BETWEEN', 'AFTER'),
-    FOREIGN KEY (satd_id) REFERENCES satd.SATD(satd_id)
+    FOREIGN KEY (satd_id) REFERENCES satd.SATD(satd_id),
+    FOREIGN KEY (commit_hash) REFERENCES satd.CommitMetaData(commit_hash)
 );  
