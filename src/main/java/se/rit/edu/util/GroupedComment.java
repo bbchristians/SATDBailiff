@@ -63,7 +63,7 @@ public class GroupedComment implements Comparable {
     }
 
     public int getNumLines() {
-        return this.endLine - this.startLine;
+        return this.endLine - this.startLine + 1;
     }
 
     @Override

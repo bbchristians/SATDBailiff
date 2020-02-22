@@ -7,6 +7,7 @@ import se.rit.edu.satd.SATDDifference;
 import se.rit.edu.satd.SATDInstance;
 import se.rit.edu.satd.detector.SATDDetector;
 import se.rit.edu.util.ElapsedTimer;
+import se.rit.edu.util.GroupedComment;
 
 import java.util.List;
 import java.util.Map;
@@ -77,8 +78,8 @@ public class RepositoryDiffMiner {
         }
 
         // Get the SATD occurrences for each repo
-        final Map<String, List<String>> olderSATD = this.firstRepo.getFilesToSAIDOccurrences(this.satdDetector);
-        final Map<String, List<String>> newerSATD = this.secondRepo.getFilesToSAIDOccurrences(this.satdDetector);
+        final Map<String, List<GroupedComment>> olderSATD = this.firstRepo.getFilesToSAIDOccurrences(this.satdDetector);
+        final Map<String, List<GroupedComment>> newerSATD = this.secondRepo.getFilesToSAIDOccurrences(this.satdDetector);
 
         this.startSATDDiffTimer();
 
@@ -113,7 +114,7 @@ public class RepositoryDiffMiner {
                 mappedNewerSATD.forEach(newerSATDMapping ->
                         mappedOlderSATD.stream()
                                 .filter(MappedSATDComment::isNotMapped)
-                                .filter(s -> s.getComment().equals(newerSATDMapping.getComment()))
+                                .filter(newerSATDMapping::commentMatches)
                                 .findFirst()
                                 .ifPresent(s -> {
                                     s.setMapped();
@@ -224,15 +225,19 @@ public class RepositoryDiffMiner {
      */
     private class MappedSATDComment {
 
-        private String comment;
+        private GroupedComment comment;
         private boolean isMapped = false;
 
-        private MappedSATDComment(String oldComment) {
+        private MappedSATDComment(GroupedComment oldComment) {
             this.comment = oldComment;
         }
 
-        private String getComment() {
+        private GroupedComment getComment() {
             return this.comment;
+        }
+
+        private boolean commentMatches(MappedSATDComment other) {
+            return this.comment.getComment().equals(other.getComment().getComment());
         }
 
         private boolean isMapped() {

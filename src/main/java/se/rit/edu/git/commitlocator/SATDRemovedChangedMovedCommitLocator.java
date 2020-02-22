@@ -37,18 +37,33 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
             // Cur file to search for, noted in case of file rename
             String fileToSearchFor = satdInstance.getOldFile();
             // Lines of the commit
-            int commentStartLine = -1;
-            int commentEndLine = -1;
+            int commentStartLine = satdInstance.getStartLineNumberOldFile();
+            int commentEndLine = satdInstance.getEndLineNumberOldFile();
             for( int i = 1; i < commitsBetween.size(); i++ ) {
                 final String thisCommit = commitsBetween.get(i).getName();
-                final String curFileToSearchFor = fileToSearchFor;
+
+                final String fileToSearchForBeforeRename = fileToSearchFor;
                 // Get all diffs in the commit for the file we're looking for
                 final List<DiffEntry> lde = CommitLocator.getDiffEntries(
                         gitInstance,
                         commitsBetween.get(i-1).getTree(),
                         commitsBetween.get(i).getTree()).stream().
-                        filter(de -> de.getOldPath().equals(curFileToSearchFor))
+                        filter(de -> de.getOldPath().equals(fileToSearchForBeforeRename))
                         .collect(Collectors.toList());
+
+                // If the file was renamed, and is the file we're looking for,
+                // Update the name so we can search for the renamed file
+                final Optional<DiffEntry> renameEntry = lde.stream()
+                        .filter(de -> de.getChangeType().equals(DiffEntry.ChangeType.RENAME))
+                        .findFirst();
+                if( renameEntry.isPresent() ) {
+                    // Start checking for the renamed file
+                    fileToSearchFor = renameEntry.get().getNewPath();
+                    satdInstance.setNameOfFileWhenAddressed(fileToSearchFor);
+                }
+
+                final String fileToSearchForAfterRename = fileToSearchFor;
+
                 // If file was modified
                 final List<DiffEntry> ldeModifies = lde.stream()
                         .filter(de -> de.getChangeType().equals(DiffEntry.ChangeType.MODIFY))
@@ -61,7 +76,7 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
                     final TreeWalk thisRepoWalker = getTreeWalker(gitInstance.getRepository(), thisCommit);
                     while ( thisRepoWalker.next() ) {
                         // If the file is the one we care about
-                        if( thisRepoWalker.getPathString().equals(fileToSearchFor) ) {
+                        if( thisRepoWalker.getPathString().equals(fileToSearchForAfterRename) ) {
                             final ObjectLoader fileLoader = gitInstance.getRepository()
                                     .open(thisRepoWalker.getObjectId(0));
                             // See if the comment that is SATD is still in the file
@@ -90,23 +105,28 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
                                                 (edit.getBeginA() <= curStartLine && edit.getEndA() >= curStartLine ) ||
                                                         (edit.getBeginA() <= curEndLine && edit.getEndA() >= curEndLine))
                                         .collect(Collectors.toList());
-                                final int numLinesChangedInSATDRange = editsInsideSATDBlock.stream()
+                                final int numLinesAddedInSATDRange = editsInsideSATDBlock.stream()
                                         .mapToInt(Edit::getLengthB)
                                         .sum();
 
                                 // If no lines were added where SATD comment was removed
                                 // FIXME it is possible that multi-line SATD could have 1 line removed --
-                                    // and still be SATD
-                                if( !editsInsideSATDBlock.isEmpty() && numLinesChangedInSATDRange == 0 ) {
-                                    // We know SATD was removed
+                                //  and still be SATD -- filter EditList to find what the boundaries of the edits were
+                                if( !editsInsideSATDBlock.isEmpty() && numLinesAddedInSATDRange == 0 ) {
+                                    // We know some SATD was removed, and nothing was added
                                     satdInstance.setResolution(SATDInstance.SATDResolution.SATD_REMOVED);
                                     satdInstance.setNewFile(SATDInstance.FILE_NONE);
                                 }
                                 // If at least one line was added where SATD comment was removed
-                                else if( !editsInsideSATDBlock.isEmpty() && numLinesChangedInSATDRange > 0 ) {
+                                else if( !editsInsideSATDBlock.isEmpty() && numLinesAddedInSATDRange > 0 ) {
                                     // We the SATD may have only been modified
                                     satdInstance.setResolution(SATDInstance.SATDResolution.SATD_POSSIBLY_REMOVED);
                                     satdInstance.setNewFile(SATDInstance.FILE_UNKNOWN);
+                                }
+                                // If no changes were made to the SATD comment, but the file was changed
+                                else if( !fileToSearchForBeforeRename.equals(fileToSearchForAfterRename) ) {
+                                    satdInstance.setResolution(SATDInstance.SATDResolution.FILE_PATH_CHANGED);
+                                    satdInstance.setNewFile(fileToSearchForAfterRename);
                                 }
 
                                 // TODO can we check if the SATD was moved to another file?
@@ -124,16 +144,6 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
                             }
                         }
                     }
-                }
-                // If the file was renamed, and is the file we're looking for,
-                // Update the name so we can search for the renamed file
-                final Optional<DiffEntry> renameEntry = lde.stream()
-                        .filter(de -> de.getChangeType().equals(DiffEntry.ChangeType.RENAME))
-                        .findFirst();
-                if( renameEntry.isPresent() ) {
-                    // Start checking for the renamed file
-                    fileToSearchFor = renameEntry.get().getNewPath();
-                    satdInstance.setNameOfFileWhenAddressed(fileToSearchFor);
                 }
             }
         } catch (IOException e) {

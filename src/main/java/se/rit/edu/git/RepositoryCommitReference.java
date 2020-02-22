@@ -26,7 +26,7 @@ public class RepositoryCommitReference {
     private Git gitInstance;
     private String tag;
     private String projectName;
-    private Map<String, List<String>> satdOccurrences = null;
+    private Map<String, List<GroupedComment>> satdOccurrences = null;
 
     private ElapsedTimer timer = null;
 
@@ -53,7 +53,7 @@ public class RepositoryCommitReference {
         return this.gitInstance;
     }
 
-    public Map<String, List<String>> getFilesToSAIDOccurrences(SATDDetector detector){
+    public Map<String, List<GroupedComment>> getFilesToSAIDOccurrences(SATDDetector detector){
 
         if( this.satdOccurrences != null ) {
             return this.satdOccurrences;
@@ -62,7 +62,7 @@ public class RepositoryCommitReference {
         this.startSATDParseTimer();
 
         final TreeWalk thisRepoWalker = this.getTreeWalker();
-        final Map<String, List<String>> filesToSATDMap = new HashMap<>();
+        final Map<String, List<GroupedComment>> filesToSATDMap = new HashMap<>();
         try {
             // Walk through each Java file in the repository at the time of the commit
             while (thisRepoWalker.next()) {
@@ -73,8 +73,7 @@ public class RepositoryCommitReference {
                 filesToSATDMap.put(
                         thisRepoWalker.getPathString(),
                         JavaParseUtil.parseFileForComments(fileLoader.openStream()).stream()
-                                .map(GroupedComment::getComment)
-                                .filter(detector::isSATD)
+                                .filter(groupedComment -> detector.isSATD(groupedComment.getComment()))
                                 .collect(Collectors.toList())
                 );
             }

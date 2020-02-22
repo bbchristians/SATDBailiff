@@ -1,6 +1,7 @@
 package se.rit.edu.satd;
 
 import com.sun.istack.internal.NotNull;
+import se.rit.edu.util.GroupedComment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +24,9 @@ public class SATDInstance {
     // SATD Instance mandatory fields
     private String oldFile;
     private String newFile;
+    private GroupedComment satdCommentBlock;
+
+    @Deprecated
     private String satdComment;
 
     // SATD Instance other fields that maintain defaults
@@ -32,10 +36,17 @@ public class SATDInstance {
     private String commentChangedTo = COMMENT_NONE;
     private SATDResolution resolution = SATDResolution.UNKNOWN;
 
+    @Deprecated
     public SATDInstance(@NotNull String oldFile, @NotNull String newFile, @NotNull String satdComment) {
         this.oldFile = oldFile;
         this.newFile = newFile;
         this.satdComment = satdComment;
+    }
+
+    public SATDInstance(@NotNull String oldFile, @NotNull String newFile, @NotNull GroupedComment satdComment) {
+        this.oldFile = oldFile;
+        this.newFile = newFile;
+        this.satdCommentBlock = satdComment;
     }
 
     public List<String> getContributingCommits() {
@@ -67,7 +78,15 @@ public class SATDInstance {
     }
 
     public String getSATDComment() {
-        return this.satdComment;
+        return this.satdCommentBlock.getComment();
+    }
+
+    public int getStartLineNumberOldFile() {
+        return this.satdCommentBlock.getStartLine();
+    }
+
+    public int getEndLineNumberOldFile() {
+        return this.satdCommentBlock.getEndLine();
     }
 
     public void addContributingCommit(String contributingCommit) {
