@@ -5,6 +5,7 @@ import se.rit.edu.git.RepositoryCommitReference;
 import se.rit.edu.satd.SATDMiner;
 import se.rit.edu.satd.detector.SATDDetectorImpl;
 import se.rit.edu.satd.writer.CSVOutputWriter;
+import se.rit.edu.satd.writer.MySQLOutputWriter;
 import se.rit.edu.util.ElapsedTimer;
 
 import java.io.File;
@@ -43,8 +44,9 @@ public class Main {
 
             miner.setSatdDetector(new SATDDetectorImpl());
 
-            miner.writeRepoSATD(repos, new CSVOutputWriter(
-                    new File(String.join(File.separator, OUT_DIR, GitUtil.getRepoNameFromGithubURI(repo) + ".csv"))));
+//            miner.writeRepoSATD(repos, new CSVOutputWriter(
+//                    new File(String.join(File.separator, OUT_DIR, GitUtil.getRepoNameFromGithubURI(repo) + ".csv"))));
+            miner.writeRepoSATD(repos, new MySQLOutputWriter("mySQL.properties"));
 
             miner.cleanRepo();
 
