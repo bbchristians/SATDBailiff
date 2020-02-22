@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS satd.SATDInFile (
 );
 
 CREATE TABLE IF NOT EXISTS satd.SATD (
-	satd_id INT,
+	satd_id INT AUTO_INCREMENT,
 	first_tag_id INT,
     second_tag_id INT,
     first_file INT,

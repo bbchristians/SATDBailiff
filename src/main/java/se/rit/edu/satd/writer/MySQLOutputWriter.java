@@ -42,8 +42,12 @@ public class MySQLOutputWriter implements OutputWriter {
             final int newProjectTagId = this.getTagId(conn, diff.getNewTag(), projectId);
             diff.getAllSATDInstances().forEach(satdInstance -> {
                 try {
-                    final int oldCommentId = this.getSATDInFileId(conn, satdInstance, true);
-                    final int newCommentId = this.getSATDInFileId(conn, satdInstance, false);
+                    final int oldFileId = this.getSATDInFileId(conn, satdInstance, true);
+                    final int newFileId = this.getSATDInFileId(conn, satdInstance, false);
+                    final int satdInstanceId = this.getSATDInstanceId(conn, satdInstance,
+                            newProjectTagId, oldProjectTagId, newFileId, oldFileId);
+
+                    // TODO store commit data
                 } catch (SQLException e) {
                     throw new UncheckedIOException(new IOException(e));
                 }
@@ -123,6 +127,15 @@ public class MySQLOutputWriter implements OutputWriter {
         throw new SQLException("Could not obtain the tag ID for tag: " + tag);
     }
 
+    /**
+     * Gets the ID for the SATD file instance, and inserts it into the appropriate table
+     * if it is not present
+     * @param conn The DB Connection
+     * @param satdInstance The SATD instance to draw data from
+     * @param useOld True if the old file info in the SATDInstance should be used, else False
+     * @return The ID for the SATD file instance
+     * @throws SQLException Thrown if any SQL exceptions are encountered.
+     */
     private int getSATDInFileId(Connection conn, SATDInstance satdInstance, boolean useOld) throws SQLException {
         final PreparedStatement queryStmt = conn.prepareStatement(
                 "SELECT SATDInFile.f_id FROM SATDInFile WHERE " +
@@ -152,5 +165,39 @@ public class MySQLOutputWriter implements OutputWriter {
             }
         }
         throw new SQLException("Could not obtain a file instance ID.");
+    }
+
+    private int getSATDInstanceId(Connection conn, SATDInstance satdInstance,
+                                  int newTagId, int oldTagId, int newFileId, int oldFileId) throws SQLException{
+        final PreparedStatement queryStmt = conn.prepareStatement(
+                "SELECT SATD.satd_id FROM SATD WHERE SATD.first_tag_id=? AND " +
+                        "SATD.second_tag_id=? AND SATD.first_file=? AND SATD.second_file=?"
+        );
+        queryStmt.setInt(1, oldTagId); // first_tag_id
+        queryStmt.setInt(2, newTagId); // second_tag_id
+        queryStmt.setInt(3, oldFileId); // first_file
+        queryStmt.setInt(4, newFileId); // second_file
+        final ResultSet res = queryStmt.executeQuery();
+        if( res.next() ) {
+            // Return the result if one was found
+            return res.getInt(1);
+        } else {
+            // Otherwise, add it and then return the newly generated key
+            final PreparedStatement updateStmt = conn.prepareStatement(
+                    "INSERT INTO SATD(first_tag_id, second_tag_id, first_file, second_file, resolution) " +
+                            "VALUES (?,?,?,?,?)",
+                    Statement.RETURN_GENERATED_KEYS);
+            updateStmt.setInt(1, oldTagId); // first_tag_id
+            updateStmt.setInt(2, newTagId); // second_tag_id
+            updateStmt.setInt(3, oldFileId); // first_file
+            updateStmt.setInt(4, newFileId); // second_file
+            updateStmt.setString(5, satdInstance.getResolution().name()); // resolution
+            updateStmt.executeUpdate();
+            final ResultSet updateRes = updateStmt.getGeneratedKeys();
+            if (updateRes.next()) {
+                return updateRes.getInt(1);
+            }
+        }
+        throw new SQLException("Could not obtain an SATD instance ID.");
     }
 }
