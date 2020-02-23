@@ -1,6 +1,8 @@
 package se.rit.edu.satd;
 
 import com.sun.istack.internal.NotNull;
+import se.rit.edu.git.models.CommitMetaData;
+import se.rit.edu.git.models.NullCommitMetaData;
 import se.rit.edu.util.GroupedComment;
 
 import java.util.ArrayList;
@@ -27,9 +29,17 @@ public class SATDInstance {
     private GroupedComment commentNew = null;
 
     // SATD Instance other fields that maintain defaults
+    @Deprecated
     private List<String> contributingCommits = new ArrayList<>();
-    private String nameOfFileWhenAddressed = FILE_UNKNOWN;
+    @Deprecated
     private String commitRemoved = COMMIT_UNKNOWN;
+
+    private List<CommitMetaData> initialBlameCommits = new ArrayList<>();
+    // Contains only commits that touched the SATD comment
+    private List<CommitMetaData> commitsBetweenVersions = new ArrayList<>();
+    private CommitMetaData commitAddressed = new NullCommitMetaData();
+
+    private String nameOfFileWhenAddressed = FILE_UNKNOWN;
     private SATDResolution resolution = SATDResolution.UNKNOWN;
 
     public SATDInstance(@NotNull String oldFile, @NotNull String newFile, @NotNull GroupedComment satdComment) {
@@ -42,10 +52,12 @@ public class SATDInstance {
         }
     }
 
+    @Deprecated
     public List<String> getContributingCommits() {
         return this.contributingCommits;
     }
 
+    @Deprecated
     public String getCommitRemoved() {
         return commitRemoved;
     }
@@ -112,12 +124,38 @@ public class SATDInstance {
         return this.commentNew.getEndLine();
     }
 
+    public List<CommitMetaData> getInitialBlameCommits() {
+        return this.initialBlameCommits;
+    }
+
+    public List<CommitMetaData> getCommitsBetweenVersions() {
+        return this.commitsBetweenVersions;
+    }
+
+    public CommitMetaData getCommitAddressed() {
+        return this.commitAddressed;
+    }
+
+    @Deprecated
     public void addContributingCommit(String contributingCommit) {
         this.contributingCommits.add(contributingCommit);
     }
 
+    @Deprecated
     public void setCommitRemoved(String commitRemoved) {
         this.commitRemoved = commitRemoved;
+    }
+
+    public void addInitialBlameCommit(CommitMetaData data) {
+        this.initialBlameCommits.add(data);
+    }
+
+    public void addCommitBetweenVersions(CommitMetaData data) {
+        this.commitsBetweenVersions.add(data);
+    }
+
+    public void setCommitAddressed(CommitMetaData data) {
+        this.commitAddressed = data;
     }
 
     public void setNameOfFileWhenAddressed(String nameOfFileWhenAddressed) {

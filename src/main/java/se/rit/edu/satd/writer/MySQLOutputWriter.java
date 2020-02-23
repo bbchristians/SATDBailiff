@@ -1,5 +1,6 @@
 package se.rit.edu.satd.writer;
 
+import se.rit.edu.git.models.CommitMetaData;
 import se.rit.edu.satd.SATDDifference;
 import se.rit.edu.satd.SATDInstance;
 
@@ -46,8 +47,7 @@ public class MySQLOutputWriter implements OutputWriter {
                     final int newFileId = this.getSATDInFileId(conn, satdInstance, false);
                     final int satdInstanceId = this.getSATDInstanceId(conn, satdInstance,
                             newProjectTagId, oldProjectTagId, newFileId, oldFileId);
-
-                    // TODO store commit data
+                    storeCommitData(conn, satdInstance, satdInstanceId);
                 } catch (SQLException e) {
                     throw new UncheckedIOException(new IOException(e));
                 }
@@ -131,7 +131,7 @@ public class MySQLOutputWriter implements OutputWriter {
      * Gets the ID for the SATD file instance, and inserts it into the appropriate table
      * if it is not present
      * @param conn The DB Connection
-     * @param satdInstance The SATD instance to draw data from
+     * @param satdInstance The SATD instance to draw models from
      * @param useOld True if the old file info in the SATDInstance should be used, else False
      * @return The ID for the SATD file instance
      * @throws SQLException Thrown if any SQL exceptions are encountered.
@@ -200,4 +200,78 @@ public class MySQLOutputWriter implements OutputWriter {
         }
         throw new SQLException("Could not obtain an SATD instance ID.");
     }
+
+    private void storeCommitData(Connection conn, SATDInstance satdInstance, int satdInstanceId) throws SQLException {
+        if(satdInstance.getInitialBlameCommits().stream()
+                .anyMatch(commitMetaData -> !this.storeSingleCommit(conn, satdInstanceId,
+                        commitMetaData, CommitType.BEFORE))) {
+            throw new SQLException("Error storing blame commits.");
+        }
+        if(satdInstance.getCommitsBetweenVersions().stream()
+                .anyMatch(commitMetaData -> !this.storeSingleCommit(conn, satdInstanceId,
+                        commitMetaData, CommitType.BETWEEN))) {
+            throw new SQLException("Error storing commits between versions.");
+        }
+        if( storeSingleCommit(conn, satdInstanceId, satdInstance.getCommitAddressed(), CommitType.ADDRESSED) ) {
+            throw new SQLException("Error storing addressing commit.");
+        }
+    }
+
+    private boolean storeSingleCommit(Connection conn, int satdInstanceId,
+                                      CommitMetaData commitMetaData, CommitType commitType) {
+        try {
+            final PreparedStatement queryStmt = conn.prepareStatement(
+                    "SELECT * FROM Commits WHERE satd_id=? AND commit_hash=?;"
+            );
+            queryStmt.setInt(1, satdInstanceId); // satd_id
+            queryStmt.setString(2, commitMetaData.getHash()); // commit_hash
+            final ResultSet res = queryStmt.executeQuery();
+            if (res.next()) {
+                // Return the result if one was found
+                return true;
+            } else {
+                this.storeCommitDataIfNeeded(conn, commitMetaData);
+                // Otherwise, add it and then return the newly generated key
+                final PreparedStatement updateStmt = conn.prepareStatement(
+                        "INSERT INTO Commits(satd_id, commit_hash, commit_type) VALUES (?,?,?)",
+                        Statement.RETURN_GENERATED_KEYS);
+                updateStmt.setInt(1, satdInstanceId); // satd_id
+                updateStmt.setString(2, commitMetaData.getHash()); // commit_hash
+                updateStmt.setString(3, commitType.name()); // commit_type
+            }
+        } catch (SQLException e) {
+            return false;
+        }
+        return false;
+    }
+
+    private boolean storeCommitDataIfNeeded(Connection conn, CommitMetaData commitMetaData) throws SQLException {
+        // Get CommitMetaData if not inserted already
+        final PreparedStatement queryStmt = conn.prepareStatement(
+                "SELECT * FROM CommitMetaData WHERE commit_hash=?"
+        );
+        queryStmt.setString(1, commitMetaData.getHash()); // commit_hash
+        final ResultSet res = queryStmt.executeQuery();
+        if( res.next() ) {
+            // Return the result if one was found
+            return true;
+        } else {
+            // Otherwise, add it and then return the newly generated key
+            final PreparedStatement updateStmt = conn.prepareStatement(
+                    "INSERT INTO CommitMetaData(commit_hash) VALUES (?)",
+                    Statement.RETURN_GENERATED_KEYS);
+            updateStmt.setString(1, commitMetaData.getHash()); // commit_hash
+            updateStmt.executeUpdate();
+            final ResultSet updateRes = updateStmt.getGeneratedKeys();
+            return updateRes.next();
+        }
+    }
+
+    private enum CommitType {
+        BEFORE,
+        BETWEEN,
+        ADDRESSED
+    }
+
+
 }

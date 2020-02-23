@@ -34,7 +34,7 @@ public class SATDMiner {
     /**
      * Generates a list of repository references to be used for other mining actions
      * @param mostRecentCommit a boundary in which no future tags will be considered
-     *                         -- This is to be used to allow data collection to be replicated
+     *                         -- This is to be used to allow models collection to be replicated
      *                            across different time periods
      * @param sortType the way in which commit should be sorted
      *                 -- The miner will diff release versions as they appear ordered in the list

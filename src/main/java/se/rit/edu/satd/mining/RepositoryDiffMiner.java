@@ -221,7 +221,7 @@ public class RepositoryDiffMiner {
     }
 
     /**
-     * A data class to store meta-data on whether a commit has been mapped between a new and old SATD instance
+     * A models class to store meta-models on whether a commit has been mapped between a new and old SATD instance
      */
     private class MappedSATDComment {
 
@@ -251,7 +251,7 @@ public class RepositoryDiffMiner {
         private void setMapped() {
             if( this.isMapped ) {
                 System.err.println("It is likely that an SATD instance was unintentionally mapped twice. " +
-                                "This will throw off output data.");
+                                "This will throw off output models.");
             }
             this.isMapped = true;
         }
