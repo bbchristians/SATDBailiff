@@ -7,7 +7,6 @@ import com.github.javaparser.ast.comments.CommentsCollection;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class JavaParseUtil {

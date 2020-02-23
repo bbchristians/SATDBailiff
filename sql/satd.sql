@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS satd.Tags (
 CREATE TABLE IF NOT EXISTS satd.SATDInFile (
 	f_id INT AUTO_INCREMENT,
     f_comment BLOB,
+    f_comment_type VARCHAR(32),
     f_path VARCHAR(256),
     start_line INT,
     end_line INT,

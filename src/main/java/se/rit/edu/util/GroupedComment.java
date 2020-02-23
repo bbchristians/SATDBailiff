@@ -11,6 +11,10 @@ public class GroupedComment implements Comparable {
     private int startLine;
     private int endLine;
     private String comment;
+    private String commentType;
+
+    // Default constructor for inheritance
+    GroupedComment() { }
 
     GroupedComment(Comment oldComment) {
         if( !oldComment.getRange().isPresent() ) {
@@ -30,24 +34,32 @@ public class GroupedComment implements Comparable {
                 })
                 .map(String::trim)
                 .collect(Collectors.joining("\n"));
+        this.commentType = oldComment.isBlockComment() ? "Block"
+                : oldComment.isLineComment() ? "Line"
+                : oldComment.isOrphan() ? "Orphan"
+                : oldComment.isJavadocComment() ? "JavaDoc"
+                : "Unknown";
 
     }
 
-    private GroupedComment(int startLine, int endLine, String comment) {
+    private GroupedComment(int startLine, int endLine, String comment, String commentType) {
         this.startLine = startLine;
         this.endLine = endLine;
         this.comment = comment;
+        this.commentType = commentType;
     }
 
     public GroupedComment joinWith(GroupedComment other) {
         return new GroupedComment(
                 Integer.min(this.startLine, other.startLine),
                 Integer.max(this.endLine, other.endLine),
-                String.join("\n", this.comment, other.comment));
+                String.join("\n", this.comment, other.comment),
+                this.commentType);
     }
 
     public boolean precedesDirectly(GroupedComment other) {
-        return this.getEndLine() + 1 == other.getStartLine();
+        return this.commentType.equals(other.commentType) &&
+                this.endLine + 1 == other.startLine;
     }
 
     public int getStartLine() {
@@ -64,6 +76,10 @@ public class GroupedComment implements Comparable {
 
     public int getNumLines() {
         return this.endLine - this.startLine + 1;
+    }
+
+    public String getCommentType() {
+        return this.commentType;
     }
 
     @Override

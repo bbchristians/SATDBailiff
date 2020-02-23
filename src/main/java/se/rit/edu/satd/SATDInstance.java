@@ -4,6 +4,7 @@ import com.sun.istack.internal.NotNull;
 import se.rit.edu.git.models.CommitMetaData;
 import se.rit.edu.git.models.NullCommitMetaData;
 import se.rit.edu.util.GroupedComment;
+import se.rit.edu.util.NullGroupedComment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,8 +24,8 @@ public class SATDInstance {
     // SATD Instance mandatory fields
     private String oldFile;
     private String newFile;
-    private GroupedComment commentOld = null;
-    private GroupedComment commentNew = null;
+    private GroupedComment commentOld = new NullGroupedComment();
+    private GroupedComment commentNew = new NullGroupedComment();
 
     // Commit Metadata for the SATD Instance
     private List<CommitMetaData> initialBlameCommits = new ArrayList<>();
@@ -77,6 +78,10 @@ public class SATDInstance {
 
     public GroupedComment getCommentGroupOld() {
         return this.commentOld;
+    }
+
+    public GroupedComment getCommentGroupNew() {
+        return this.commentNew;
     }
 
     public int getStartLineNumberOldFile() {

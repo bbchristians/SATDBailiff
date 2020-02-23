@@ -3,6 +3,7 @@ package se.rit.edu.satd.writer;
 import se.rit.edu.git.models.CommitMetaData;
 import se.rit.edu.satd.SATDDifference;
 import se.rit.edu.satd.SATDInstance;
+import se.rit.edu.util.GroupedComment;
 
 import java.io.*;
 import java.sql.*;
@@ -137,14 +138,23 @@ public class MySQLOutputWriter implements OutputWriter {
      * @throws SQLException Thrown if any SQL exceptions are encountered.
      */
     private int getSATDInFileId(Connection conn, SATDInstance satdInstance, boolean useOld) throws SQLException {
+        // Get the correct values from the SATD Instance
+        final String filePath = useOld ? satdInstance.getOldFile()
+                : satdInstance.getNewFile();
+        final int startLineNumber = useOld ? satdInstance.getStartLineNumberOldFile()
+                : satdInstance.getStartLineNumberNewFile();
+        final int endLineNumber = useOld ? satdInstance.getEndLineNumberOldFile()
+                : satdInstance.getEndLineNumberNewFile();
+        final GroupedComment comment = useOld ? satdInstance.getCommentGroupOld() :
+                satdInstance.getCommentGroupNew();
         final PreparedStatement queryStmt = conn.prepareStatement(
                 "SELECT SATDInFile.f_id FROM SATDInFile WHERE " +
                 "SATDInFile.f_comment=? AND SATDInFile.f_path=? AND " +
                 "SATDInFile.start_line=? AND SATDInFile.end_line=?");
-        queryStmt.setString(1, satdInstance.getCommentOld()); // f_comment
-        queryStmt.setString(2, useOld ? satdInstance.getOldFile() : satdInstance.getNewFile()); // f_path
-        queryStmt.setInt(3, useOld ? satdInstance.getStartLineNumberOldFile() : satdInstance.getStartLineNumberNewFile()); // start_line
-        queryStmt.setInt(4, useOld ? satdInstance.getEndLineNumberOldFile() : satdInstance.getEndLineNumberNewFile()); // end_line
+        queryStmt.setString(1, comment.getComment()); // f_comment
+        queryStmt.setString(2, filePath); // f_path
+        queryStmt.setInt(3, startLineNumber); // start_line
+        queryStmt.setInt(4, endLineNumber); // end_line
         final ResultSet res = queryStmt.executeQuery();
         if( res.next() ) {
             // Return the result if one was found
@@ -152,12 +162,14 @@ public class MySQLOutputWriter implements OutputWriter {
         } else {
             // Otherwise, add it and then return the newly generated key
             final PreparedStatement updateStmt = conn.prepareStatement(
-                    "INSERT INTO SATDInFile(f_comment, f_path, start_line, end_line) VALUES (?, ?, ?, ?);",
+                    "INSERT INTO SATDInFile(f_comment, f_comment_type, f_path, start_line, end_line) " +
+                            "VALUES (?,?,?,?,?);",
                     Statement.RETURN_GENERATED_KEYS);
-            updateStmt.setString(1, satdInstance.getCommentOld()); // f_comment
-            updateStmt.setString(2, useOld ? satdInstance.getOldFile() : satdInstance.getNewFile()); // f_path
-            updateStmt.setInt(3, useOld ? satdInstance.getStartLineNumberOldFile() : satdInstance.getStartLineNumberNewFile()); // start_line
-            updateStmt.setInt(4, useOld ? satdInstance.getEndLineNumberOldFile() : satdInstance.getEndLineNumberNewFile()); // end_line
+            updateStmt.setString(1, comment.getComment()); // f_comment
+            updateStmt.setString(2, comment.getCommentType()); // f_comment_type
+            updateStmt.setString(3, filePath); // f_path
+            updateStmt.setInt(4, startLineNumber); // start_line
+            updateStmt.setInt(5, endLineNumber); // end_line
             updateStmt.executeUpdate();
             final ResultSet updateRes = updateStmt.getGeneratedKeys();
             if (updateRes.next()) {
@@ -167,6 +179,17 @@ public class MySQLOutputWriter implements OutputWriter {
         throw new SQLException("Could not obtain a file instance ID.");
     }
 
+    /**
+     * Gets the SATD Instance ID and adds the SATD Instance to the DB if needed
+     * @param conn The DB Connection
+     * @param satdInstance an SATD instance to lookup or store in the db
+     * @param newTagId the ID of the new tag in the DB
+     * @param oldTagId the ID of the old tag in the DB
+     * @param newFileId the ID of the new file in the DB
+     * @param oldFileId the ID of the old file in the DB
+     * @return the ID of the SATDInstance in the DB
+     * @throws SQLException throws if an error occurs while modifying DB
+     */
     private int getSATDInstanceId(Connection conn, SATDInstance satdInstance,
                                   int newTagId, int oldTagId, int newFileId, int oldFileId) throws SQLException{
         final PreparedStatement queryStmt = conn.prepareStatement(
@@ -201,6 +224,15 @@ public class MySQLOutputWriter implements OutputWriter {
         throw new SQLException("Could not obtain an SATD instance ID.");
     }
 
+    /**
+     * Stores all commit data inside the SATD instance without duplicating any data
+     * @param conn The DB Connection
+     * @param satdInstance an SATDInstance to store the commit data of
+     * @param satdInstanceId the ID of the SATDInstance in the DB
+     * @throws SQLException thrown if any errors occur while interfacing with the DB
+     * TODO Does the CommitType change depending on the resolution?
+     *  -- Is initial blame actually the BETWEEN type when the SATD Is added?
+     */
     private void storeCommitData(Connection conn, SATDInstance satdInstance, int satdInstanceId) throws SQLException {
         if( satdInstance.getInitialBlameCommits().stream()
                 .anyMatch(commitMetaData -> !this.storeSingleCommit(conn, satdInstanceId,
@@ -219,6 +251,14 @@ public class MySQLOutputWriter implements OutputWriter {
         }
     }
 
+    /**
+     * Stores a single commit's data in the DB if needed
+     * @param conn The DB Connection
+     * @param satdInstanceId the ID of the SATDInstance in the DB
+     * @param commitMetaData A metadata object of the commit
+     * @param commitType the relation of the commit to the SATDInstance
+     * @return True if no errors were encountered, else False
+     */
     private boolean storeSingleCommit(Connection conn, int satdInstanceId,
                                       CommitMetaData commitMetaData, CommitType commitType) {
         try {
@@ -249,6 +289,13 @@ public class MySQLOutputWriter implements OutputWriter {
         }
     }
 
+    /**
+     * Stores commit data while avoid duplicate insertions
+     * @param conn The DB Connection
+     * @param commitMetaData the MetaData of the commit to store
+     * @throws SQLException thrown if any errors are encountered while interfacing
+     *      with the DB
+     */
     private void storeCommitDataIfNeeded(Connection conn, CommitMetaData commitMetaData) throws SQLException {
         try {
             // Get CommitMetaData if not inserted already
@@ -275,10 +322,13 @@ public class MySQLOutputWriter implements OutputWriter {
         }
     }
 
+    /**
+     * Types of relations between commits and the SATD Instance
+     */
     private enum CommitType {
-        BEFORE,
-        BETWEEN,
-        ADDRESSED
+        BEFORE, // Commit was present in the SATDInstance when initially blamed
+        BETWEEN, // Commit occurred between the first and second tag
+        ADDRESSED // Commit resolved the SATD
     }
 
 
