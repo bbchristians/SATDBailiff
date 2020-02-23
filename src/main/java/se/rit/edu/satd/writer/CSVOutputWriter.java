@@ -1,6 +1,7 @@
 package se.rit.edu.satd.writer;
 
 import com.opencsv.CSVWriter;
+import se.rit.edu.git.models.CommitMetaData;
 import se.rit.edu.satd.SATDDifference;
 import se.rit.edu.satd.SATDInstance;
 
@@ -84,10 +85,12 @@ public class CSVOutputWriter implements OutputWriter {
 
     private static String[] instanceToCSV(SATDInstance satdInstance) {
         return new String[] {
-                satdInstance.getContributingCommits().isEmpty() ?
+                satdInstance.getInitialBlameCommits().isEmpty() ?
                         SATDInstance.COMMIT_UNKNOWN
-                        : String.join(", ", satdInstance.getContributingCommits()),
-                satdInstance.getCommitRemoved(),
+                        : satdInstance.getInitialBlameCommits().stream()
+                                .map(CommitMetaData::getHash)
+                                .collect(Collectors.joining(", ")),
+                satdInstance.getCommitAddressed().getHash(),
                 satdInstance.getOldFile(),
                 "" + satdInstance.getStartLineNumberOldFile(),
                 "" + satdInstance.getEndLineNumberOldFile(),

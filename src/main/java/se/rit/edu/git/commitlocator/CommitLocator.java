@@ -8,6 +8,7 @@ import org.eclipse.jgit.diff.RenameDetector;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.treewalk.TreeWalk;
+import se.rit.edu.git.models.CommitMetaData;
 import se.rit.edu.satd.SATDInstance;
 import se.rit.edu.util.GroupedComment;
 import se.rit.edu.util.JavaParseUtil;
@@ -50,9 +51,9 @@ public abstract class CommitLocator {
                 IntStream.range(singleComment.getStartLine() - 1,
                         singleComment.getStartLine() + singleComment.getNumLines())
                         .mapToObj(blameResult::getSourceCommit)
-                        .map(RevCommit::getName)
+                        .map(CommitMetaData::new)
                         .distinct()
-                        .forEach(satdInstance::addContributingCommit);
+                        .forEach(satdInstance::addInitialBlameCommit);
             }
         } catch (GitAPIException e) {
             System.err.println("Git API error while blaming file.");

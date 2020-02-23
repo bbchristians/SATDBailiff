@@ -10,7 +10,6 @@ public class SATDUnaddressedCommitLocator extends CommitLocator {
         // SATD not addressed, so no commit
         satdInstance.setResolution(SATDInstance.SATDResolution.SATD_UNADDRESSED);
         satdInstance.setNameOfFileWhenAddressed(SATDInstance.FILE_NONE);
-        satdInstance.setCommitRemoved(SATDInstance.NO_COMMIT);
     }
 
 }

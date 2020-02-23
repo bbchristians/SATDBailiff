@@ -2,6 +2,7 @@ package se.rit.edu.satd;
 
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.jetbrains.annotations.NotNull;
+import se.rit.edu.git.models.CommitMetaData;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -132,9 +133,13 @@ public class SATDDifference {
      * @return True if it is likely that the SATD instances share an origin, else False
      */
     private boolean satdIsLikelyChangedTo(SATDInstance from, SATDInstance to) {
-        final List<String> allFromCommits = new ArrayList<>(from.getContributingCommits());
-        allFromCommits.add(from.getCommitRemoved());
-        return !Collections.disjoint(to.getContributingCommits(), allFromCommits) &&
+        final List<CommitMetaData> allFromCommits = new ArrayList<>(from.getInitialBlameCommits());
+        allFromCommits.addAll(from.getCommitsBetweenVersions());
+        allFromCommits.add(from.getCommitAddressed());
+        final List<CommitMetaData> allToCommits = new ArrayList<>(to.getInitialBlameCommits());
+        allToCommits.addAll(to.getCommitsBetweenVersions());
+        allToCommits.add(to.getCommitAddressed());
+        return !Collections.disjoint(allToCommits, allFromCommits) &&
                 to.getNewFile().equals(from.getNameOfFileWhenAddressed()) &&
                 commentsAreSimilar(to.getCommentOld().trim(), from.getCommentOld().trim());
     }

@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS satd.CommitMetaData(
 CREATE TABLE IF NOT EXISTS satd.Commits (
 	satd_id INT,
     commit_hash varchar(256),
-    commit_type ENUM('BEFORE', 'BETWEEN', 'AFTER'),
+    commit_type ENUM('BEFORE', 'BETWEEN', 'ADDRESSED'),
     FOREIGN KEY (satd_id) REFERENCES satd.SATD(satd_id),
     FOREIGN KEY (commit_hash) REFERENCES satd.CommitMetaData(commit_hash)
 );  

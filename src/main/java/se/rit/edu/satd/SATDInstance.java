@@ -15,8 +15,6 @@ public class SATDInstance {
 
     // String constants for output
     public static final String COMMIT_UNKNOWN = "Commit Unknown";
-    public static final String NO_COMMIT = "None";
-    public static final String ERROR_FINDING_COMMIT = "ERROR_FINDING";
     public static final String FILE_UNKNOWN = "File Unknown";
     public static final String FILE_NONE = "None";
     public static final String FILE_DEV_NULL = "dev/null";
@@ -28,12 +26,7 @@ public class SATDInstance {
     private GroupedComment commentOld = null;
     private GroupedComment commentNew = null;
 
-    // SATD Instance other fields that maintain defaults
-    @Deprecated
-    private List<String> contributingCommits = new ArrayList<>();
-    @Deprecated
-    private String commitRemoved = COMMIT_UNKNOWN;
-
+    // Commit Metadata for the SATD Instance
     private List<CommitMetaData> initialBlameCommits = new ArrayList<>();
     // Contains only commits that touched the SATD comment
     private List<CommitMetaData> commitsBetweenVersions = new ArrayList<>();
@@ -50,16 +43,6 @@ public class SATDInstance {
         } else {
             this.commentOld = satdComment;
         }
-    }
-
-    @Deprecated
-    public List<String> getContributingCommits() {
-        return this.contributingCommits;
-    }
-
-    @Deprecated
-    public String getCommitRemoved() {
-        return commitRemoved;
     }
 
     public String getNameOfFileWhenAddressed() {
@@ -134,16 +117,6 @@ public class SATDInstance {
 
     public CommitMetaData getCommitAddressed() {
         return this.commitAddressed;
-    }
-
-    @Deprecated
-    public void addContributingCommit(String contributingCommit) {
-        this.contributingCommits.add(contributingCommit);
-    }
-
-    @Deprecated
-    public void setCommitRemoved(String commitRemoved) {
-        this.commitRemoved = commitRemoved;
     }
 
     public void addInitialBlameCommit(CommitMetaData data) {

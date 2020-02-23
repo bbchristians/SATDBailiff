@@ -14,6 +14,8 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
+import se.rit.edu.git.models.CommitMetaData;
+import se.rit.edu.git.models.NullCommitMetaData;
 import se.rit.edu.satd.SATDInstance;
 import se.rit.edu.util.GroupedComment;
 import se.rit.edu.util.JavaParseUtil;
@@ -40,7 +42,7 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
             int commentStartLine = satdInstance.getStartLineNumberOldFile();
             int commentEndLine = satdInstance.getEndLineNumberOldFile();
             for( int i = 1; i < commitsBetween.size(); i++ ) {
-                final String thisCommit = commitsBetween.get(i).getName();
+                final RevCommit thisCommit = commitsBetween.get(i);
 
                 final String fileToSearchForBeforeRename = fileToSearchFor;
                 // Get all diffs in the commit for the file we're looking for
@@ -129,7 +131,7 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
 
                                 // TODO can we check if the SATD was moved to another file?
                                 satdInstance.setNameOfFileWhenAddressed(fileToSearchFor);
-                                satdInstance.setCommitRemoved(thisCommit);
+                                satdInstance.setCommitAddressed(new CommitMetaData(thisCommit));
                                 return;
                             }
                             // If the identical comment was still present in the file
@@ -146,25 +148,21 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
             }
         } catch (IOException e) {
             System.err.println("Error resolving commit strings when finding addressed commit in SATDRemovedChangedMovedCommitLocator");
-            satdInstance.setCommitRemoved(SATDInstance.ERROR_FINDING_COMMIT);
+            satdInstance.setCommitAddressed(new NullCommitMetaData());
             satdInstance.setResolution(SATDInstance.SATDResolution.ERROR_UNKNOWN);
         }
      }
 
-    private TreeWalk getTreeWalker(Repository repository, String commit) {
+    private TreeWalk getTreeWalker(Repository repository, RevCommit commit) {
         TreeWalk treeWalk = new TreeWalk(repository);
-        RevWalk revWalk = new RevWalk(repository);
         try {
-            RevCommit revCommit = revWalk.parseCommit(repository.resolve(commit));
-            treeWalk.addTree(revCommit.getTree());
+            treeWalk.addTree(commit.getTree());
             treeWalk.setRecursive(true);
             treeWalk.setFilter(PathSuffixFilter.create(".java"));
         } catch (MissingObjectException | IncorrectObjectTypeException | CorruptObjectException e) {
             System.err.println("Exception in getting tree walker.");
         } catch (IOException e) {
             System.err.println("IOException in getting tree walker.");
-        } finally {
-            revWalk.dispose();
         }
         return treeWalk;
     }
