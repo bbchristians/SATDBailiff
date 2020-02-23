@@ -40,7 +40,10 @@ CREATE TABLE IF NOT EXISTS satd.SATD (
 
 CREATE TABLE IF NOT EXISTS satd.CommitMetaData(
 	commit_hash varchar(256),
-    # TODO add more metadata
+    author_name varchar(256),
+    author_email varchar(256),
+    committer_name varchar(256),
+    committer_email varchar(256),
     PRIMARY KEY (commit_hash)
 );
 

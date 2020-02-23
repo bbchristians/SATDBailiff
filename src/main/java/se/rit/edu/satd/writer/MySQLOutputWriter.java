@@ -260,8 +260,13 @@ public class MySQLOutputWriter implements OutputWriter {
             if (!res.next()) {
                 // Add the commit data if it is not found
                 final PreparedStatement updateStmt = conn.prepareStatement(
-                        "INSERT INTO CommitMetaData(commit_hash) VALUES (?)");
+                        "INSERT INTO CommitMetaData(commit_hash, author_name, author_email, " +
+                                "committer_name, committer_email) VALUES (?,?,?,?,?)");
                 updateStmt.setString(1, commitMetaData.getHash()); // commit_hash
+                updateStmt.setString(2, commitMetaData.getAuthorName()); // author_name
+                updateStmt.setString(3, commitMetaData.getAuthorEmail()); // author_email
+                updateStmt.setString(4, commitMetaData.getCommitterName()); // committer_name
+                updateStmt.setString(5, commitMetaData.getCommitterEmail()); // committer_email
                 updateStmt.executeUpdate();
             }
         } catch (SQLException e) {
