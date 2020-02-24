@@ -92,6 +92,7 @@ public class RepositoryDiffMiner {
         // Create base diff object
         final SATDDifference difference = new SATDDifference(
                 this.firstRepo.getProjectName(),
+                this.firstRepo.getProjectURI(),
                 this.firstRepo.getTag(),
                 this.secondRepo.getTag());
 

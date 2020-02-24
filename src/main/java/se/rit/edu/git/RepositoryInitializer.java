@@ -145,6 +145,7 @@ public class RepositoryInitializer {
                             new RepositoryCommitReference(
                                     this.repoRef,
                                     GitUtil.getRepoNameFromGithubURI(this.gitURI),
+                                    this.gitURI,
                                     commitDataObject.getCommit(),
                                     commitDataObject.getTag()))
                     .collect(Collectors.toList());

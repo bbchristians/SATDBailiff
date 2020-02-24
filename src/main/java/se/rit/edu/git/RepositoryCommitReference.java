@@ -26,19 +26,25 @@ public class RepositoryCommitReference {
     private Git gitInstance;
     private String tag;
     private String projectName;
+    private String projectURI;
     private Map<String, List<GroupedComment>> satdOccurrences = null;
 
     private ElapsedTimer timer = null;
 
-    RepositoryCommitReference(Git gitInstance, String projectName, String commitHash, String tag) {
+    RepositoryCommitReference(Git gitInstance, String projectName, String projectURI, String commitHash, String tag) {
         this.commit = commitHash;
         this.projectName = projectName;
+        this.projectURI = projectURI;
         this.gitInstance = gitInstance;
         this.tag = tag;
     }
 
     public String getProjectName() {
         return this.projectName;
+    }
+
+    public String getProjectURI() {
+        return this.projectURI;
     }
 
     public String getTag() {

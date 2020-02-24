@@ -49,7 +49,7 @@ public abstract class CommitLocator {
             if( !soughtComment.isEmpty() ) {
                 final GroupedComment singleComment = soughtComment.get(0);
                 IntStream.range(singleComment.getStartLine() - 1,
-                        singleComment.getStartLine() + singleComment.getNumLines())
+                        singleComment.getStartLine() + singleComment.getNumLines() - 1) // TODO is the +1 here correct?
                         .mapToObj(blameResult::getSourceCommit)
                         .map(CommitMetaData::new)
                         .distinct()

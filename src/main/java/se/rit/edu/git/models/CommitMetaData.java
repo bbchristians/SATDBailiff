@@ -45,6 +45,8 @@ public class CommitMetaData {
 
     @Override
     public boolean equals(Object o) {
-        return o instanceof CommitMetaData && this.hash.equals(((CommitMetaData) o).hash);
+        return o instanceof CommitMetaData &&
+                this.hash != null &&
+                this.hash.equals(((CommitMetaData) o).hash);
     }
 }

@@ -25,6 +25,7 @@ public class SATDDifference {
     private String oldTag;
     private String newTag;
     private String projectName;
+    private String projectURI;
 
     // The lists of the different types of SATD that can be found in a project
     private List<SATDInstance> fileRemovedSATD = new ArrayList<>();
@@ -32,8 +33,10 @@ public class SATDDifference {
     private List<SATDInstance> changedOrAddedSATD = new ArrayList<>();
     private List<SATDInstance> unaddressedSATD = new ArrayList<>();
 
-    public SATDDifference(@NotNull String projectName, @NotNull String oldTag, @NotNull String newTag) {
+    public SATDDifference(@NotNull String projectName, @NotNull String projectURI,
+                          @NotNull String oldTag, @NotNull String newTag) {
         this.projectName = projectName;
+        this.projectName = projectURI;
         this.oldTag = oldTag;
         this.newTag = newTag;
     }
@@ -72,6 +75,10 @@ public class SATDDifference {
 
     public String getProjectName() {
         return this.projectName;
+    }
+
+    public String getProjectURI() {
+        return this.projectURI;
     }
 
     public String getOldTag() {
