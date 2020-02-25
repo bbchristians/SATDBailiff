@@ -14,6 +14,8 @@ import java.util.Properties;
 
 public class MySQLOutputWriter implements OutputWriter {
 
+    private static final int COMMENTS_MAX_CHARS = 4096;
+
     private String dbURI;
     private String user;
     private String pass;
@@ -153,7 +155,8 @@ public class MySQLOutputWriter implements OutputWriter {
                 "SELECT SATDInFile.f_id FROM SATDInFile WHERE " +
                 "SATDInFile.f_comment=? AND SATDInFile.f_path=? AND " +
                 "SATDInFile.start_line=? AND SATDInFile.end_line=?");
-        queryStmt.setString(1, comment.getComment()); // f_comment
+        queryStmt.setString(1, shortenStringToLength(
+                comment.getComment().replace("\"", "\\\""), COMMENTS_MAX_CHARS)); // f_comment
         queryStmt.setString(2, filePath); // f_path
         queryStmt.setInt(3, startLineNumber); // start_line
         queryStmt.setInt(4, endLineNumber); // end_line
@@ -167,7 +170,8 @@ public class MySQLOutputWriter implements OutputWriter {
                     "INSERT INTO SATDInFile(f_comment, f_comment_type, f_path, start_line, end_line) " +
                             "VALUES (?,?,?,?,?);",
                     Statement.RETURN_GENERATED_KEYS);
-            updateStmt.setString(1, shortenStringToLength(comment.getComment(), 4096)); // f_comment
+            updateStmt.setString(1, shortenStringToLength(
+                    comment.getComment().replace("\"", "\\\""), COMMENTS_MAX_CHARS)); // f_comment
             updateStmt.setString(2, comment.getCommentType()); // f_comment_type
             updateStmt.setString(3, filePath); // f_path
             updateStmt.setInt(4, startLineNumber); // start_line
