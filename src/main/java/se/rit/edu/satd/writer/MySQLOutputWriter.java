@@ -164,7 +164,7 @@ public class MySQLOutputWriter implements OutputWriter {
                     "INSERT INTO SATDInFile(f_comment, f_comment_type, f_path, start_line, end_line) " +
                             "VALUES (?,?,?,?,?);",
                     Statement.RETURN_GENERATED_KEYS);
-            updateStmt.setString(1, comment.getComment()); // f_comment
+            updateStmt.setString(1, shortenStringToLength(comment.getComment(), 4096)); // f_comment
             updateStmt.setString(2, comment.getCommentType()); // f_comment_type
             updateStmt.setString(3, filePath); // f_path
             updateStmt.setInt(4, startLineNumber); // start_line
@@ -319,6 +319,10 @@ public class MySQLOutputWriter implements OutputWriter {
             System.err.println("SQL Error encountered when storing commit metadata.");
             throw e;
         }
+    }
+
+    private static String shortenStringToLength(String str, int length) {
+        return str.substring(0, Math.min(str.length(), length));
     }
 
     /**
