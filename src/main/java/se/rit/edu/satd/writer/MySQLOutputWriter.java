@@ -5,7 +5,10 @@ import se.rit.edu.satd.SATDDifference;
 import se.rit.edu.satd.SATDInstance;
 import se.rit.edu.util.GroupedComment;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.sql.*;
 import java.util.Properties;
 

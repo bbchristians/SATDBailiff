@@ -4,7 +4,6 @@ import se.rit.edu.git.GitUtil;
 import se.rit.edu.git.RepositoryCommitReference;
 import se.rit.edu.satd.SATDMiner;
 import se.rit.edu.satd.detector.SATDDetectorImpl;
-import se.rit.edu.satd.writer.CSVOutputWriter;
 import se.rit.edu.satd.writer.MySQLOutputWriter;
 import se.rit.edu.util.ElapsedTimer;
 

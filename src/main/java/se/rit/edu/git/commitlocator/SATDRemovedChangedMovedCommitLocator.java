@@ -11,7 +11,6 @@ import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.patch.FileHeader;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
 import se.rit.edu.git.models.CommitMetaData;
@@ -41,6 +40,7 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
             // Lines of the commit
             int commentStartLine = satdInstance.getStartLineNumberOldFile();
             int commentEndLine = satdInstance.getEndLineNumberOldFile();
+            // TODO Binary Search to speed this up
             for( int i = 1; i < commitsBetween.size(); i++ ) {
                 final RevCommit thisCommit = commitsBetween.get(i);
 
