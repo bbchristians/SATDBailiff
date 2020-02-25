@@ -36,7 +36,7 @@ public class SATDDifference {
     public SATDDifference(@NotNull String projectName, @NotNull String projectURI,
                           @NotNull String oldTag, @NotNull String newTag) {
         this.projectName = projectName;
-        this.projectName = projectURI;
+        this.projectURI = projectURI;
         this.oldTag = oldTag;
         this.newTag = newTag;
     }

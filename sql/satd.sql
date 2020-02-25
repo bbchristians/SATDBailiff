@@ -2,8 +2,8 @@ DROP TABLE IF EXISTS satd.CommitMetaData, satd.Commits, satd.SATD, satd.SATDInFi
 
 CREATE TABLE IF NOT EXISTS satd.Projects (
 	p_id INT AUTO_INCREMENT,
-    p_name VARCHAR(255) UNIQUE,
-    p_url VARCHAR(255) UNIQUE,
+    p_name VARCHAR(255) NOT NULL UNIQUE,
+    p_url VARCHAR(255) NOT NULL UNIQUE,
     PRIMARY KEY (p_id)
 );
 
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS satd.Tags (
 
 CREATE TABLE IF NOT EXISTS satd.SATDInFile (
 	f_id INT AUTO_INCREMENT,
-    f_comment BLOB,
+    f_comment VARCHAR(4096),
     f_comment_type VARCHAR(32),
     f_path VARCHAR(256),
     start_line INT,

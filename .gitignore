@@ -6,3 +6,4 @@ satd_analyzer.iml
 *out*/
 repos.txt
 *.txt
+sql/*.csv

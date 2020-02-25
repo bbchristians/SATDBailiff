@@ -24,7 +24,8 @@ public class RepositoryDiffMiner {
     private SATDDetector satdDetector = null;
 
     // Timer for metrics reporting
-    private ElapsedTimer timer = null;
+    private ElapsedTimer diffTimer = null;
+    private ElapsedTimer mineTimer = null;
 
     private RepositoryDiffMiner() {}
 
@@ -156,10 +157,12 @@ public class RepositoryDiffMiner {
             }
         });
 
+        this.endSATDDiffTimer();
+
+        this.startSATDCommitMineTimer();
         // Get commits for File Removed SATD
         this.setCommitsInDiff(difference);
-
-        this.endSATDDiffTimer();
+        this.endSATDCommitMineTimer();
 
         return difference;
     }
@@ -204,12 +207,12 @@ public class RepositoryDiffMiner {
     }
 
     /**
-     * Starts the elapsed timer for determining the time it took to diff the
+     * Starts the elapsed diffTimer for determining the time it took to diff the
      * repositories.
      */
     private void startSATDDiffTimer() {
-        this.timer = new ElapsedTimer();
-        this.timer.start();
+        this.diffTimer = new ElapsedTimer();
+        this.diffTimer.start();
     }
 
     /**
@@ -217,8 +220,18 @@ public class RepositoryDiffMiner {
      * repositories, and also outputs the execution time.
      */
     private void endSATDDiffTimer() {
-        this.timer.end();
-        System.out.println(String.format("Finished diffing against previous version in %,dms", this.timer.readMS()));
+        this.diffTimer.end();
+        System.out.println(String.format("Finished diffing against previous version in %,dms", this.diffTimer.readMS()));
+    }
+
+    private void startSATDCommitMineTimer() {
+        this.mineTimer = new ElapsedTimer();
+        this.mineTimer.start();
+    }
+
+    private void endSATDCommitMineTimer() {
+        this.mineTimer.end();
+        System.out.println(String.format("Finished mining commit data and finalizing diffs in %,dms", this.mineTimer.readMS()));
     }
 
     /**

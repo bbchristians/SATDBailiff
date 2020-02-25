@@ -38,7 +38,6 @@ public class MySQLOutputWriter implements OutputWriter {
     public void writeDiff(SATDDifference diff) throws IOException {
         try {
             final Connection conn = DriverManager.getConnection(this.dbURI, this.user, this.pass);
-            // TODO add URL to the SATDInstance so it can be referenced here
             final int projectId = this.getProjectId(conn, diff.getProjectName(), diff.getProjectURI());
             final int oldProjectTagId = this.getTagId(conn, diff.getOldTag(), projectId);
             final int newProjectTagId = this.getTagId(conn, diff.getNewTag(), projectId);
