@@ -9,7 +9,6 @@ import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.patch.FileHeader;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
@@ -101,7 +100,7 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
                 gitInstance, secondCommit, satdInstance, commitFileMapping.get(secondCommit));
         // If the second commit does not contains the SATD
         if( matchingCommentInSecondFile instanceof NullGroupedComment ) {
-            // Get the SATD Occurance in the first file
+            // Get the SATD Occurrence in the first file
             final GroupedComment matchingCommentInFirstFile = this.commitContainsSATD(
                     gitInstance, firstCommit, satdInstance, commitFileMapping.get(firstCommit));
             // Neither first, nor second file contains SATD, so it must have been addressed earlier

@@ -40,7 +40,7 @@ public class SATDInstance {
         this.oldFile = oldFile;
         this.newFile = newFile;
         if( oldFile.equals(FILE_DEV_NULL) ) {
-            this.commentNew = satdComment;
+            this.commentNew = satdComment; // TODO the new comment is always a null instance
         } else {
             this.commentOld = satdComment;
         }

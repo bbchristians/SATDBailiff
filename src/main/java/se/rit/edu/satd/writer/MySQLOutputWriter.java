@@ -167,8 +167,9 @@ public class MySQLOutputWriter implements OutputWriter {
         } else {
             // Otherwise, add it and then return the newly generated key
             final PreparedStatement updateStmt = conn.prepareStatement(
-                    "INSERT INTO SATDInFile(f_comment, f_comment_type, f_path, start_line, end_line) " +
-                            "VALUES (?,?,?,?,?);",
+                    "INSERT INTO SATDInFile(f_comment, f_comment_type, f_path, start_line, end_line, " +
+                            "containing_class, containing_method) " +
+                            "VALUES (?,?,?,?,?,?,?);",
                     Statement.RETURN_GENERATED_KEYS);
             updateStmt.setString(1, shortenStringToLength(
                     comment.getComment().replace("\"", "\\\""), COMMENTS_MAX_CHARS)); // f_comment
@@ -176,6 +177,8 @@ public class MySQLOutputWriter implements OutputWriter {
             updateStmt.setString(3, filePath); // f_path
             updateStmt.setInt(4, startLineNumber); // start_line
             updateStmt.setInt(5, endLineNumber); // end_line
+            updateStmt.setString(6, comment.getContainingClass());
+            updateStmt.setString(7, comment.getContainingMethod());
             updateStmt.executeUpdate();
             final ResultSet updateRes = updateStmt.getGeneratedKeys();
             if (updateRes.next()) {

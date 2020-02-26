@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS satd.SATDInFile (
     f_path VARCHAR(256),
     start_line INT,
     end_line INT,
+    containing_class VARCHAR(256),
+    containing_method VARCHAR(256),
     PRIMARY KEY (f_id)
 );
 

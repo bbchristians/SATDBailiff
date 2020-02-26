@@ -2,6 +2,7 @@ package se.rit.edu.util;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
+import com.github.javaparser.Range;
 import com.github.javaparser.ast.comments.CommentsCollection;
 
 import java.io.InputStream;
@@ -42,5 +43,15 @@ public class JavaParseUtil {
             groupedComments.add(previousComment);
         }
         return new ArrayList<>(groupedComments);
+    }
+
+    public static boolean commentInRange(Range range, int start, int end) {
+        return
+                // Starts before the start and ends after the start
+                (range.begin.line <= start && range.end.line >= start ) ||
+                        // Starts before the end, and ends after the end
+                        (range.begin.line <= end && range.end.line >= end) ||
+                        // Starts after the start and ends before the end
+                        (range.begin.line >= start && range.end.line <= end);
     }
 }

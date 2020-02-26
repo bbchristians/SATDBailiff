@@ -1,17 +1,24 @@
 package se.rit.edu.util;
 
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.comments.Comment;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class GroupedComment implements Comparable {
+
+    private static final String UNKNOWN = "None";
 
     private int startLine;
     private int endLine;
     private String comment;
     private String commentType;
+    private String containingClass = UNKNOWN;
+    private String containingMethod = UNKNOWN;
 
     // Default constructor for inheritance
     GroupedComment() { }
@@ -39,14 +46,31 @@ public class GroupedComment implements Comparable {
                 : oldComment.isOrphan() ? "Orphan"
                 : oldComment.isJavadocComment() ? "JavaDoc"
                 : "Unknown";
-
+        // Get containing class and method if found
+        final Optional<ClassOrInterfaceDeclaration> classRoot = oldComment.findRootNode().findAll(ClassOrInterfaceDeclaration.class).stream()
+                .filter(dec -> dec.getRange().isPresent())
+                .filter(dec -> JavaParseUtil.commentInRange(dec.getRange().get(), this.startLine, this.endLine))
+                .findFirst();
+        if( classRoot.isPresent() ) {
+            this.containingClass = classRoot
+                    .map(ClassOrInterfaceDeclaration::getFullyQualifiedName)
+                    .map(opt -> opt.orElse(UNKNOWN))
+                    .get();
+            this.containingMethod = classRoot.get().findAll(MethodDeclaration.class).stream()
+                    .filter(dec -> dec.getRange().isPresent())
+                    .filter(dec -> JavaParseUtil.commentInRange(dec.getRange().get(), this.startLine, this.endLine))
+                    .map(MethodDeclaration::getNameAsString)
+                    .findFirst()
+                    .orElse(UNKNOWN);
+        }
     }
 
-    private GroupedComment(int startLine, int endLine, String comment, String commentType) {
+    private GroupedComment(int startLine, int endLine, String comment, String commentType, String containingClass) {
         this.startLine = startLine;
         this.endLine = endLine;
         this.comment = comment;
         this.commentType = commentType;
+        this.containingClass = containingClass;
     }
 
     public GroupedComment joinWith(GroupedComment other) {
@@ -54,12 +78,22 @@ public class GroupedComment implements Comparable {
                 Integer.min(this.startLine, other.startLine),
                 Integer.max(this.endLine, other.endLine),
                 String.join("\n", this.comment, other.comment),
-                this.commentType);
+                this.commentType,
+                this.containingClass);
     }
 
     public boolean precedesDirectly(GroupedComment other) {
-        return this.commentType.equals(other.commentType) &&
+        return this.containingClass.equals(other.containingClass) &&
+                this.commentType.equals(other.commentType) &&
                 this.endLine + 1 == other.startLine;
+    }
+
+    public String getContainingClass() {
+        return this.containingClass;
+    }
+
+    public String getContainingMethod() {
+        return this.containingMethod;
     }
 
     public int getStartLine() {
