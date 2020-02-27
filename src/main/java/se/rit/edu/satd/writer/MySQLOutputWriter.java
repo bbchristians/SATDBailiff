@@ -317,12 +317,22 @@ public class MySQLOutputWriter implements OutputWriter {
                 // Add the commit data if it is not found
                 final PreparedStatement updateStmt = conn.prepareStatement(
                         "INSERT INTO CommitMetaData(commit_hash, author_name, author_email, " +
-                                "committer_name, committer_email) VALUES (?,?,?,?,?)");
+                                "committer_name, committer_email, author_date, commit_date) VALUES (?,?,?,?,?,?,?)");
                 updateStmt.setString(1, commitMetaData.getHash()); // commit_hash
                 updateStmt.setString(2, commitMetaData.getAuthorName()); // author_name
                 updateStmt.setString(3, commitMetaData.getAuthorEmail()); // author_email
                 updateStmt.setString(4, commitMetaData.getCommitterName()); // committer_name
                 updateStmt.setString(5, commitMetaData.getCommitterEmail()); // committer_email
+                if( commitMetaData.getAuthorDate() != null ) {
+                    updateStmt.setDate(6, new Date(commitMetaData.getAuthorDate().getTime())); // author_date
+                } else {
+                    updateStmt.setDate(6, null);
+                }
+                if( commitMetaData.getCommitDate() != null ) {
+                    updateStmt.setDate(7, new Date(commitMetaData.getCommitDate().getTime())); // commit_date
+                } else {
+                    updateStmt.setDate(7, null);
+                }
                 updateStmt.executeUpdate();
             }
         } catch (SQLException e) {

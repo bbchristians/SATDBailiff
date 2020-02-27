@@ -3,19 +3,23 @@ BEGIN;
 	SET @project_name = "apache/commons-validator";
 
 	-- Headers
-	-- SELECT 'satd_id', 'project_name', 'v1_tag', 'v2_tag', 'resolution', 'v1_commit', 'v1_path', 'v1_class', 'v1_method', 'v1_comment', 
--- 		   'v2_commit', 'v2_path', 'v2_class', 'v2_method', 'v2_comment'
-    
-   -- UNION ALL
+	--  SELECT 0, 'project_name', 'v1_tag', 'v2_tag', 'resolution', 'v1_commit', 'v1_path', 'v1_class', 'v1_method', 'v1_comment', 
+--  		   'v2_commit', 'v2_path', 'v2_class', 'v2_method', 'v2_comment'
+--     
+--     UNION ALL
 
 	-- Query
 	SELECT 
 		SATD.satd_id, Projects.p_name as project_name, V1Tag.tag as v1_tag, V2Tag.tag as v2_tag,
         SATD.resolution, 
-        BeforeCommit.commit_hash as v1_commit, FirstFile.f_path as v1_path, 
+		CASE WHEN BeforeCommit.commit_hash IS NULL THEN 'None' else BeforeCommit.commit_hash END as v1_commit,
+		CASE WHEN BeforeCommit.commit_date IS NULL then 'None' else BeforeCommit.commit_date END as v1_commit_date,
+        FirstFile.f_path as v1_path, 
 			FirstFile.containing_class as v1_class, FirstFile.containing_method as v1_method,
             FirstFile.f_comment as v1_comment, 
-        AddressedCommit.commit_hash as v2_commit, SecondFile.f_path as v2_path, 
+		CASE WHEN AddressedCommit.commit_hash IS NULL THEN 'None' else AddressedCommit.commit_hash END as v2_commit,
+        CASE WHEN AddressedCommit.commit_date IS NULL then 'None' else AddressedCommit.commit_date END as v2_commit_date,
+        SecondFile.f_path as v2_path, 
 			SecondFile.containing_class as v2_class, SecondFile.containing_method as v2_method,
             SecondFile.f_comment as v2_comment
 		FROM satd.Projects
@@ -37,8 +41,8 @@ BEGIN;
         on SATD.satd_id=AddressedCommit.satd_id AND AddressedCommit.commit_type='ADDRESSED'
 		WHERE Projects.p_name=@project_name
         ORDER BY satd_id ASC
---      INTO OUTFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/out.csv'
--- 		FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
--- 		ESCAPED BY '"' 
--- 		LINES TERMINATED BY '\r\n';
+		INTO OUTFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/out.csv'
+		FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
+		ESCAPED BY '"' 
+		LINES TERMINATED BY '\r\n';
     

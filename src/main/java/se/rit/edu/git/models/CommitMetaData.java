@@ -2,15 +2,19 @@ package se.rit.edu.git.models;
 
 import org.eclipse.jgit.revwalk.RevCommit;
 
+import java.util.Date;
+
 public class CommitMetaData {
 
     private String hash;
 
     private String authorName;
     private String authorEmail;
+    private Date authorDate;
 
     private String committerName;
     private String committerEmail;
+    private Date commitDate;
 
     // For inheritance
     CommitMetaData() {}
@@ -19,8 +23,10 @@ public class CommitMetaData {
         this.hash = commit.getName();
         this.authorName = commit.getAuthorIdent().getName();
         this.authorEmail = commit.getAuthorIdent().getEmailAddress();
+        this.authorDate = commit.getAuthorIdent().getWhen();
         this.committerName = commit.getCommitterIdent().getName();
         this.committerEmail = commit.getCommitterIdent().getEmailAddress();
+        this.commitDate = commit.getCommitterIdent().getWhen();
     }
 
     public String getHash() {
@@ -28,19 +34,27 @@ public class CommitMetaData {
     }
 
     public String getAuthorName() {
-        return authorName;
+        return this.authorName;
     }
 
     public String getAuthorEmail() {
-        return authorEmail;
+        return this.authorEmail;
+    }
+
+    public Date getAuthorDate() {
+        return this.authorDate;
     }
 
     public String getCommitterName() {
-        return committerName;
+        return this.committerName;
     }
 
     public String getCommitterEmail() {
-        return committerEmail;
+        return this.committerEmail;
+    }
+
+    public Date getCommitDate() {
+        return this.commitDate;
     }
 
     @Override
