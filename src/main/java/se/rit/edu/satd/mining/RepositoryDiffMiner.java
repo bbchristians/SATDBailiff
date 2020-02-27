@@ -8,6 +8,7 @@ import se.rit.edu.satd.SATDInstance;
 import se.rit.edu.satd.detector.SATDDetector;
 import se.rit.edu.util.ElapsedTimer;
 import se.rit.edu.util.GroupedComment;
+import se.rit.edu.util.NullGroupedComment;
 
 import java.util.List;
 import java.util.Map;
@@ -102,7 +103,8 @@ public class RepositoryDiffMiner {
             final String newKey = fileMapping.get(oldKey);
             if( newKey.equals(RepositoryFileMapping.NOT_FOUND) ) {
                 difference.addFileRemovedSATD(olderSATD.get(oldKey).stream()
-                        .map(comment -> new SATDInstance(oldKey, SATDInstance.FILE_DEV_NULL, comment))
+                        .map(comment ->
+                                new SATDInstance(oldKey, SATDInstance.FILE_DEV_NULL, comment, new NullGroupedComment()))
                         .collect(Collectors.toList()));
             } else {
                 // See which strings in each file are present here
@@ -119,8 +121,8 @@ public class RepositoryDiffMiner {
                                 .filter(newerSATDMapping::commentMatches)
                                 .findFirst()
                                 .ifPresent(s -> {
-                                    s.setMapped();
-                                    newerSATDMapping.setMapped();
+                                    s.setMapped(newerSATDMapping);
+                                    newerSATDMapping.setMapped(s);
                                 })
                 );
 
@@ -129,8 +131,9 @@ public class RepositoryDiffMiner {
                 // no resources should be spent determining whether the SATD was addressed
                 List<SATDInstance> untouchedSATD = mappedOlderSATD.stream()
                         .filter(MappedSATDComment::isMapped)
-                        .map(MappedSATDComment::getComment)
-                        .map(comment -> new SATDInstance(oldKey, newKey, comment))
+                        .map(comment ->
+                                new SATDInstance(oldKey, newKey, comment.getComment(),
+                                        comment.getMappedSATDComment().getComment()))
                         .collect(Collectors.toList());
                 // SATD that was not in the new repo, but was in the old repo
                 // We will need to determine whether the SATD was changed or removed
@@ -139,7 +142,8 @@ public class RepositoryDiffMiner {
                 List<SATDInstance> changedOrRemovedSATD = mappedOlderSATD.stream()
                         .filter(MappedSATDComment::isNotMapped)
                         .map(MappedSATDComment::getComment)
-                        .map(comment -> new SATDInstance(oldKey, SATDInstance.FILE_UNKNOWN, comment))
+                        .map(comment -> new SATDInstance(oldKey, SATDInstance.FILE_UNKNOWN,
+                                comment, new NullGroupedComment()))
                         .collect(Collectors.toList());
                 // SATD that was not in the old repo, but was in the repo
                 // We will need to determine whether the SATD was changed from another
@@ -147,7 +151,8 @@ public class RepositoryDiffMiner {
                 List<SATDInstance> changedOrAddedSATD = mappedNewerSATD.stream()
                         .filter(MappedSATDComment::isNotMapped)
                         .map(MappedSATDComment::getComment)
-                        .map(comment -> new SATDInstance(SATDInstance.FILE_DEV_NULL, newKey, comment))
+                        .map(comment -> new SATDInstance(SATDInstance.FILE_DEV_NULL, newKey,
+                                new NullGroupedComment(), comment))
                         .collect(Collectors.toList());
 
                 // Add these processed instances to the difference object
@@ -241,6 +246,7 @@ public class RepositoryDiffMiner {
 
         private GroupedComment comment;
         private boolean isMapped = false;
+        private MappedSATDComment otherComment = null;
 
         private MappedSATDComment(GroupedComment oldComment) {
             this.comment = oldComment;
@@ -262,12 +268,18 @@ public class RepositoryDiffMiner {
             return !this.isMapped;
         }
 
-        private void setMapped() {
+        private MappedSATDComment getMappedSATDComment() {
+            return this.otherComment;
+        }
+
+        private void setMapped(MappedSATDComment other) {
             if( this.isMapped ) {
                 System.err.println("It is likely that an SATD instance was unintentionally mapped twice. " +
                                 "This will throw off output models.");
+                return;
             }
             this.isMapped = true;
+            this.otherComment = other;
         }
     }
 }

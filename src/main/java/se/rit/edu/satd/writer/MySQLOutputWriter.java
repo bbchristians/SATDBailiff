@@ -287,6 +287,9 @@ public class MySQLOutputWriter implements OutputWriter {
                 final PreparedStatement updateStmt = conn.prepareStatement(
                         "INSERT INTO Commits(satd_id, commit_hash, commit_type) VALUES (?,?,?)");
                 updateStmt.setInt(1, satdInstanceId); // satd_id
+                if( commitMetaData.getHash() == null ) {
+                    System.err.println("FUCK");
+                }
                 updateStmt.setString(2, commitMetaData.getHash()); // commit_hash
                 updateStmt.setString(3, commitType.name()); // commit_type
                 updateStmt.executeUpdate();

@@ -3,14 +3,14 @@ BEGIN;
 	SET @project_name = "apache/commons-validator";
 
 	-- Headers
-	SELECT 'project_name', 'v1_tag', 'v2_tag', 'resolution', 'v1_commit', 'v1_path', 'v1_class', 'v1_method', 'v1_comment', 
-		   'v2_commit', 'v2_path', 'v2_class', 'v2_method', 'v2_comment'
+	-- SELECT 'satd_id', 'project_name', 'v1_tag', 'v2_tag', 'resolution', 'v1_commit', 'v1_path', 'v1_class', 'v1_method', 'v1_comment', 
+-- 		   'v2_commit', 'v2_path', 'v2_class', 'v2_method', 'v2_comment'
     
-    UNION ALL
+   -- UNION ALL
 
 	-- Query
 	SELECT 
-		Projects.p_name as project_name, V1Tag.tag as v1_tag, V2Tag.tag as v2_tag,
+		SATD.satd_id, Projects.p_name as project_name, V1Tag.tag as v1_tag, V2Tag.tag as v2_tag,
         SATD.resolution, 
         BeforeCommit.commit_hash as v1_commit, FirstFile.f_path as v1_path, 
 			FirstFile.containing_class as v1_class, FirstFile.containing_method as v1_method,
@@ -26,18 +26,19 @@ BEGIN;
         INNER JOIN satd.Tags as V2Tag
 		ON SATD.second_tag_id=V2Tag.t_id
 		INNER JOIN satd.SATDInFile as FirstFile
-		on SATD.first_file=FirstFile.f_id
+        ON SATD.first_file = FirstFile.f_id
 		INNER JOIN satd.SATDInFile as SecondFile
-		on SATD.second_file=SecondFile.f_id
-        INNER JOIN satd.Commits as BeforeCommit
+        ON SATD.second_file = SecondFile.f_id
+        LEFT JOIN satd.Commits as BeforeCommit
         on SATD.satd_id=BeforeCommit.satd_id AND BeforeCommit.commit_type='BEFORE'
 		-- INNER JOIN satd.Commits as BetweenCommit
 		-- on SATD.satd_id=BetweenCommit.satd_id AND BetweenCommit.commit_type='BETWEEN'
-        INNER JOIN satd.Commits as AddressedCommit
+        LEFT JOIN satd.Commits as AddressedCommit
         on SATD.satd_id=AddressedCommit.satd_id AND AddressedCommit.commit_type='ADDRESSED'
 		WHERE Projects.p_name=@project_name
-        INTO OUTFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/out.csv'
-		FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
-		ESCAPED BY '"' 
-		LINES TERMINATED BY '\r\n';
+        ORDER BY satd_id ASC
+--      INTO OUTFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/out.csv'
+-- 		FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
+-- 		ESCAPED BY '"' 
+-- 		LINES TERMINATED BY '\r\n';
     

@@ -36,14 +36,12 @@ public class SATDInstance {
     private String nameOfFileWhenAddressed = FILE_UNKNOWN;
     private SATDResolution resolution = SATDResolution.UNKNOWN;
 
-    public SATDInstance(@NotNull String oldFile, @NotNull String newFile, @NotNull GroupedComment satdComment) {
+    public SATDInstance(@NotNull String oldFile, @NotNull String newFile,
+                        @NotNull GroupedComment oldComment, @NotNull GroupedComment newComment) {
         this.oldFile = oldFile;
         this.newFile = newFile;
-        if( oldFile.equals(FILE_DEV_NULL) ) {
-            this.commentNew = satdComment; // TODO the new comment is always a null instance
-        } else {
-            this.commentOld = satdComment;
-        }
+        this.commentOld = oldComment;
+        this.commentNew = newComment;
     }
 
     public String getNameOfFileWhenAddressed() {
