@@ -1,11 +1,14 @@
 package edu.rit.se.satd.mining;
 
 import edu.rit.se.satd.SATDDifference;
+import edu.rit.se.satd.SATDInstance;
+import edu.rit.se.satd.comment.NullGroupedComment;
 import edu.rit.se.util.MappingPair;
 import edu.rit.se.git.RepositoryCommitReference;
 import edu.rit.se.satd.comment.GroupedComment;
 import edu.rit.se.satd.detector.SATDDetector;
 import edu.rit.se.satd.mining.commit.CommitToCommitDiff;
+import lombok.AllArgsConstructor;
 
 import java.util.Collection;
 import java.util.List;
@@ -15,32 +18,13 @@ import java.util.stream.Collectors;
 /**
  * Mines the differences in SATD between repositories
  */
+@AllArgsConstructor
 public class RepositoryDiffMiner {
 
     // Required fields
-    RepositoryCommitReference firstRepo;
-    RepositoryCommitReference secondRepo = null;
-    SATDDetector satdDetector = null;
-
-    /**
-     * Adds a second repository to the repository diff miner
-     * @param repo The later of the repository commit references
-     * @return a RepositoryDiffMiner object
-     */
-    public RepositoryDiffMiner andSecondRepository(RepositoryCommitReference repo) {
-        this.secondRepo = repo;
-        return this;
-    }
-
-    /**
-     * Adds an SATDDetector to the diff miner
-     * @param detector an SATDDetector
-     * @return a RepositoryDiffMiner object
-     */
-    public RepositoryDiffMiner usingDetector(SATDDetector detector) {
-        this.satdDetector = detector;
-        return this;
-    }
+    private RepositoryCommitReference firstRepo;
+    private RepositoryCommitReference secondRepo;
+    private SATDDetector satdDetector;
 
     /**
      * Mines the differences in SATD between the two repositories set during generation
@@ -50,16 +34,8 @@ public class RepositoryDiffMiner {
      * @throws IllegalStateException thrown if the DiffMiner object has not been fully
      * configured before running
      */
-    public SATDDifference mineDiff() throws IllegalStateException {
-        if( this.secondRepo == null ) {
-            throw new IllegalStateException(
-                    "Second repo to diff not set, please call andSecondRepository() to set the second repo.");
-        }
-        if( this.satdDetector == null ) {
-            throw new IllegalStateException(
-                    "SATD Detector not set, please call usingDetector() to set the SATD Detector.");
-        }
-        SATDDifference diff = new SATDDifference(
+    public SATDDifference mineDiff() {
+        final SATDDifference diff = new SATDDifference(
                 this.firstRepo.getProjectName(),
                 this.firstRepo.getProjectURI(),
                 this.firstRepo.getCommit(),
@@ -74,7 +50,7 @@ public class RepositoryDiffMiner {
         final Map<String, List<GroupedComment>> olderSATD = this.firstRepo.getFilesToSATDOccurrences(
                 this.satdDetector, cToCDiff.getModifiedFilesOld());
 
-        // Add SATD Instances that were in the old repo, but possibly modified in the new repo
+        // Add SATD Instances that were in the OLD repo, but possibly modified in the new repo
         diff.addSATDInstances(
                 olderSATD.keySet().stream()
                         .flatMap(fileInOldRepo -> olderSATD.get(fileInOldRepo).stream()
@@ -86,18 +62,23 @@ public class RepositoryDiffMiner {
                         .flatMap(Collection::stream)
                         .collect(Collectors.toList())
         );
+        // Add SATD instances that were in the NEW repo, but not in the old repo
+//        diff.addSATDInstances(
+//                newerSATD.keySet().stream()
+//                        .flatMap(fileInNewRepo -> newerSATD.get(fileInNewRepo).stream()
+//                                .filter(comment ->
+//                                        !olderSATD.keySet().contains(fileInNewRepo) ||
+//                                                !olderSATD.get(fileInNewRepo).contains(comment))
+//                                .map(comment -> new MappingPair(fileInNewRepo, comment)))
+//                        .map(pair -> new SATDInstance(
+//                                "/dev/null",
+//                                pair.getFirst().toString(),
+//                                new NullGroupedComment(),
+//                                (GroupedComment) pair.getSecond(),
+//                                SATDInstance.SATDResolution.SATD_ADDED))
+//                        .collect(Collectors.toList())
+//        );
 
         return diff;
-    }
-
-    /**
-     * Generates an initial RepositoryDiffMiner Object
-     * @param repo The earlier of the repository commit references
-     * @return a RepositoryDiffMiner object
-     */
-    public static RepositoryDiffMiner ofFirstRepository(RepositoryCommitReference repo) {
-        RepositoryDiffMiner miner = new RepositoryDiffMiner();
-        miner.firstRepo = repo;
-        return miner;
     }
 }

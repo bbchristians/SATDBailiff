@@ -108,45 +108,32 @@ public class CommitToCommitDiff {
                                         SATDInstance.SATDResolution.SATD_REMOVED
                                 )
                         );
-                    } else if( !updatedComments.isEmpty() ){
+                    } else if( !updatedComments.isEmpty() &&
+                            updatedComments.stream()
+                                    .map(GroupedComment::getComment)
+                                    .noneMatch(comment.getComment()::equals)){
                         // TODO Determine if the SATD was changed or removed
                         satd.addAll(
                                 updatedComments.stream()
-                                        .flatMap(newComment -> {
-                                            List<SATDInstance> newSATD = new ArrayList<>();
+                                        .map(newComment -> {
                                             // If the comment that was added is similar enough to the old comment
                                             if( SimilarityUtil.commentsAreSimilar(comment, newComment) ) {
-                                                // Add an SATD instance where the comment was changed
-                                                newSATD.add(
-                                                        new SATDInstance(
+                                                    // We know the comment was changed
+                                                    return new SATDInstance(
                                                             diffEntry.getOldPath(),
                                                             diffEntry.getNewPath(),
                                                             comment,
                                                             newComment,
-                                                            SATDInstance.SATDResolution.SATD_CHANGED));
+                                                            SATDInstance.SATDResolution.SATD_CHANGED);
                                             } else {
-                                                // Add two separate SATD Instances -- 1 removal and 1 addition
-                                                newSATD.add(
-                                                        new SATDInstance(
-                                                                diffEntry.getOldPath(),
-                                                                diffEntry.getNewPath(),
-                                                                comment,
-                                                                new NullGroupedComment(),
-                                                                SATDInstance.SATDResolution.SATD_REMOVED
-                                                        )
-                                                );
-                                                // TODO is this going to add duplicate Add entries??
-                                                newSATD.add(
-                                                        new SATDInstance(
-                                                                diffEntry.getOldPath(),
-                                                                diffEntry.getNewPath(),
-                                                                new NullGroupedComment(),
-                                                                comment,
-                                                                SATDInstance.SATDResolution.SATD_ADDED
-                                                        )
-                                                );
+                                                    // We know the comment was removed
+                                                    return new SATDInstance(
+                                                            diffEntry.getOldPath(),
+                                                            diffEntry.getNewPath(),
+                                                            comment,
+                                                            new NullGroupedComment(),
+                                                            SATDInstance.SATDResolution.SATD_REMOVED);
                                             }
-                                            return newSATD.stream();
                                         })
                                         .collect(Collectors.toList()));
                     }

@@ -12,6 +12,8 @@ import edu.rit.se.satd.writer.OutputWriter;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * A class which contains high-level logic for mining SATD Instances from a git repository.
@@ -28,6 +30,8 @@ public class SATDMiner {
     // A reference to the repository initializes. Stored so it can be cleaned
     // once mining has completed
     private RepositoryInitializer repo;
+
+    public Set<String> totalCommitsMined = new HashSet<>();
 
     public RepositoryCommitReference getBaseCommit(String head) {
         if( (repo == null || !repo.didInitialize()) && !this.initializeRepo() ) {
@@ -54,9 +58,8 @@ public class SATDMiner {
             return;
         }
         // Go through each commit, and diff against the adjacent commits
-        commitRef.getParentCommitReferences().stream().map(RepositoryDiffMiner::ofFirstRepository)
-                .map(r -> r.andSecondRepository(commitRef))
-                .map(r -> r.usingDetector(this.satdDetector))
+        commitRef.getParentCommitReferences().stream()
+                .map(parentRef -> new RepositoryDiffMiner(parentRef, commitRef, this.satdDetector))
                 .map(RepositoryDiffMiner::mineDiff)
                 .forEach(diff -> {
                     try {
@@ -68,7 +71,7 @@ public class SATDMiner {
 
         // Recurse on parents
         commitRef.getParentCommitReferences().forEach(p -> writeRepoSATD(p, writer));
-
+        totalCommitsMined.add(commitRef.getCommit().getName());
     }
 
     /**

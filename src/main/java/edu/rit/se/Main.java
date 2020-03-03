@@ -40,6 +40,7 @@ public class Main {
             timer.end();
             System.out.println(String.format("Finished analyzing SATD in %s in %,dms",
                     GitUtil.getRepoNameFromGithubURI(repo), timer.readMS()));
+            System.out.println("Mined " + miner.totalCommitsMined.size() + " commits total.");
         }
     }
 }
