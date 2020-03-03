@@ -13,6 +13,11 @@ import java.util.stream.Collectors;
 
 public class JavaParseUtil {
 
+    /**
+     * Gets a list of comments from the input java file
+     * @param file An input stream containing the contents of a java file to parse for comments
+     * @return a list of grouped comments that correlate to comments from the parsed java file
+     */
     public static List<GroupedComment> parseFileForComments(InputStream file) {
         final JavaParser parser = new JavaParser();
         final ParseResult parsedFile = parser.parse(file);
@@ -46,7 +51,14 @@ public class JavaParseUtil {
         return new ArrayList<>(groupedComments);
     }
 
-    public static boolean commentInRange(Range range, int start, int end) {
+    /**
+     * Determines if the given range occurred within the start and end bounds
+     * @param range The range of the edit
+     * @param start the starting bound
+     * @param end the ending bound
+     * @return True if the range overlaps with the start and end boundaries, else False
+     */
+    public static boolean isRangeBetweenBounds(Range range, int start, int end) {
         return
                 // Starts before the start and ends after the start
                 (range.begin.line <= start && range.end.line >= start ) ||

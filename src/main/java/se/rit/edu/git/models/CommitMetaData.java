@@ -4,6 +4,9 @@ import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.util.Date;
 
+/**
+ * Data class for commit metadata
+ */
 public class CommitMetaData {
 
     private String hash;

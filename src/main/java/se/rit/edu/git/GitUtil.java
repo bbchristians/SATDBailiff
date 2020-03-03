@@ -1,5 +1,7 @@
 package se.rit.edu.git;
 
+import com.github.javaparser.Position;
+import com.github.javaparser.Range;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.Edit;
@@ -13,6 +15,7 @@ import org.eclipse.jgit.revwalk.*;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
 import org.eclipse.jgit.treewalk.filter.TreeFilter;
+import se.rit.edu.util.JavaParseUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,34 +25,13 @@ import java.util.Set;
 
 public class GitUtil {
 
+    /**
+     * Parses a repository name from a GitHub URI
+     * @param githubURI the Github URI, like "https://github.com/bbchristians/SATDMiner"
+     * @return a parsed URI, like "bbchristians/SATDMiner"
+     */
     public static String getRepoNameFromGithubURI(String githubURI) {
         return githubURI.split(".com/")[1].replace(".git", "");
-    }
-
-    // mimic git tag --contains <commit>
-    private static Set<Ref> getTagsForCommit(Repository repo,
-                                             RevCommit latestCommit) throws Exception {
-        final Set<Ref> tags = new HashSet<>();
-        final RevWalk walk = new RevWalk(repo);
-        walk.reset();
-        walk.setTreeFilter(TreeFilter.ANY_DIFF);
-        walk.sort(RevSort.TOPO, true);
-        walk.sort(RevSort.COMMIT_TIME_DESC, true);
-        for (final Ref ref : repo.getTags().values()) {
-            final RevObject obj = walk.parseAny(ref.getObjectId());
-            final RevCommit tagCommit;
-            if (obj instanceof RevCommit) {
-                tagCommit = (RevCommit) obj;
-            } else if (obj instanceof RevTag) {
-                tagCommit = walk.parseCommit(((RevTag) obj).getObject());
-            } else {
-                continue;
-            }
-            if (walk.isMergedInto(latestCommit, tagCommit)) {
-                tags.add(ref);
-            }
-        }
-        return tags;
     }
 
     /**
@@ -71,6 +53,13 @@ public class GitUtil {
         return treeWalk;
     }
 
+    /**
+     * Gets all diffs between two revision trees
+     * @param gitInstance the Git instance the revisions take place within
+     * @param tree1 a revision tree
+     * @param tree2 a revision tree
+     * @return A list of all DiffEntries between the two trees
+     */
     public static List<DiffEntry> getDiffEntries(Git gitInstance, RevTree tree1, RevTree tree2) {
         try {
             TreeWalk tw = new TreeWalk(gitInstance.getRepository());
@@ -88,14 +77,17 @@ public class GitUtil {
         return new ArrayList<>();
     }
 
-    // TODO make this a util function as it is duplicate code
+    /**
+     * Determines if an edit occurs between two line bounds
+     * @param edit the edit object
+     * @param startLine the start line bound
+     * @param endLine the end line bound
+     * @return True if the edit touches any lines between the bounds (inclusive), else False
+     */
     public static boolean editOccursBetweenLines(Edit edit, int startLine, int endLine) {
-        return
-                // Starts before the start and ends after the start
-                (edit.getBeginA() <= startLine && edit.getEndA() >= startLine ) ||
-                        // Starts before the end, and ends after the end
-                        (edit.getBeginA() <= endLine && edit.getEndA() >= endLine) ||
-                        // Starts after the start and ends before the end
-                        (edit.getBeginA() >= startLine && edit.getEndA() <= endLine);
+        return JavaParseUtil.isRangeBetweenBounds(
+                new Range(new Position(edit.getBeginA(), 0), new Position(edit.getEndA(), 0)),
+                startLine, endLine
+        );
     }
 }

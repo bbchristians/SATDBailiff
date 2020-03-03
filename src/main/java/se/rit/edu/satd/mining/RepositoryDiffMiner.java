@@ -69,10 +69,10 @@ public class RepositoryDiffMiner {
         final CommitToCommitDiff cToCDiff = new CommitToCommitDiff(this.firstRepo, this.secondRepo);
 
         // Get the SATD occurrences for each repo
-        final Map<String, List<GroupedComment>> olderSATD = this.firstRepo.getFilesToSAIDOccurrences(
-                this.satdDetector, cToCDiff.getModifiedFilesOld());
-        final Map<String, List<GroupedComment>> newerSATD = this.secondRepo.getFilesToSAIDOccurrences(
+        final Map<String, List<GroupedComment>> newerSATD = this.secondRepo.getFilesToSATDOccurrences(
                 this.satdDetector, cToCDiff.getModifiedFilesNew());
+        final Map<String, List<GroupedComment>> olderSATD = this.firstRepo.getFilesToSATDOccurrences(
+                this.satdDetector, cToCDiff.getModifiedFilesOld());
 
         diff.addSATDInstances(
                 olderSATD.keySet().stream()

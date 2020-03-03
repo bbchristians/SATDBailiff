@@ -11,8 +11,8 @@ import se.rit.edu.git.RepositoryCommitReference;
 import se.rit.edu.satd.SATDDifference;
 import se.rit.edu.satd.SATDInstance;
 import se.rit.edu.satd.comment.GroupedComment;
-import se.rit.edu.util.JavaParseUtil;
 import se.rit.edu.satd.comment.NullGroupedComment;
+import se.rit.edu.util.JavaParseUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

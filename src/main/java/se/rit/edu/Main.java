@@ -25,26 +25,16 @@ public class Main {
 
         while( inFileReader.hasNext() ) {
 
-            String repo = inFileReader.next();
-
-            if( !repo.endsWith(".git") ) {
-                repo += ".git";
-            }
+            final String repo = inFileReader.next();
 
             ElapsedTimer timer = new ElapsedTimer();
             timer.start();
 
             SATDMiner miner = new SATDMiner(repo);
-//            List<RepositoryCommitReference> repos = miner.getReposAtReleases(SATDMiner.ReleaseSortType.RELEASE_PARSE);
-
-
-//            System.out.println(String.format("%d tags found in repository.", repos.size()));
 
             miner.setSatdDetector(new SATDDetectorImpl());
 
-//            miner.writeRepoSATD(repos, new CSVOutputWriter(
-//                    new File(String.join(File.separator, OUT_DIR, GitUtil.getRepoNameFromGithubURI(repo) + ".csv"))));
-            miner.writeRepoSATD(miner.getBaseCommit("809e7225e497b1db1594d56155b25ad64bab6dce"),
+            miner.writeRepoSATD(miner.getBaseCommit("2cf6933774bec5345e4505948fc1be2f75a66153"),
                     new MySQLOutputWriter("mySQL.properties"));
 
             miner.cleanRepo();

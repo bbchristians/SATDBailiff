@@ -50,7 +50,7 @@ public class GroupedComment implements Comparable {
         // Get containing class and method if found
         final Optional<ClassOrInterfaceDeclaration> classRoot = oldComment.findRootNode().findAll(ClassOrInterfaceDeclaration.class).stream()
                 .filter(dec -> dec.getRange().isPresent())
-                .filter(dec -> JavaParseUtil.commentInRange(dec.getRange().get(), this.startLine, this.endLine))
+                .filter(dec -> JavaParseUtil.isRangeBetweenBounds(dec.getRange().get(), this.startLine, this.endLine))
                 .findFirst();
         if( classRoot.isPresent() ) {
             this.containingClass = classRoot
@@ -59,7 +59,7 @@ public class GroupedComment implements Comparable {
                     .get();
             this.containingMethod = classRoot.get().findAll(MethodDeclaration.class).stream()
                     .filter(dec -> dec.getRange().isPresent())
-                    .filter(dec -> JavaParseUtil.commentInRange(dec.getRange().get(), this.startLine, this.endLine))
+                    .filter(dec -> JavaParseUtil.isRangeBetweenBounds(dec.getRange().get(), this.startLine, this.endLine))
                     .map(MethodDeclaration::getNameAsString)
                     .findFirst()
                     .orElse(UNKNOWN);

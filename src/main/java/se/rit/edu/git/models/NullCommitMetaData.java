@@ -1,5 +1,8 @@
 package se.rit.edu.git.models;
 
+/**
+ * Null instance for the CommitMetaData class, to be used in place of null commits
+ */
 public class NullCommitMetaData extends CommitMetaData {
 
     public NullCommitMetaData() {

@@ -10,7 +10,6 @@ import se.rit.edu.util.ElapsedTimer;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Date;
 
 /**
  * A class that, given a git repository, collects references to all tags in that repository
@@ -37,7 +36,6 @@ public class RepositoryInitializer {
 
     // Timer for reporting
     private ElapsedTimer cloneTimer = null;
-    private ElapsedTimer tagsTimer = null;
 
     // Prevents other functionality of the class from being used if the git init fails
     private Boolean gitDidInit = false;
@@ -81,77 +79,6 @@ public class RepositoryInitializer {
         return this.gitDidInit;
     }
 
-//    /**
-//     * Users git tags to generate a list of repository references
-//     * @param startCommit The latest commit to consider
-//     * @return a list of repository references for each tag in the repository
-//     */
-//    public List<RepositoryCommitReference> getComparableRepositories(String startCommit) {
-//        if( !this.gitDidInit ) {
-//            throw new IllegalStateException("Tried to get repositories from initializer that failed initialization.");
-//        }
-//        try {
-//            this.startGetTagsElapsedTimer();
-//            // Get remote reference
-//            final Collection<Ref> remoteRefs = this.repoRef.lsRemote()
-//                    .setCredentialsProvider(new UsernamePasswordCredentialsProvider(GIT_USERNAME, GIT_PASSWORD))
-//                    .setRemote(ORIGIN)
-//                    .setTags(true)
-//                    .setHeads(false)
-//                    .call();
-//            final RevWalk revWalk = new RevWalk(this.repoRef.getRepository());
-//
-//            // Get startCommitDate
-//            final Date latestDate = startCommit != null ?
-//                    revWalk.parseCommit(this.repoRef.getRepository().resolve(startCommit))
-//                            .getAuthorIdent()
-//                            .getWhen()
-//                    : new Date();
-//
-//            // Map all valid commits to the date they were made
-//            final List<CommitData> commitData = remoteRefs.stream().map(ref -> {
-//                        try {
-//                            final RevCommit commit = revWalk.parseCommit(ref.getObjectId());
-//                            final String[] refNameSplit = ref.getName().split("/");
-//                            return new CommitData(
-//                                    commit.getName(),
-//                                    commit.getAuthorIdent().getWhen(),
-//                                    refNameSplit[refNameSplit.length - 1]);
-//                        } catch (IOException e) {
-//                            System.err.println("Error when parsing git tags");
-//                            e.printStackTrace();
-//                            return null;
-//                        } catch (IllegalCharsetNameException e) {
-//                            System.err.println("Illegal charset given in commit metadata: " + e.getCharsetName());
-//                            return null;
-//                        }
-//                    })
-//                    .filter(commit -> commit != null && commit.getDate().before(latestDate))
-//                    .sorted() // TODO updated sorting here?
-//                    .collect(Collectors.toList());
-//
-//            revWalk.dispose();
-//            this.endGetTagsElapsedTimer();
-//
-//            // Build reference objects from parsed tags
-//            return commitData.stream()
-//                    .map(commitDataObject ->
-//                            new RepositoryCommitReference(
-//                                    this.repoRef,
-//                                    GitUtil.getRepoNameFromGithubURI(this.gitURI),
-//                                    this.gitURI,
-//                                    commitDataObject.getCommit(),
-//                                    commitDataObject.getTag()))
-//                    .collect(Collectors.toList());
-//
-//        } catch (GitAPIException e) {
-//            System.err.println("Error when fetching tags");
-//        } catch (IOException e) {
-//            System.err.println("Error when fetching start commit date.");
-//        }
-//        return new ArrayList<>();
-//    }
-
     public RepositoryCommitReference getMostRecentCommit(String mostRecentCommit) {
         final RevWalk revWalk = new RevWalk(this.repoRef.getRepository());
         try {
@@ -163,7 +90,7 @@ public class RepositoryInitializer {
                             mostRecentCommit != null ? mostRecentCommit : Constants.HEAD))
             );
         } catch (IOException e) {
-            System.err.println("Uh oh");
+            System.err.println("Could not parse the supplied commit for the repository: " + mostRecentCommit);
         }
         return null;
     }
@@ -200,52 +127,5 @@ public class RepositoryInitializer {
         this.cloneTimer.end();
         System.out.println(String.format("Finished cloning: %s in %,dms",
                 GitUtil.getRepoNameFromGithubURI(this.gitURI), this.cloneTimer.readMS()));
-    }
-
-    private void startGetTagsElapsedTimer() {
-        this.tagsTimer = new ElapsedTimer();
-        this.tagsTimer.start();
-    }
-
-    private void endGetTagsElapsedTimer() {
-        this.tagsTimer.end();
-        System.out.println(String.format("Finished gathering tags for %s in %,dms",
-                GitUtil.getRepoNameFromGithubURI(this.gitURI), this.tagsTimer.readMS()));
-    }
-
-
-    private class CommitData implements Comparable {
-        private String commit;
-        private Date date;
-        private String tag;
-        private CommitData(String commit, Date date, String tag) {
-            this.commit = commit;
-            this.date = date;
-            this.tag = tag;
-        }
-
-        private String getCommit() {
-            return this.commit;
-        }
-        private Date getDate() {
-            return this.date;
-        }
-        private String getTag() {
-            return this.tag;
-        }
-
-        @Override
-        public int compareTo(Object o) {
-            if( o instanceof CommitData) {
-                if( o.equals(this) ) {
-                    return 0;
-                }
-                if( ((CommitData) o).getDate().before(this.getDate()) ) {
-                    return 1;
-                }
-                return -1;
-            }
-            return 0;
-        }
     }
 }

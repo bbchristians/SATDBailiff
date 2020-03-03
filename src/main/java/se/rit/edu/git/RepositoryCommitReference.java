@@ -8,9 +8,9 @@ import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
+import se.rit.edu.satd.comment.GroupedComment;
 import se.rit.edu.satd.detector.SATDDetector;
 import se.rit.edu.util.ElapsedTimer;
-import se.rit.edu.satd.comment.GroupedComment;
 import se.rit.edu.util.JavaParseUtil;
 
 import java.io.IOException;
@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Class used to represent a commit inside a git repository
+ */
 public class RepositoryCommitReference {
 
     private RevCommit commit;
@@ -54,6 +57,9 @@ public class RepositoryCommitReference {
         return this.gitInstance;
     }
 
+    /**
+     * @return A list of the commit's parents
+     */
     public List<RepositoryCommitReference> getParentCommitReferences() {
         final RevWalk rw = new RevWalk(this.gitInstance.getRepository());
         return Arrays.stream(this.commit.getParents())
@@ -73,11 +79,13 @@ public class RepositoryCommitReference {
                 .collect(Collectors.toList());
     }
 
-    public Map<String, List<GroupedComment>> getFilesToSAIDOccurrences(SATDDetector detector, List<String> filesToSearch){
-
-        if( this.satdOccurrences != null ) {
-            return this.satdOccurrences;
-        }
+    /**
+     * @param detector a detector to classify comments in the files as SATD
+     * @param filesToSearch a list of files to limit the search to
+     * @return a mapping of files to the SATD Occurrences in each of those files
+     */
+    public Map<String, List<GroupedComment>> getFilesToSATDOccurrences(
+            SATDDetector detector, List<String> filesToSearch){
 
         this.startSATDParseTimer();
 
@@ -87,17 +95,25 @@ public class RepositoryCommitReference {
             // Walk through each Java file in the repository at the time of the commit
             while (thisRepoWalker.next()) {
 
-                if( filesToSearch.contains(thisRepoWalker.getPathString())) {
-                    // Get loader to load file contents into memory
-                    final ObjectLoader fileLoader = this.gitInstance.getRepository()
-                            .open(thisRepoWalker.getObjectId(0));
-                    // Parse Java file for SATD and add it to the map
-                    filesToSATDMap.put(
-                            thisRepoWalker.getPathString(),
-                            JavaParseUtil.parseFileForComments(fileLoader.openStream()).stream()
-                                    .filter(groupedComment -> detector.isSATD(groupedComment.getComment()))
-                                    .collect(Collectors.toList())
-                    );
+                final String curFileName = thisRepoWalker.getPathString();
+
+                if( filesToSearch.contains(curFileName)) {
+
+                    // See if the parse was cached
+                    if( this.satdOccurrences != null && this.satdOccurrences.containsKey(curFileName) ) {
+                        filesToSATDMap.put(curFileName, this.satdOccurrences.get(curFileName));
+                    } else {
+                        // Get loader to load file contents into memory
+                        final ObjectLoader fileLoader = this.gitInstance.getRepository()
+                                .open(thisRepoWalker.getObjectId(0));
+                        // Parse Java file for SATD and add it to the map
+                        filesToSATDMap.put(
+                                curFileName,
+                                JavaParseUtil.parseFileForComments(fileLoader.openStream()).stream()
+                                        .filter(groupedComment -> detector.isSATD(groupedComment.getComment()))
+                                        .collect(Collectors.toList())
+                        );
+                    }
                 }
             }
         } catch (MissingObjectException | IncorrectObjectTypeException | CorruptObjectException e) {
