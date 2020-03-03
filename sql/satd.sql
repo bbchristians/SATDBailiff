@@ -1,18 +1,10 @@
-DROP TABLE IF EXISTS satd.CommitMetaData, satd.Commits, satd.SATD, satd.SATDInFile, satd.Tags, satd.Projects;
+DROP TABLE IF EXISTS satd.Commits, satd.SATD, satd.SATDInFile, satd.Projects;
 
 CREATE TABLE IF NOT EXISTS satd.Projects (
 	p_id INT AUTO_INCREMENT,
     p_name VARCHAR(255) NOT NULL UNIQUE,
     p_url VARCHAR(255) NOT NULL UNIQUE,
     PRIMARY KEY (p_id)
-);
-
-CREATE TABLE IF NOT EXISTS satd.Tags (
-	t_id INT AUTO_INCREMENT,
-	tag VARCHAR(255),
-    p_id INT,
-    PRIMARY KEY (t_id),
-    FOREIGN KEY (p_id) REFERENCES satd.Projects(p_id)
 );
 
 CREATE TABLE IF NOT EXISTS satd.SATDInFile (
@@ -27,35 +19,31 @@ CREATE TABLE IF NOT EXISTS satd.SATDInFile (
     PRIMARY KEY (f_id)
 );
 
+CREATE TABLE IF NOT EXISTS satd.Commits(
+	commit_hash varchar(256),
+    p_id INT,
+    author_name varchar(256),
+    author_email varchar(256),
+    author_date DATE,
+    committer_name varchar(256),
+    committer_email varchar(256),
+    commit_date DATE,
+    PRIMARY KEY (commit_hash),
+    FOREIGN KEY (p_id) REFERENCES Projects(p_id)
+);
+
 CREATE TABLE IF NOT EXISTS satd.SATD (
 	satd_id INT AUTO_INCREMENT,
-	first_tag_id INT,
-    second_tag_id INT,
+    p_id INT,
+	first_commit varchar(256),
+    second_commit varchar(256),
     first_file INT,
     second_file INT,
     resolution VARCHAR(64),
     PRIMARY KEY (satd_id),
-    FOREIGN KEY (first_tag_id) REFERENCES satd.Tags(t_id),
-    FOREIGN KEY (second_tag_id) REFERENCES satd.Tags(t_id),
+    FOREIGN KEY (p_id) REFERENCES satd.Projects(p_id),
+    FOREIGN KEY (first_commit) REFERENCES satd.Commits(commit_hash),
+    FOREIGN KEY (second_commit) REFERENCES satd.Commits(commit_hash),
     FOREIGN KEY (first_file) REFERENCES satd.SATDInFile(f_id),
     FOREIGN KEY (second_file) REFERENCES satd.SATDInFile(f_id)
-);
-
-CREATE TABLE IF NOT EXISTS satd.CommitMetaData(
-	commit_hash varchar(256),
-    author_name varchar(256),
-    author_email varchar(256),
-    author_date date,
-    committer_name varchar(256),
-    committer_email varchar(256),
-    commit_date date,
-    PRIMARY KEY (commit_hash)
-);
-
-CREATE TABLE IF NOT EXISTS satd.Commits (
-	satd_id INT,
-    commit_hash varchar(256),
-    commit_type ENUM('BEFORE', 'BETWEEN', 'ADDRESSED'),
-    FOREIGN KEY (satd_id) REFERENCES satd.SATD(satd_id),
-    FOREIGN KEY (commit_hash) REFERENCES satd.CommitMetaData(commit_hash)
-);  
+); 

@@ -1,14 +1,12 @@
 package se.rit.edu;
 
 import se.rit.edu.git.GitUtil;
-import se.rit.edu.git.RepositoryCommitReference;
 import se.rit.edu.satd.SATDMiner;
 import se.rit.edu.satd.detector.SATDDetectorImpl;
 import se.rit.edu.satd.writer.MySQLOutputWriter;
 import se.rit.edu.util.ElapsedTimer;
 
 import java.io.File;
-import java.util.List;
 import java.util.Scanner;
 
 
@@ -37,15 +35,17 @@ public class Main {
             timer.start();
 
             SATDMiner miner = new SATDMiner(repo);
-            List<RepositoryCommitReference> repos = miner.getReposAtReleases(SATDMiner.ReleaseSortType.RELEASE_PARSE);
+//            List<RepositoryCommitReference> repos = miner.getReposAtReleases(SATDMiner.ReleaseSortType.RELEASE_PARSE);
 
-            System.out.println(String.format("%d tags found in repository.", repos.size()));
+
+//            System.out.println(String.format("%d tags found in repository.", repos.size()));
 
             miner.setSatdDetector(new SATDDetectorImpl());
 
 //            miner.writeRepoSATD(repos, new CSVOutputWriter(
 //                    new File(String.join(File.separator, OUT_DIR, GitUtil.getRepoNameFromGithubURI(repo) + ".csv"))));
-            miner.writeRepoSATD(repos, new MySQLOutputWriter("mySQL.properties"));
+            miner.writeRepoSATD(miner.getBaseCommit("809e7225e497b1db1594d56155b25ad64bab6dce"),
+                    new MySQLOutputWriter("mySQL.properties"));
 
             miner.cleanRepo();
 

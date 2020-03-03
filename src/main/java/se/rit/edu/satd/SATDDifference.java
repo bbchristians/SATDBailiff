@@ -1,6 +1,7 @@
 package se.rit.edu.satd;
 
 import org.apache.commons.text.similarity.LevenshteinDistance;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.jetbrains.annotations.NotNull;
 import se.rit.edu.git.models.CommitMetaData;
 
@@ -22,8 +23,8 @@ public class SATDDifference {
     private static final double LEVENSHTEIN_DISTANCE_MIN = 0.50;
 
     // Required fields for maintaining an SATD Difference object
-    private String oldTag;
-    private String newTag;
+    private RevCommit oldCommit;
+    private RevCommit newCommit;
     private String projectName;
     private String projectURI;
 
@@ -32,13 +33,14 @@ public class SATDDifference {
     private List<SATDInstance> addressedOrChangedSATD = new ArrayList<>();
     private List<SATDInstance> changedOrAddedSATD = new ArrayList<>();
     private List<SATDInstance> unaddressedSATD = new ArrayList<>();
+    private List<SATDInstance> fileRenamedSATD = new ArrayList<>();
 
     public SATDDifference(@NotNull String projectName, @NotNull String projectURI,
-                          @NotNull String oldTag, @NotNull String newTag) {
+                          @NotNull RevCommit oldCommit, @NotNull RevCommit newCommit) {
         this.projectName = projectName;
         this.projectURI = projectURI;
-        this.oldTag = oldTag;
-        this.newTag = newTag;
+        this.oldCommit = oldCommit;
+        this.newCommit = newCommit;
     }
 
     public void addFileRemovedSATD(List<SATDInstance> satd) {
@@ -55,6 +57,10 @@ public class SATDDifference {
 
     public void addUnaddressedSATD(List<SATDInstance> satd) {
         this.unaddressedSATD.addAll(satd);
+    }
+
+    public void addFileRenamedSATD(List<SATDInstance> satd) {
+        this.fileRenamedSATD.addAll(satd);
     }
 
     public List<SATDInstance> getFileRemovedSATD() {
@@ -81,12 +87,12 @@ public class SATDDifference {
         return this.projectURI;
     }
 
-    public String getOldTag() {
-        return this.oldTag;
+    public RevCommit getOldCommit() {
+        return oldCommit;
     }
 
-    public String getNewTag() {
-        return this.newTag;
+    public RevCommit getNewCommit() {
+        return newCommit;
     }
 
     public List<SATDInstance> getAllSATDInstances() {
@@ -95,6 +101,7 @@ public class SATDDifference {
         allInstances.addAll(this.getAddressedOrChangedSATD());
         allInstances.addAll(this.getChangedOrAddedSATD());
         allInstances.addAll(this.getUnaddressedSATD());
+        allInstances.addAll(this.fileRenamedSATD);
         return allInstances;
     }
 

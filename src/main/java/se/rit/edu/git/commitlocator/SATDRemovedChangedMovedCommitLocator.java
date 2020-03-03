@@ -4,14 +4,10 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.diff.Edit;
-import org.eclipse.jgit.errors.CorruptObjectException;
-import org.eclipse.jgit.errors.IncorrectObjectTypeException;
-import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.lib.ObjectLoader;
-import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.treewalk.TreeWalk;
-import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
+import se.rit.edu.git.GitUtil;
 import se.rit.edu.git.models.CommitMetaData;
 import se.rit.edu.git.models.NullCommitMetaData;
 import se.rit.edu.satd.SATDInstance;
@@ -23,8 +19,13 @@ import se.rit.edu.util.NullGroupedComment;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static se.rit.edu.git.GitUtil.getTreeWalker;
 
 public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
 
@@ -60,7 +61,7 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
         String curName = satdInstance.getOldFile();
         for(int i = 1; i < allCommits.size(); i++) {
             final String finalCurName = curName;
-            curName = CommitLocator.getDiffEntries(
+            curName = GitUtil.getDiffEntries(
                     gitInstance,
                     allCommits.get(i-1).getTree(),
                     allCommits.get(i).getTree()).stream()
@@ -111,7 +112,7 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
             // We know the SATD was addressed here so we can set the final file location
             satdInstance.setNewFile(commitFileMapping.get(secondCommit));
             // See how this commit impacted the SATD
-            final Optional<Edit> editBetween = CommitLocator.getDiffEntries(gitInstance, firstCommit.getTree(), secondCommit.getTree()).stream()
+            final Optional<Edit> editBetween = GitUtil.getDiffEntries(gitInstance, firstCommit.getTree(), secondCommit.getTree()).stream()
                     .filter(de -> de.getOldPath().equals(commitFileMapping.get(firstCommit)))
                     .filter(de -> de.getChangeType().equals(DiffEntry.ChangeType.MODIFY))
                     .map(de -> {
@@ -151,7 +152,7 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
 
     private GroupedComment commitContainsSATD(Git gitInstance, RevCommit commit,
                                        SATDInstance satdInstance, String curFileName) throws IOException {
-        final TreeWalk thisRepoWalker = getTreeWalker(gitInstance.getRepository(), commit);
+        final TreeWalk thisRepoWalker = getTreeWalker(gitInstance, commit);
         // Walk through the repo at this commit until the pertinent file is located
         while ( thisRepoWalker.next() ) {
             // If the file is the one we care about
@@ -170,21 +171,6 @@ public class SATDRemovedChangedMovedCommitLocator extends CommitLocator {
         System.err.println("File not found in repository when it should have been -- this should not occur!");
         return new NullGroupedComment();
     }
-
-    private TreeWalk getTreeWalker(Repository repository, RevCommit commit) {
-        TreeWalk treeWalk = new TreeWalk(repository);
-        try {
-            treeWalk.addTree(commit.getTree());
-            treeWalk.setRecursive(true);
-            treeWalk.setFilter(PathSuffixFilter.create(".java"));
-        } catch (MissingObjectException | IncorrectObjectTypeException | CorruptObjectException e) {
-            System.err.println("Exception in getting tree walker.");
-        } catch (IOException e) {
-            System.err.println("IOException in getting tree walker.");
-        }
-        return treeWalk;
-    }
-
     private DiffFormatter getFormatter(Git gitInstance) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         DiffFormatter formatter = new DiffFormatter(outputStream);

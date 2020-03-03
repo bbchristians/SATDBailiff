@@ -74,20 +74,4 @@ public abstract class CommitLocator {
      */
     public abstract void findCommitAddressed(Git gitInstance, SATDInstance satdInstance, String v1, String v2);
 
-    static List<DiffEntry> getDiffEntries(Git gitInstance, RevTree tree1, RevTree tree2) {
-        try {
-            TreeWalk tw = new TreeWalk(gitInstance.getRepository());
-            tw.setRecursive(true);
-            tw.addTree(tree1);
-            tw.addTree(tree2);
-
-            RenameDetector rd = new RenameDetector(gitInstance.getRepository());
-            rd.addAll(DiffEntry.scan(tw));
-
-            return rd.compute(tw.getObjectReader(), null);
-        } catch (IOException e) {
-            System.err.println("Error diffing trees.");
-        }
-        return new ArrayList<>();
-    }
 }

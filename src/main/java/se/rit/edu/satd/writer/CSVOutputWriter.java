@@ -67,8 +67,8 @@ public class CSVOutputWriter implements OutputWriter {
                 .map(CSVOutputWriter::instanceToCSV)
                 .map(csv -> new String[] {
                         diff.getProjectName(),
-                        diff.getOldTag(),
-                        diff.getNewTag(),
+                        diff.getOldCommit().getName(),
+                        diff.getNewCommit().getName(),
                         csv[0],
                         csv[1],
                         csv[2],

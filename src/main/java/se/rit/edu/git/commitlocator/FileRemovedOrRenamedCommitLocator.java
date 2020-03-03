@@ -4,6 +4,7 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.errors.CorruptObjectException;
 import org.eclipse.jgit.revwalk.RevCommit;
+import se.rit.edu.git.GitUtil;
 import se.rit.edu.git.models.CommitMetaData;
 import se.rit.edu.git.models.NullCommitMetaData;
 import se.rit.edu.satd.SATDInstance;
@@ -31,7 +32,7 @@ public class FileRemovedOrRenamedCommitLocator extends CommitLocator {
             String fileToFindDeletion = satdInstance.getOldFile();
             RevCommit commitIfRenamed = null;
             for( int i = 1; i < commitsBetween.size(); i++ ) {
-                List<DiffEntry> lde = CommitLocator.getDiffEntries(gitInstance,
+                List<DiffEntry> lde = GitUtil.getDiffEntries(gitInstance,
                         commitsBetween.get(i-1).getTree(), commitsBetween.get(i).getTree());
                 for (DiffEntry de : lde) {
                     // If the file was removed and is the file we're looking for,

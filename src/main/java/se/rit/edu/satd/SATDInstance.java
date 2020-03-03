@@ -4,7 +4,6 @@ import com.sun.istack.internal.NotNull;
 import se.rit.edu.git.models.CommitMetaData;
 import se.rit.edu.git.models.NullCommitMetaData;
 import se.rit.edu.util.GroupedComment;
-import se.rit.edu.util.NullGroupedComment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,8 +23,9 @@ public class SATDInstance {
     // SATD Instance mandatory fields
     private String oldFile;
     private String newFile;
-    private GroupedComment commentOld = new NullGroupedComment();
-    private GroupedComment commentNew = new NullGroupedComment();
+    private GroupedComment commentOld;
+    private GroupedComment commentNew;
+    private SATDResolution resolution;
 
     // Commit Metadata for the SATD Instance
     private List<CommitMetaData> initialBlameCommits = new ArrayList<>();
@@ -34,14 +34,15 @@ public class SATDInstance {
     private CommitMetaData commitAddressed = new NullCommitMetaData();
 
     private String nameOfFileWhenAddressed = FILE_UNKNOWN;
-    private SATDResolution resolution = SATDResolution.UNKNOWN;
 
     public SATDInstance(@NotNull String oldFile, @NotNull String newFile,
-                        @NotNull GroupedComment oldComment, @NotNull GroupedComment newComment) {
+                        @NotNull GroupedComment oldComment, @NotNull GroupedComment newComment,
+                        @NotNull SATDResolution resolution) {
         this.oldFile = oldFile;
         this.newFile = newFile;
         this.commentOld = oldComment;
         this.commentNew = newComment;
+        this.resolution = resolution;
     }
 
     public String getNameOfFileWhenAddressed() {
@@ -124,10 +125,6 @@ public class SATDInstance {
 
     public void addInitialBlameCommit(CommitMetaData data) {
         this.initialBlameCommits.add(data);
-    }
-
-    public void addCommitBetweenVersions(CommitMetaData data) {
-        this.commitsBetweenVersions.add(data);
     }
 
     public void setCommitAddressed(CommitMetaData data) {

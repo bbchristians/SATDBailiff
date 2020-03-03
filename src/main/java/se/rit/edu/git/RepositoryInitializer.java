@@ -3,20 +3,14 @@ package se.rit.edu.git;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import se.rit.edu.util.ElapsedTimer;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.IllegalCharsetNameException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * A class that, given a git repository, collects references to all tags in that repository
@@ -87,75 +81,91 @@ public class RepositoryInitializer {
         return this.gitDidInit;
     }
 
-    /**
-     * Users git tags to generate a list of repository references
-     * @param startCommit The latest commit to consider
-     * @return a list of repository references for each tag in the repository
-     */
-    public List<RepositoryCommitReference> getComparableRepositories(String startCommit) {
-        if( !this.gitDidInit ) {
-            throw new IllegalStateException("Tried to get repositories from initializer that failed initialization.");
-        }
+//    /**
+//     * Users git tags to generate a list of repository references
+//     * @param startCommit The latest commit to consider
+//     * @return a list of repository references for each tag in the repository
+//     */
+//    public List<RepositoryCommitReference> getComparableRepositories(String startCommit) {
+//        if( !this.gitDidInit ) {
+//            throw new IllegalStateException("Tried to get repositories from initializer that failed initialization.");
+//        }
+//        try {
+//            this.startGetTagsElapsedTimer();
+//            // Get remote reference
+//            final Collection<Ref> remoteRefs = this.repoRef.lsRemote()
+//                    .setCredentialsProvider(new UsernamePasswordCredentialsProvider(GIT_USERNAME, GIT_PASSWORD))
+//                    .setRemote(ORIGIN)
+//                    .setTags(true)
+//                    .setHeads(false)
+//                    .call();
+//            final RevWalk revWalk = new RevWalk(this.repoRef.getRepository());
+//
+//            // Get startCommitDate
+//            final Date latestDate = startCommit != null ?
+//                    revWalk.parseCommit(this.repoRef.getRepository().resolve(startCommit))
+//                            .getAuthorIdent()
+//                            .getWhen()
+//                    : new Date();
+//
+//            // Map all valid commits to the date they were made
+//            final List<CommitData> commitData = remoteRefs.stream().map(ref -> {
+//                        try {
+//                            final RevCommit commit = revWalk.parseCommit(ref.getObjectId());
+//                            final String[] refNameSplit = ref.getName().split("/");
+//                            return new CommitData(
+//                                    commit.getName(),
+//                                    commit.getAuthorIdent().getWhen(),
+//                                    refNameSplit[refNameSplit.length - 1]);
+//                        } catch (IOException e) {
+//                            System.err.println("Error when parsing git tags");
+//                            e.printStackTrace();
+//                            return null;
+//                        } catch (IllegalCharsetNameException e) {
+//                            System.err.println("Illegal charset given in commit metadata: " + e.getCharsetName());
+//                            return null;
+//                        }
+//                    })
+//                    .filter(commit -> commit != null && commit.getDate().before(latestDate))
+//                    .sorted() // TODO updated sorting here?
+//                    .collect(Collectors.toList());
+//
+//            revWalk.dispose();
+//            this.endGetTagsElapsedTimer();
+//
+//            // Build reference objects from parsed tags
+//            return commitData.stream()
+//                    .map(commitDataObject ->
+//                            new RepositoryCommitReference(
+//                                    this.repoRef,
+//                                    GitUtil.getRepoNameFromGithubURI(this.gitURI),
+//                                    this.gitURI,
+//                                    commitDataObject.getCommit(),
+//                                    commitDataObject.getTag()))
+//                    .collect(Collectors.toList());
+//
+//        } catch (GitAPIException e) {
+//            System.err.println("Error when fetching tags");
+//        } catch (IOException e) {
+//            System.err.println("Error when fetching start commit date.");
+//        }
+//        return new ArrayList<>();
+//    }
+
+    public RepositoryCommitReference getMostRecentCommit(String mostRecentCommit) {
+        final RevWalk revWalk = new RevWalk(this.repoRef.getRepository());
         try {
-            this.startGetTagsElapsedTimer();
-            // Get remote reference
-            final Collection<Ref> remoteRefs = this.repoRef.lsRemote()
-                    .setCredentialsProvider(new UsernamePasswordCredentialsProvider(GIT_USERNAME, GIT_PASSWORD))
-                    .setRemote(ORIGIN)
-                    .setTags(true)
-                    .setHeads(false)
-                    .call();
-            final RevWalk revWalk = new RevWalk(this.repoRef.getRepository());
-
-            // Get startCommitDate
-            final Date latestDate = startCommit != null ?
-                    revWalk.parseCommit(this.repoRef.getRepository().resolve(startCommit))
-                            .getAuthorIdent()
-                            .getWhen()
-                    : new Date();
-
-            // Map all valid commits to the date they were made
-            final List<CommitData> commitData = remoteRefs.stream().map(ref -> {
-                        try {
-                            final RevCommit commit = revWalk.parseCommit(ref.getObjectId());
-                            final String[] refNameSplit = ref.getName().split("/");
-                            return new CommitData(
-                                    commit.getName(),
-                                    commit.getAuthorIdent().getWhen(),
-                                    refNameSplit[refNameSplit.length - 1]);
-                        } catch (IOException e) {
-                            System.err.println("Error when parsing git tags");
-                            e.printStackTrace();
-                            return null;
-                        } catch (IllegalCharsetNameException e) {
-                            System.err.println("Illegal charset given in commit metadata: " + e.getCharsetName());
-                            return null;
-                        }
-                    })
-                    .filter(commit -> commit != null && commit.getDate().before(latestDate))
-                    .sorted() // TODO updated sorting here?
-                    .collect(Collectors.toList());
-
-            revWalk.dispose();
-            this.endGetTagsElapsedTimer();
-
-            // Build reference objects from parsed tags
-            return commitData.stream()
-                    .map(commitDataObject ->
-                            new RepositoryCommitReference(
-                                    this.repoRef,
-                                    GitUtil.getRepoNameFromGithubURI(this.gitURI),
-                                    this.gitURI,
-                                    commitDataObject.getCommit(),
-                                    commitDataObject.getTag()))
-                    .collect(Collectors.toList());
-
-        } catch (GitAPIException e) {
-            System.err.println("Error when fetching tags");
+            return new RepositoryCommitReference(
+                    this.repoRef,
+                    GitUtil.getRepoNameFromGithubURI(this.gitURI),
+                    this.gitURI,
+                    revWalk.parseCommit(this.repoRef.getRepository().resolve(
+                            mostRecentCommit != null ? mostRecentCommit : Constants.HEAD))
+            );
         } catch (IOException e) {
-            System.err.println("Error when fetching start commit date.");
+            System.err.println("Uh oh");
         }
-        return new ArrayList<>();
+        return null;
     }
 
     /**

@@ -8,13 +8,14 @@ import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
-import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
 import se.rit.edu.satd.detector.SATDDetector;
 import se.rit.edu.util.ElapsedTimer;
 import se.rit.edu.util.GroupedComment;
 import se.rit.edu.util.JavaParseUtil;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,21 +23,19 @@ import java.util.stream.Collectors;
 
 public class RepositoryCommitReference {
 
-    private String commit;
+    private RevCommit commit;
     private Git gitInstance;
-    private String tag;
     private String projectName;
     private String projectURI;
     private Map<String, List<GroupedComment>> satdOccurrences = null;
 
     private ElapsedTimer timer = null;
 
-    RepositoryCommitReference(Git gitInstance, String projectName, String projectURI, String commitHash, String tag) {
-        this.commit = commitHash;
+    RepositoryCommitReference(Git gitInstance, String projectName, String projectURI, RevCommit commit) {
+        this.commit = commit;
         this.projectName = projectName;
         this.projectURI = projectURI;
         this.gitInstance = gitInstance;
-        this.tag = tag;
     }
 
     public String getProjectName() {
@@ -47,16 +46,31 @@ public class RepositoryCommitReference {
         return this.projectURI;
     }
 
-    public String getTag() {
-        return this.tag;
-    }
-
-    public String getCommit() {
+    public RevCommit getCommit() {
         return this.commit;
     }
 
     public Git getGitInstance() {
         return this.gitInstance;
+    }
+
+    public List<RepositoryCommitReference> getParentCommitReferences() {
+        final RevWalk rw = new RevWalk(this.gitInstance.getRepository());
+        return Arrays.stream(this.commit.getParents())
+                .map(RevCommit::toObjectId)
+                .map(id -> {
+                        try {
+                            return rw.parseCommit(id);
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }})
+                .map(parent -> new RepositoryCommitReference(
+                        this.gitInstance,
+                        this.projectName,
+                        this.projectURI,
+                        parent
+                ))
+                .collect(Collectors.toList());
     }
 
     public Map<String, List<GroupedComment>> getFilesToSAIDOccurrences(SATDDetector detector){
@@ -67,7 +81,7 @@ public class RepositoryCommitReference {
 
         this.startSATDParseTimer();
 
-        final TreeWalk thisRepoWalker = this.getTreeWalker();
+        final TreeWalk thisRepoWalker = GitUtil.getTreeWalker(this.gitInstance, this.commit);
         final Map<String, List<GroupedComment>> filesToSATDMap = new HashMap<>();
         try {
             // Walk through each Java file in the repository at the time of the commit
@@ -98,29 +112,6 @@ public class RepositoryCommitReference {
     }
 
     /**
-     * @return a TreeWalk instance for the repository at the given commit
-     */
-    private TreeWalk getTreeWalker() {
-        TreeWalk treeWalk = new TreeWalk(this.gitInstance.getRepository());
-        RevWalk revWalk = new RevWalk(this.gitInstance.getRepository());
-        try {
-            RevCommit commit = revWalk.parseCommit(this.gitInstance.getRepository().resolve(this.commit));
-            treeWalk.addTree(commit.getTree());
-            treeWalk.setRecursive(true);
-            treeWalk.setFilter(PathSuffixFilter.create(".java"));
-        } catch (MissingObjectException | IncorrectObjectTypeException | CorruptObjectException e) {
-            System.err.println("Exception in getting tree walker.");
-            e.printStackTrace();
-        } catch (IOException e) {
-            System.err.println("IOException in getting tree walker.");
-            e.printStackTrace();
-        } finally {
-            revWalk.dispose();
-        }
-        return treeWalk;
-    }
-
-    /**
      * Overwrites and starts a time to record the time it takes to locate SATD In the repository
      * at the given commit
      */
@@ -135,8 +126,8 @@ public class RepositoryCommitReference {
     private void endSATDParseTimer() {
         if( this.timer != null ) {
             this.timer.end();
-            System.out.println(String.format("Finished finding SATD in %s/%s in %,dms",
-                    this.projectName, this.tag, this.timer.readMS()));
+            System.out.println(String.format("Finished finding SATD in %s/commit/%s in %,dms",
+                    this.projectName, this.commit.getName(), this.timer.readMS()));
         }
     }
 }
