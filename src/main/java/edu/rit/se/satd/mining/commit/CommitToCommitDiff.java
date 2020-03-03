@@ -1,10 +1,10 @@
 package edu.rit.se.satd.mining.commit;
 
 import edu.rit.se.git.RepositoryCommitReference;
-import edu.rit.se.satd.SATDDifference;
 import edu.rit.se.satd.SATDInstance;
 import edu.rit.se.satd.comment.NullGroupedComment;
 import edu.rit.se.util.JavaParseUtil;
+import edu.rit.se.util.SimilarityUtil;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
@@ -54,16 +54,16 @@ public class CommitToCommitDiff {
                 .collect(Collectors.toList());
     }
 
-    public List<SATDInstance> loadDiffsFor(SATDDifference diff, String filePath, GroupedComment comment) {
+    public List<SATDInstance> loadDiffsFor(String filePath, GroupedComment comment) {
         return diffEntries.stream()
                 .filter(entry -> entry.getOldPath().equals(filePath))
-                .map(diffEntry -> this.placeDiffs(diff, diffEntry, comment))
+                .map(diffEntry -> this.getSATDFromDiff(diffEntry, comment))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
 
     }
 
-    private List<SATDInstance> placeDiffs(SATDDifference diff, DiffEntry diffEntry, GroupedComment comment) {
+    private List<SATDInstance> getSATDFromDiff(DiffEntry diffEntry, GroupedComment comment) {
         final List<SATDInstance> satd = new ArrayList<>();
 
         switch (diffEntry.getChangeType()) {
@@ -112,28 +112,47 @@ public class CommitToCommitDiff {
                         // TODO Determine if the SATD was changed or removed
                         satd.addAll(
                                 updatedComments.stream()
-                                        .map(newComment -> new SATDInstance(
-                                                diffEntry.getOldPath(),
-                                                diffEntry.getNewPath(),
-                                                comment,
-                                                newComment,
-                                                SATDInstance.SATDResolution.SATD_POSSIBLY_REMOVED))
+                                        .flatMap(newComment -> {
+                                            List<SATDInstance> newSATD = new ArrayList<>();
+                                            // If the comment that was added is similar enough to the old comment
+                                            if( SimilarityUtil.commentsAreSimilar(comment, newComment) ) {
+                                                // Add an SATD instance where the comment was changed
+                                                newSATD.add(
+                                                        new SATDInstance(
+                                                            diffEntry.getOldPath(),
+                                                            diffEntry.getNewPath(),
+                                                            comment,
+                                                            newComment,
+                                                            SATDInstance.SATDResolution.SATD_CHANGED));
+                                            } else {
+                                                // Add two separate SATD Instances -- 1 removal and 1 addition
+                                                newSATD.add(
+                                                        new SATDInstance(
+                                                                diffEntry.getOldPath(),
+                                                                diffEntry.getNewPath(),
+                                                                comment,
+                                                                new NullGroupedComment(),
+                                                                SATDInstance.SATDResolution.SATD_REMOVED
+                                                        )
+                                                );
+                                                // TODO is this going to add duplicate Add entries??
+                                                newSATD.add(
+                                                        new SATDInstance(
+                                                                diffEntry.getOldPath(),
+                                                                diffEntry.getNewPath(),
+                                                                new NullGroupedComment(),
+                                                                comment,
+                                                                SATDInstance.SATDResolution.SATD_ADDED
+                                                        )
+                                                );
+                                            }
+                                            return newSATD.stream();
+                                        })
                                         .collect(Collectors.toList()));
                     }
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
-                break;
-            case ADD:
-                satd.add(
-                        new SATDInstance(
-                                diffEntry.getOldPath(),
-                                diffEntry.getNewPath(),
-                                new NullGroupedComment(),
-                                comment, // TODO is this right?
-                                SATDInstance.SATDResolution.SATD_ADDED
-                        )
-                );
                 break;
         }
         return satd;

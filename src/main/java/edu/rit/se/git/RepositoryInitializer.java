@@ -79,7 +79,7 @@ public class RepositoryInitializer {
         return this.gitDidInit;
     }
 
-    public RepositoryCommitReference getMostRecentCommit(String mostRecentCommit) {
+    public RepositoryCommitReference getMostRecentCommit(String head) {
         final RevWalk revWalk = new RevWalk(this.repoRef.getRepository());
         try {
             return new RepositoryCommitReference(
@@ -87,10 +87,10 @@ public class RepositoryInitializer {
                     GitUtil.getRepoNameFromGithubURI(this.gitURI),
                     this.gitURI,
                     revWalk.parseCommit(this.repoRef.getRepository().resolve(
-                            mostRecentCommit != null ? mostRecentCommit : Constants.HEAD))
+                            head != null ? head : Constants.HEAD))
             );
         } catch (IOException e) {
-            System.err.println("Could not parse the supplied commit for the repository: " + mostRecentCommit);
+            System.err.println("Could not parse the supplied commit for the repository: " + head);
         }
         return null;
     }

@@ -29,12 +29,12 @@ public class SATDMiner {
         this.repositoryURI = repositoryURI;
     }
 
-    public RepositoryCommitReference getBaseCommit(String mostRecentCommit) {
+    public RepositoryCommitReference getBaseCommit(String head) {
         if( (repo == null || !repo.didInitialize()) && !this.initializeRepo() ) {
             System.err.println("Repository failed to initialize");
             return null;
         }
-        return this.repo.getMostRecentCommit(mostRecentCommit);
+        return this.repo.getMostRecentCommit(head);
     }
 
     public void setSatdDetector(SATDDetector detector) {

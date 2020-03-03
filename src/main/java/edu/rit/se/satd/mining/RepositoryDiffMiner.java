@@ -74,6 +74,7 @@ public class RepositoryDiffMiner {
         final Map<String, List<GroupedComment>> olderSATD = this.firstRepo.getFilesToSATDOccurrences(
                 this.satdDetector, cToCDiff.getModifiedFilesOld());
 
+        // Add SATD Instances that were in the old repo, but possibly modified in the new repo
         diff.addSATDInstances(
                 olderSATD.keySet().stream()
                         .flatMap(fileInOldRepo -> olderSATD.get(fileInOldRepo).stream()
@@ -81,7 +82,7 @@ public class RepositoryDiffMiner {
                                         !newerSATD.keySet().contains(fileInOldRepo) ||
                                                 !newerSATD.get(fileInOldRepo).contains(comment))
                                 .map(comment -> new MappingPair(fileInOldRepo, comment)))
-                        .map(pair -> cToCDiff.loadDiffsFor(diff, pair.getFirst().toString(), (GroupedComment) pair.getSecond()))
+                        .map(pair -> cToCDiff.loadDiffsFor(pair.getFirst().toString(), (GroupedComment) pair.getSecond()))
                         .flatMap(Collection::stream)
                         .collect(Collectors.toList())
         );
