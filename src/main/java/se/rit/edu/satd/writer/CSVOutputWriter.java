@@ -47,7 +47,7 @@ public class CSVOutputWriter implements OutputWriter {
         Writer writer = new BufferedWriter(new FileWriter(this.outFile, true));
         CSVWriter csvWriter = new CSVWriter(writer);
 
-        csvWriter.writeAll(instanceListToCSV(diff, diff.getAllSATDInstances()));
+        csvWriter.writeAll(instanceListToCSV(diff, diff.getSATDInstances()));
 
         csvWriter.close();
     }
@@ -77,8 +77,7 @@ public class CSVOutputWriter implements OutputWriter {
                         csv[5],
                         csv[6],
                         csv[7],
-                        csv[8],
-                        csv[9]
+                        csv[8]
                 })
                 .collect(Collectors.toList());
     }
@@ -95,7 +94,6 @@ public class CSVOutputWriter implements OutputWriter {
                 "" + satdInstance.getStartLineNumberOldFile(),
                 "" + satdInstance.getEndLineNumberOldFile(),
                 satdInstance.getNewFile(),
-                satdInstance.getNameOfFileWhenAddressed(),
                 satdInstance.getResolution().name(),
                 satdInstance.getCommentOld(),
                 satdInstance.getCommentNew()};

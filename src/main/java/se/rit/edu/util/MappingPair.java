@@ -1,5 +1,8 @@
 package se.rit.edu.util;
 
+/**
+ * Helper class for java streams and collection mapping
+ */
 public class MappingPair {
 
     private Object first;

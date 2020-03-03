@@ -2,23 +2,25 @@ package se.rit.edu.satd.mining;
 
 import se.rit.edu.git.RepositoryCommitReference;
 import se.rit.edu.satd.SATDDifference;
+import se.rit.edu.satd.comment.GroupedComment;
 import se.rit.edu.satd.detector.SATDDetector;
-import se.rit.edu.util.ElapsedTimer;
-import se.rit.edu.util.GroupedComment;
+import se.rit.edu.satd.mining.commit.CommitToCommitDiff;
+import se.rit.edu.util.MappingPair;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Mines the differences in SATD between repositories
  */
-public abstract class RepositoryDiffMiner {
+public class RepositoryDiffMiner {
 
     // Required fields
     RepositoryCommitReference firstRepo;
     RepositoryCommitReference secondRepo = null;
     SATDDetector satdDetector = null;
-
-    // Timer for metrics reporting
-    private ElapsedTimer diffTimer = null;
-    private ElapsedTimer mineTimer = null;
 
     /**
      * Adds a second repository to the repository diff miner
@@ -57,82 +59,44 @@ public abstract class RepositoryDiffMiner {
             throw new IllegalStateException(
                     "SATD Detector not set, please call usingDetector() to set the SATD Detector.");
         }
-        return new SATDDifference(
+        SATDDifference diff = new SATDDifference(
                 this.firstRepo.getProjectName(),
                 this.firstRepo.getProjectURI(),
                 this.firstRepo.getCommit(),
                 this.secondRepo.getCommit());
+
+        // Load the diffs between versions
+        final CommitToCommitDiff cToCDiff = new CommitToCommitDiff(this.firstRepo, this.secondRepo);
+
+        // Get the SATD occurrences for each repo
+        final Map<String, List<GroupedComment>> olderSATD = this.firstRepo.getFilesToSAIDOccurrences(
+                this.satdDetector, cToCDiff.getModifiedFilesOld());
+        final Map<String, List<GroupedComment>> newerSATD = this.secondRepo.getFilesToSAIDOccurrences(
+                this.satdDetector, cToCDiff.getModifiedFilesNew());
+
+        diff.addSATDInstances(
+                olderSATD.keySet().stream()
+                        .flatMap(fileInOldRepo -> olderSATD.get(fileInOldRepo).stream()
+                                .filter(comment ->
+                                        !newerSATD.keySet().contains(fileInOldRepo) ||
+                                                !newerSATD.get(fileInOldRepo).contains(comment))
+                                .map(comment -> new MappingPair(fileInOldRepo, comment)))
+                        .map(pair -> cToCDiff.loadDiffsFor(diff, pair.getFirst().toString(), (GroupedComment) pair.getSecond()))
+                        .flatMap(Collection::stream)
+                        .collect(Collectors.toList())
+        );
+
+        return diff;
     }
 
     /**
-     * Starts the elapsed diffTimer for determining the time it took to diff the
-     * repositories.
+     * Generates an initial RepositoryDiffMiner Object
+     * @param repo The earlier of the repository commit references
+     * @return a RepositoryDiffMiner object
      */
-    void startSATDDiffTimer() {
-        this.diffTimer = new ElapsedTimer();
-        this.diffTimer.start();
-    }
-
-    /**
-     * Ends the elapsed time for determining the time it took to diff the
-     * repositories, and also outputs the execution time.
-     */
-    void endSATDDiffTimer() {
-        this.diffTimer.end();
-        System.out.println(String.format("Finished diffing against previous version in %,dms", this.diffTimer.readMS()));
-    }
-
-    void startSATDCommitMineTimer() {
-        this.mineTimer = new ElapsedTimer();
-        this.mineTimer.start();
-    }
-
-    void endSATDCommitMineTimer() {
-        this.mineTimer.end();
-        System.out.println(String.format("Finished mining commit data and finalizing diffs in %,dms", this.mineTimer.readMS()));
-    }
-
-    /**
-     * A models class to store meta-models on whether a commit has been mapped between a new and old SATD instance
-     */
-    class MappedSATDComment {
-
-        private GroupedComment comment;
-        private boolean isMapped = false;
-        private MappedSATDComment otherComment = null;
-
-        MappedSATDComment(GroupedComment oldComment) {
-            this.comment = oldComment;
-        }
-
-        GroupedComment getComment() {
-            return this.comment;
-        }
-
-        boolean commentMatches(MappedSATDComment other) {
-            return this.comment.getComment().equals(other.getComment().getComment());
-        }
-
-        boolean isMapped() {
-            return this.isMapped;
-        }
-
-        boolean isNotMapped() {
-            return !this.isMapped;
-        }
-
-        MappedSATDComment getMappedSATDComment() {
-            return this.otherComment;
-        }
-
-        void setMapped(MappedSATDComment other) {
-            if( this.isMapped ) {
-                System.err.println("It is likely that an SATD instance was unintentionally mapped twice. " +
-                                "This will throw off output models.");
-                return;
-            }
-            this.isMapped = true;
-            this.otherComment = other;
-        }
+    public static RepositoryDiffMiner ofFirstRepository(RepositoryCommitReference repo) {
+        RepositoryDiffMiner miner = new RepositoryDiffMiner();
+        miner.firstRepo = repo;
+        return miner;
     }
 }

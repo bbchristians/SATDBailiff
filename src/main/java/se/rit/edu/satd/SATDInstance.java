@@ -3,7 +3,7 @@ package se.rit.edu.satd;
 import com.sun.istack.internal.NotNull;
 import se.rit.edu.git.models.CommitMetaData;
 import se.rit.edu.git.models.NullCommitMetaData;
-import se.rit.edu.util.GroupedComment;
+import se.rit.edu.satd.comment.GroupedComment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,8 +33,6 @@ public class SATDInstance {
     private List<CommitMetaData> commitsBetweenVersions = new ArrayList<>();
     private CommitMetaData commitAddressed = new NullCommitMetaData();
 
-    private String nameOfFileWhenAddressed = FILE_UNKNOWN;
-
     public SATDInstance(@NotNull String oldFile, @NotNull String newFile,
                         @NotNull GroupedComment oldComment, @NotNull GroupedComment newComment,
                         @NotNull SATDResolution resolution) {
@@ -43,10 +41,6 @@ public class SATDInstance {
         this.commentOld = oldComment;
         this.commentNew = newComment;
         this.resolution = resolution;
-    }
-
-    public String getNameOfFileWhenAddressed() {
-        return nameOfFileWhenAddressed;
     }
 
     public SATDResolution getResolution() {
@@ -123,28 +117,8 @@ public class SATDInstance {
         return this.commitAddressed;
     }
 
-    public void addInitialBlameCommit(CommitMetaData data) {
-        this.initialBlameCommits.add(data);
-    }
-
-    public void setCommitAddressed(CommitMetaData data) {
-        this.commitAddressed = data;
-    }
-
-    public void setNameOfFileWhenAddressed(String nameOfFileWhenAddressed) {
-        this.nameOfFileWhenAddressed = nameOfFileWhenAddressed;
-    }
-
     public void setResolution(SATDResolution resolution) {
         this.resolution = resolution;
-    }
-
-    public void setCommentNew(GroupedComment comment) {
-        this.commentNew = comment;
-    }
-
-    public void setNewFile(String newFile) {
-        this.newFile = newFile;
     }
 
     public enum SATDResolution {
@@ -154,8 +128,6 @@ public class SATDInstance {
         SATD_REMOVED,
         SATD_POSSIBLY_REMOVED,
         SATD_CHANGED,
-        SATD_ADDED,
-        SATD_UNADDRESSED,
-        ERROR_UNKNOWN
+        SATD_ADDED
     }
 }

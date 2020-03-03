@@ -1,9 +1,10 @@
-package se.rit.edu.util;
+package se.rit.edu.satd.comment;
 
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.comments.Comment;
 import org.jetbrains.annotations.NotNull;
+import se.rit.edu.util.JavaParseUtil;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -23,7 +24,7 @@ public class GroupedComment implements Comparable {
     // Default constructor for inheritance
     GroupedComment() { }
 
-    GroupedComment(Comment oldComment) {
+    public GroupedComment(Comment oldComment) {
         if( !oldComment.getRange().isPresent() ) {
             System.err.println("Comment line numbers could not be found.");
         } else {

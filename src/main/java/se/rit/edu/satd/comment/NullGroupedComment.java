@@ -1,4 +1,4 @@
-package se.rit.edu.util;
+package se.rit.edu.satd.comment;
 
 
 public class NullGroupedComment extends GroupedComment {

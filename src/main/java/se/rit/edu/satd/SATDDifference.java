@@ -8,7 +8,6 @@ import se.rit.edu.git.models.CommitMetaData;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 /**
@@ -29,11 +28,7 @@ public class SATDDifference {
     private String projectURI;
 
     // The lists of the different types of SATD that can be found in a project
-    private List<SATDInstance> fileRemovedSATD = new ArrayList<>();
-    private List<SATDInstance> addressedOrChangedSATD = new ArrayList<>();
-    private List<SATDInstance> changedOrAddedSATD = new ArrayList<>();
-    private List<SATDInstance> unaddressedSATD = new ArrayList<>();
-    private List<SATDInstance> fileRenamedSATD = new ArrayList<>();
+    private List<SATDInstance> satdInstances = new ArrayList<>();
 
     public SATDDifference(@NotNull String projectName, @NotNull String projectURI,
                           @NotNull RevCommit oldCommit, @NotNull RevCommit newCommit) {
@@ -43,40 +38,12 @@ public class SATDDifference {
         this.newCommit = newCommit;
     }
 
-    public void addFileRemovedSATD(List<SATDInstance> satd) {
-        this.fileRemovedSATD.addAll(satd);
+    public void addSATDInstances(List<SATDInstance> satd) {
+        this.satdInstances.addAll(satd);
     }
 
-    public void addAddressedOrChangedSATD(List<SATDInstance> satd) {
-        this.addressedOrChangedSATD.addAll(satd);
-    }
-
-    public void addChangedOrAddedSATD(List<SATDInstance> satd) {
-        this.changedOrAddedSATD.addAll(satd);
-    }
-
-    public void addUnaddressedSATD(List<SATDInstance> satd) {
-        this.unaddressedSATD.addAll(satd);
-    }
-
-    public void addFileRenamedSATD(List<SATDInstance> satd) {
-        this.fileRenamedSATD.addAll(satd);
-    }
-
-    public List<SATDInstance> getFileRemovedSATD() {
-        return fileRemovedSATD;
-    }
-
-    public List<SATDInstance> getAddressedOrChangedSATD() {
-        return addressedOrChangedSATD;
-    }
-
-    public List<SATDInstance> getChangedOrAddedSATD() {
-        return changedOrAddedSATD;
-    }
-
-    public List<SATDInstance> getUnaddressedSATD() {
-        return unaddressedSATD;
+    public List<SATDInstance> getSATDInstances() {
+        return satdInstances;
     }
 
     public String getProjectName() {
@@ -95,50 +62,8 @@ public class SATDDifference {
         return newCommit;
     }
 
-    public List<SATDInstance> getAllSATDInstances() {
-        List<SATDInstance> allInstances = new ArrayList<>();
-        allInstances.addAll(this.getFileRemovedSATD());
-        allInstances.addAll(this.getAddressedOrChangedSATD());
-        allInstances.addAll(this.getChangedOrAddedSATD());
-        allInstances.addAll(this.getUnaddressedSATD());
-        allInstances.addAll(this.fileRenamedSATD);
-        return allInstances;
-    }
 
-    public void alignRemovedAndAddedForOverlaps() {
-        // If it might have been removed, check if it was just changed slightly instead
-        this.addressedOrChangedSATD.stream()
-                .filter(satd -> satd.getResolution().equals(SATDInstance.SATDResolution.SATD_POSSIBLY_REMOVED))
-                .forEach(this::mergeSATDWithChangedOrAddedIfNeeded);
-    }
-
-    /**
-     * Merges an SATD instance that was possibly removed with an SATD instance which
-     * was either changed or added if there is a corresponding SATD instance that is
-     * likely to be correlated.
-     *
-     * If there is a single correlating SATD instance, it will be removed from the list of
-     * changed or added SATD, and have its resolution updated. Multiple matches will result
-     * in a null-decision where no changes will be made.
-     * @param satd The SATD instance that was possibly removed
-     */
-    private void mergeSATDWithChangedOrAddedIfNeeded(SATDInstance satd) {
-        List<SATDInstance> match = this.changedOrAddedSATD.stream()
-                .filter(coaSATD -> satdIsLikelyChangedTo(satd, coaSATD))
-                .collect(Collectors.toList());
-        // If there were multiple matches, then we cannot be sure which it actually is
-        // It is also likely in this case that the SATD was duplicated within the same file
-        if( match.size() == 1 ) {
-            // Set the updated comment
-            satd.setCommentNew(match.get(0).getCommentGroupOld());
-            satd.setResolution(SATDInstance.SATDResolution.SATD_CHANGED);
-            satd.setNewFile(match.get(0).getNewFile());
-            // Removed the comment because it wasn't really added, and it's now accounted for
-            // In the updated "Changed" SATD Instance
-            this.changedOrAddedSATD.remove(match.get(0));
-        }
-    }
-
+    // TODO move the following code to a helper util for determining changes
     /**
      * Determines if the two satd comments are likely to have originated from the same SATD
      * instance
@@ -154,7 +79,7 @@ public class SATDDifference {
         allToCommits.addAll(to.getCommitsBetweenVersions());
         allToCommits.add(to.getCommitAddressed());
         return !Collections.disjoint(allToCommits, allFromCommits) &&
-                to.getNewFile().equals(from.getNameOfFileWhenAddressed()) &&
+                to.getNewFile().equals(from.getNewFile()) && // TODO is this right?
                 commentsAreSimilar(to.getCommentOld().trim(), from.getCommentOld().trim());
     }
 

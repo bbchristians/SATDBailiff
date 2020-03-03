@@ -6,7 +6,6 @@ import se.rit.edu.git.GitUtil;
 import se.rit.edu.git.RepositoryCommitReference;
 import se.rit.edu.git.RepositoryInitializer;
 import se.rit.edu.satd.detector.SATDDetector;
-import se.rit.edu.satd.mining.RepositoryCommitDiffMiner;
 import se.rit.edu.satd.mining.RepositoryDiffMiner;
 import se.rit.edu.satd.writer.OutputWriter;
 
@@ -38,10 +37,6 @@ public class SATDMiner {
         return this.repo.getMostRecentCommit(mostRecentCommit);
     }
 
-//    public List<RepositoryCommitReference> getReposAtReleases(ReleaseSortType sortType) {
-//        return getReposAtReleases(null, sortType);
-//    }
-
     public void setSatdDetector(SATDDetector detector) {
         this.satdDetector = detector;
     }
@@ -63,7 +58,7 @@ public class SATDMiner {
             return;
         }
         // Go through each commit, and diff against the adjacent commits
-        commitRef.getParentCommitReferences().stream().map(RepositoryCommitDiffMiner::ofFirstRepository)
+        commitRef.getParentCommitReferences().stream().map(RepositoryDiffMiner::ofFirstRepository)
                 .map(r -> r.andSecondRepository(commitRef))
                 .map(r -> r.usingDetector(this.satdDetector))
                 .map(RepositoryDiffMiner::mineDiff)

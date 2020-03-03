@@ -10,7 +10,7 @@ import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import se.rit.edu.satd.detector.SATDDetector;
 import se.rit.edu.util.ElapsedTimer;
-import se.rit.edu.util.GroupedComment;
+import se.rit.edu.satd.comment.GroupedComment;
 import se.rit.edu.util.JavaParseUtil;
 
 import java.io.IOException;
@@ -73,7 +73,7 @@ public class RepositoryCommitReference {
                 .collect(Collectors.toList());
     }
 
-    public Map<String, List<GroupedComment>> getFilesToSAIDOccurrences(SATDDetector detector){
+    public Map<String, List<GroupedComment>> getFilesToSAIDOccurrences(SATDDetector detector, List<String> filesToSearch){
 
         if( this.satdOccurrences != null ) {
             return this.satdOccurrences;
@@ -86,16 +86,19 @@ public class RepositoryCommitReference {
         try {
             // Walk through each Java file in the repository at the time of the commit
             while (thisRepoWalker.next()) {
-                // Get loader to load file contents into memory
-                final ObjectLoader fileLoader = this.gitInstance.getRepository()
-                        .open(thisRepoWalker.getObjectId(0));
-                // Parse Java file for SATD and add it to the map
-                filesToSATDMap.put(
-                        thisRepoWalker.getPathString(),
-                        JavaParseUtil.parseFileForComments(fileLoader.openStream()).stream()
-                                .filter(groupedComment -> detector.isSATD(groupedComment.getComment()))
-                                .collect(Collectors.toList())
-                );
+
+                if( filesToSearch.contains(thisRepoWalker.getPathString())) {
+                    // Get loader to load file contents into memory
+                    final ObjectLoader fileLoader = this.gitInstance.getRepository()
+                            .open(thisRepoWalker.getObjectId(0));
+                    // Parse Java file for SATD and add it to the map
+                    filesToSATDMap.put(
+                            thisRepoWalker.getPathString(),
+                            JavaParseUtil.parseFileForComments(fileLoader.openStream()).stream()
+                                    .filter(groupedComment -> detector.isSATD(groupedComment.getComment()))
+                                    .collect(Collectors.toList())
+                    );
+                }
             }
         } catch (MissingObjectException | IncorrectObjectTypeException | CorruptObjectException e) {
             System.err.println("Exception in getting tree walker.");

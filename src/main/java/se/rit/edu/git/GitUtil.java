@@ -2,6 +2,7 @@ package se.rit.edu.git;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.diff.DiffEntry;
+import org.eclipse.jgit.diff.Edit;
 import org.eclipse.jgit.diff.RenameDetector;
 import org.eclipse.jgit.errors.CorruptObjectException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
@@ -85,5 +86,16 @@ public class GitUtil {
             System.err.println("Error diffing trees.");
         }
         return new ArrayList<>();
+    }
+
+    // TODO make this a util function as it is duplicate code
+    public static boolean editOccursBetweenLines(Edit edit, int startLine, int endLine) {
+        return
+                // Starts before the start and ends after the start
+                (edit.getBeginA() <= startLine && edit.getEndA() >= startLine ) ||
+                        // Starts before the end, and ends after the end
+                        (edit.getBeginA() <= endLine && edit.getEndA() >= endLine) ||
+                        // Starts after the start and ends before the end
+                        (edit.getBeginA() >= startLine && edit.getEndA() <= endLine);
     }
 }

@@ -3,7 +3,7 @@ package se.rit.edu.satd.writer;
 import se.rit.edu.git.models.CommitMetaData;
 import se.rit.edu.satd.SATDDifference;
 import se.rit.edu.satd.SATDInstance;
-import se.rit.edu.util.GroupedComment;
+import se.rit.edu.satd.comment.GroupedComment;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,7 +46,7 @@ public class MySQLOutputWriter implements OutputWriter {
             final int projectId = this.getProjectId(conn, diff.getProjectName(), diff.getProjectURI());
             final String oldCommitId = this.getCommitId(conn, new CommitMetaData(diff.getOldCommit()), projectId);
             final String newCommitId = this.getCommitId(conn, new CommitMetaData(diff.getNewCommit()), projectId);
-            diff.getAllSATDInstances().forEach(satdInstance -> {
+            diff.getSATDInstances().forEach(satdInstance -> {
                 try {
                     final int oldFileId = this.getSATDInFileId(conn, satdInstance, true);
                     final int newFileId = this.getSATDInFileId(conn, satdInstance, false);

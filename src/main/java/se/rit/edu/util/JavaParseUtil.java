@@ -4,6 +4,7 @@ import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.Range;
 import com.github.javaparser.ast.comments.CommentsCollection;
+import se.rit.edu.satd.comment.GroupedComment;
 
 import java.io.InputStream;
 import java.util.ArrayList;
