@@ -1,5 +1,9 @@
 package edu.rit.se.satd;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.jetbrains.annotations.NotNull;
 
@@ -11,47 +15,29 @@ import java.util.List;
  * A class which stores and categorizes different SATD instances
  * and maintains logic to merge appropriate entries
  */
+@RequiredArgsConstructor
 public class SATDDifference {
 
     // Required fields for maintaining an SATD Difference object
-    private RevCommit oldCommit;
-    private RevCommit newCommit;
+    @Getter
+    @NonNull
     private String projectName;
+    @Getter
+    @NonNull
     private String projectURI;
+    @Getter
+    @NonNull
+    private RevCommit oldCommit;
+    @Getter
+    @NonNull
+    private RevCommit newCommit;
 
     // The lists of the different types of SATD that can be found in a project
+    @Getter
     private List<SATDInstance> satdInstances = new ArrayList<>();
-
-    public SATDDifference(@NotNull String projectName, @NotNull String projectURI,
-                          @NotNull RevCommit oldCommit, @NotNull RevCommit newCommit) {
-        this.projectName = projectName;
-        this.projectURI = projectURI;
-        this.oldCommit = oldCommit;
-        this.newCommit = newCommit;
-    }
 
     public void addSATDInstances(List<SATDInstance> satd) {
         this.satdInstances.addAll(satd);
-    }
-
-    public List<SATDInstance> getSATDInstances() {
-        return satdInstances;
-    }
-
-    public String getProjectName() {
-        return this.projectName;
-    }
-
-    public String getProjectURI() {
-        return this.projectURI;
-    }
-
-    public RevCommit getOldCommit() {
-        return oldCommit;
-    }
-
-    public RevCommit getNewCommit() {
-        return newCommit;
     }
 
 }

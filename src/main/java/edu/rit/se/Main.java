@@ -30,9 +30,7 @@ public class Main {
             ElapsedTimer timer = new ElapsedTimer();
             timer.start();
 
-            SATDMiner miner = new SATDMiner(repo);
-
-            miner.setSatdDetector(new SATDDetectorImpl());
+            SATDMiner miner = new SATDMiner(repo, new SATDDetectorImpl());
 
             miner.writeRepoSATD(miner.getBaseCommit("2cf6933774bec5345e4505948fc1be2f75a66153"),
                     new MySQLOutputWriter("mySQL.properties"));

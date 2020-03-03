@@ -46,12 +46,11 @@ public class MySQLOutputWriter implements OutputWriter {
             final int projectId = this.getProjectId(conn, diff.getProjectName(), diff.getProjectURI());
             final String oldCommitId = this.getCommitId(conn, new CommitMetaData(diff.getOldCommit()), projectId);
             final String newCommitId = this.getCommitId(conn, new CommitMetaData(diff.getNewCommit()), projectId);
-            diff.getSATDInstances().forEach(satdInstance -> {
+            diff.getSatdInstances().forEach(satdInstance -> {
                 try {
                     final int oldFileId = this.getSATDInFileId(conn, satdInstance, true);
                     final int newFileId = this.getSATDInFileId(conn, satdInstance, false);
-                    final int satdInstanceId = this.getSATDInstanceId(conn, satdInstance,
-                            newCommitId, oldCommitId, newFileId, oldFileId);
+                    this.getSATDInstanceId(conn, satdInstance, newCommitId, oldCommitId, newFileId, oldFileId);
                 } catch (SQLException e) {
                     throw new UncheckedIOException(new IOException(e));
                 }
@@ -114,8 +113,8 @@ public class MySQLOutputWriter implements OutputWriter {
                 : satdInstance.getStartLineNumberNewFile();
         final int endLineNumber = useOld ? satdInstance.getEndLineNumberOldFile()
                 : satdInstance.getEndLineNumberNewFile();
-        final GroupedComment comment = useOld ? satdInstance.getCommentGroupOld() :
-                satdInstance.getCommentGroupNew();
+        final GroupedComment comment = useOld ? satdInstance.getCommentOld() :
+                satdInstance.getCommentNew();
         final PreparedStatement queryStmt = conn.prepareStatement(
                 "SELECT SATDInFile.f_id FROM SATDInFile WHERE " +
                 "SATDInFile.f_comment=? AND SATDInFile.f_path=? AND " +

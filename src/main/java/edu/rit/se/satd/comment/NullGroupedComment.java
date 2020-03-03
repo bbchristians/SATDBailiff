@@ -1,9 +1,9 @@
 package edu.rit.se.satd.comment;
 
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor
 public class NullGroupedComment extends GroupedComment {
-
-    public NullGroupedComment() {}
 
     @Override
     public int getStartLine() {
@@ -18,11 +18,6 @@ public class NullGroupedComment extends GroupedComment {
     @Override
     public String getComment() {
         return "None";
-    }
-
-    @Override
-    public int getNumLines() {
-        return 0;
     }
 
     @Override

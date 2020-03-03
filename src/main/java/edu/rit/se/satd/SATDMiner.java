@@ -1,7 +1,8 @@
 package edu.rit.se.satd;
 
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FileUtils;
-import org.jetbrains.annotations.NotNull;
 import edu.rit.se.git.GitUtil;
 import edu.rit.se.git.RepositoryCommitReference;
 import edu.rit.se.git.RepositoryInitializer;
@@ -15,19 +16,18 @@ import java.io.IOException;
 /**
  * A class which contains high-level logic for mining SATD Instances from a git repository.
  */
+@RequiredArgsConstructor
 public class SATDMiner {
 
     // Required fields to be set before SATD can be mined
+    @NonNull
     private String repositoryURI;
-    private SATDDetector satdDetector = null;
+    @NonNull
+    private SATDDetector satdDetector;
 
     // A reference to the repository initializes. Stored so it can be cleaned
     // once mining has completed
     private RepositoryInitializer repo;
-
-    public SATDMiner(@NotNull String repositoryURI) {
-        this.repositoryURI = repositoryURI;
-    }
 
     public RepositoryCommitReference getBaseCommit(String head) {
         if( (repo == null || !repo.didInitialize()) && !this.initializeRepo() ) {
@@ -35,10 +35,6 @@ public class SATDMiner {
             return null;
         }
         return this.repo.getMostRecentCommit(head);
-    }
-
-    public void setSatdDetector(SATDDetector detector) {
-        this.satdDetector = detector;
     }
 
     /**

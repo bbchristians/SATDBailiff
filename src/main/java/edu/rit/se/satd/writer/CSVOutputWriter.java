@@ -2,13 +2,14 @@ package edu.rit.se.satd.writer;
 
 import com.opencsv.CSVWriter;
 import edu.rit.se.satd.SATDDifference;
-import edu.rit.se.git.models.CommitMetaData;
 import edu.rit.se.satd.SATDInstance;
 
 import java.io.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// This needs to be updated before the output is reliable
+@Deprecated
 public class CSVOutputWriter implements OutputWriter {
 
     // Headers for the CSV file
@@ -47,7 +48,7 @@ public class CSVOutputWriter implements OutputWriter {
         Writer writer = new BufferedWriter(new FileWriter(this.outFile, true));
         CSVWriter csvWriter = new CSVWriter(writer);
 
-        csvWriter.writeAll(instanceListToCSV(diff, diff.getSATDInstances()));
+        csvWriter.writeAll(instanceListToCSV(diff, diff.getSatdInstances()));
 
         csvWriter.close();
     }
@@ -83,19 +84,19 @@ public class CSVOutputWriter implements OutputWriter {
     }
 
     private static String[] instanceToCSV(SATDInstance satdInstance) {
-        return new String[] {
-                satdInstance.getInitialBlameCommits().isEmpty() ?
-                        SATDInstance.COMMIT_UNKNOWN
-                        : satdInstance.getInitialBlameCommits().stream()
-                                .map(CommitMetaData::getHash)
-                                .collect(Collectors.joining(", ")),
-                satdInstance.getCommitAddressed().getHash(),
-                satdInstance.getOldFile(),
-                "" + satdInstance.getStartLineNumberOldFile(),
-                "" + satdInstance.getEndLineNumberOldFile(),
-                satdInstance.getNewFile(),
-                satdInstance.getResolution().name(),
-                satdInstance.getCommentOld(),
-                satdInstance.getCommentNew()};
+        return new String[1];//{
+//                satdInstance.getInitialBlameCommits().isEmpty() ?
+//                        "UNKNOWN"
+//                        : satdInstance.getInitialBlameCommits().stream()
+//                                .map(CommitMetaData::getHash)
+//                                .collect(Collectors.joining(", ")),
+//                satdInstance.getCommitAddressed().getHash(),
+//                satdInstance.getOldFile(),
+//                "" + satdInstance.getStartLineNumberOldFile(),
+//                "" + satdInstance.getEndLineNumberOldFile(),
+//                satdInstance.getNewFile(),
+//                satdInstance.getResolution().name(),
+//                satdInstance.getCommentOld(),
+//                satdInstance.getCommentNew()};
     }
 }
