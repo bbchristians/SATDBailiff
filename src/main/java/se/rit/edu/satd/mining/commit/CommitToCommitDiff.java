@@ -8,7 +8,6 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import se.rit.edu.git.GitUtil;
 import se.rit.edu.git.RepositoryCommitReference;
-import se.rit.edu.git.commitlocator.CommitLocatorUtil;
 import se.rit.edu.satd.SATDDifference;
 import se.rit.edu.satd.SATDInstance;
 import se.rit.edu.util.GroupedComment;

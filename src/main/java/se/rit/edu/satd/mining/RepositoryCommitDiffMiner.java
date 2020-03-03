@@ -6,7 +6,6 @@ import se.rit.edu.satd.mining.commit.CommitToCommitDiff;
 import se.rit.edu.util.GroupedComment;
 import se.rit.edu.util.MappingPair;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
