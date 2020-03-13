@@ -103,4 +103,15 @@ public class GroupedComment implements Comparable {
         }
         return -1;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if( obj instanceof  GroupedComment ) {
+            return this.comment.equals(((GroupedComment) obj).getComment()) &&
+                    this.startLine == ((GroupedComment) obj).startLine &&
+                    this.endLine == ((GroupedComment) obj).endLine;
+        }
+
+        return super.equals(obj);
+    }
 }

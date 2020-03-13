@@ -79,9 +79,16 @@ public class GitUtil {
      * @param endLine the end line bound
      * @return True if the edit touches any lines between the bounds (inclusive), else False
      */
-    public static boolean editOccursBetweenLines(Edit edit, int startLine, int endLine) {
+    public static boolean deletionOccursBetweenLines(Edit edit, int startLine, int endLine) {
         return JavaParseUtil.isRangeBetweenBounds(
                 new Range(new Position(edit.getBeginA(), 0), new Position(edit.getEndA(), 0)),
+                startLine, endLine
+        );
+    }
+
+    public static boolean additionOccursBetweenLines(Edit edit, int startLine, int endLine) {
+        return JavaParseUtil.isRangeBetweenBounds(
+                new Range(new Position(edit.getBeginB(), 0), new Position(edit.getEndB(), 0)),
                 startLine, endLine
         );
     }

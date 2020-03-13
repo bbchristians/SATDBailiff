@@ -1,4 +1,4 @@
-package edu.rit.se.git.models;
+package edu.rit.se.git.commit;
 
 /**
  * Null instance for the CommitMetaData class, to be used in place of null commits

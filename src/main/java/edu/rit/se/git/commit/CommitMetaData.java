@@ -1,4 +1,4 @@
-package edu.rit.se.git.models;
+package edu.rit.se.git.commit;
 
 import org.eclipse.jgit.revwalk.RevCommit;
 

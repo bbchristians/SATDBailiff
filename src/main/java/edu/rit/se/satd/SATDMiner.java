@@ -21,7 +21,6 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class SATDMiner {
 
-    // Required fields to be set before SATD can be mined
     @NonNull
     private String repositoryURI;
     @NonNull
@@ -31,7 +30,10 @@ public class SATDMiner {
     // once mining has completed
     private RepositoryInitializer repo;
 
-    public Set<String> totalCommitsMined = new HashSet<>();
+    // A list of the diffs that have already been accounted for to prevent
+    // infinite recursion
+    // Should be populated with results from this.getMultiRefHash()
+    private Set<String> alreadyDiffedCommits = new HashSet<>();
 
     public RepositoryCommitReference getBaseCommit(String head) {
         if( (repo == null || !repo.didInitialize()) && !this.initializeRepo() ) {
@@ -48,17 +50,14 @@ public class SATDMiner {
      * @param writer an OutputWriter that will handle the output of the miner
      */
     public void writeRepoSATD(RepositoryCommitReference commitRef, OutputWriter writer) {
-        // Check miner configured correctly
-        if( this.satdDetector == null ) {
-            System.err.println("Miner does not have SATD Detector set. Please call setSatdDetector() on the Miner object.");
-            return;
-        }
-
         if( commitRef == null ) {
             return;
         }
         // Go through each commit, and diff against the adjacent commits
         commitRef.getParentCommitReferences().stream()
+                // Filter out the already diffed commits
+                .filter(parentRef -> !this.alreadyDiffedCommits.contains(getMultiRefHash(commitRef, parentRef)))
+                .peek(parentRef -> this.alreadyDiffedCommits.add(getMultiRefHash(commitRef, parentRef)))
                 .map(parentRef -> new RepositoryDiffMiner(parentRef, commitRef, this.satdDetector))
                 .map(RepositoryDiffMiner::mineDiff)
                 .forEach(diff -> {
@@ -71,7 +70,6 @@ public class SATDMiner {
 
         // Recurse on parents
         commitRef.getParentCommitReferences().forEach(p -> writeRepoSATD(p, writer));
-        totalCommitsMined.add(commitRef.getCommit().getName());
     }
 
     /**
@@ -84,11 +82,22 @@ public class SATDMiner {
             FileUtils.deleteDirectory(new File(repo.getRepoDir()));
         } catch (IOException e) {
             System.err.println("Error in deleting cleaned git repo.");
+            e.printStackTrace();
         }
     }
 
     private boolean initializeRepo() {
         this.repo = new RepositoryInitializer(this.repositoryURI, GitUtil.getRepoNameFromGithubURI(this.repositoryURI));
         return this.repo.initRepo();
+    }
+
+    /**
+     * Generates a unique hash based off the two given repositories
+     * @param r1 a repository reference
+     * @param r2 a repository reference
+     * @return A unique hash for two compared repositories
+     */
+    private String getMultiRefHash(RepositoryCommitReference r1, RepositoryCommitReference r2) {
+        return r1.getCommit().getName() + r2.getCommit().getName();
     }
 }

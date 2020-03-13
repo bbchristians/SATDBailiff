@@ -22,12 +22,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class CommitToCommitDiff {
+
     private Git gitInstance;
-
     private RevCommit newCommit;
-
     private DiffFormatter diffFormatter;
-
     private List<DiffEntry> diffEntries;
 
     // Store the comments found in each file in the new commit as they are parsed to
@@ -37,8 +35,10 @@ public class CommitToCommitDiff {
     public CommitToCommitDiff(RepositoryCommitReference oldRepo, RepositoryCommitReference newRepo) {
         this.gitInstance = oldRepo.getGitInstance();
         this.newCommit = newRepo.getCommit();
-        this.diffEntries = GitUtil.getDiffEntries(this.gitInstance, oldRepo.getCommit().getTree(),
-                this.newCommit.getTree());
+        this.diffEntries = GitUtil.getDiffEntries(this.gitInstance, oldRepo.getCommit().getTree(), this.newCommit.getTree())
+                .stream()
+                .filter(diffEntry -> diffEntry.getOldPath().endsWith(".java") || diffEntry.getNewPath().endsWith(".java"))
+                .collect(Collectors.toList());
         this.diffFormatter = this.getFormatter(this.gitInstance);
     }
 
@@ -54,16 +54,18 @@ public class CommitToCommitDiff {
                 .collect(Collectors.toList());
     }
 
-    public List<SATDInstance> loadDiffsFor(String filePath, GroupedComment comment) {
-        return diffEntries.stream()
+    public List<SATDInstance> loadDiffsForFile(String filePath, GroupedComment comment, boolean isOldFile) {
+        return this.diffEntries.stream()
                 .filter(entry -> entry.getOldPath().equals(filePath))
-                .map(diffEntry -> this.getSATDFromDiff(diffEntry, comment))
+                .map(diffEntry -> isOldFile ?
+                        this.getSATDFromDiffOldFile(diffEntry, comment)
+                        : this.getSATDDiffFromNewFile(diffEntry, comment))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
 
     }
 
-    private List<SATDInstance> getSATDFromDiff(DiffEntry diffEntry, GroupedComment comment) {
+    private List<SATDInstance> getSATDFromDiffOldFile(DiffEntry diffEntry, GroupedComment comment) {
         final List<SATDInstance> satd = new ArrayList<>();
 
         switch (diffEntry.getChangeType()) {
@@ -90,13 +92,13 @@ public class CommitToCommitDiff {
                 break;
             case MODIFY:
                 try {
-                    // Find any SATD that might be present in the new section
+                    // Determine if the edit to the file touched the SATD
                     final List<Edit> editsToSATDComment = this.diffFormatter.toFileHeader(diffEntry).toEditList().stream()
-                            .filter(edit -> GitUtil.editOccursBetweenLines(edit, comment.getStartLine(), comment.getEndLine()))
+                            .filter(edit -> GitUtil.deletionOccursBetweenLines(edit, comment.getStartLine(), comment.getEndLine()))
                             .collect(Collectors.toList());
                     final List<GroupedComment> updatedComments = editsToSATDComment.stream()
                             .flatMap( edit -> this.getCommentsInFileInNewRepository(diffEntry.getNewPath()).stream()
-                                    .filter( c -> GitUtil.editOccursBetweenLines(edit, c.getStartLine(), c.getEndLine())))
+                                    .filter( c -> GitUtil.deletionOccursBetweenLines(edit, c.getStartLine(), c.getEndLine())))
                             .collect(Collectors.toList());
                     if( updatedComments.isEmpty() && !editsToSATDComment.isEmpty() ) {
                         satd.add(
@@ -112,7 +114,6 @@ public class CommitToCommitDiff {
                             updatedComments.stream()
                                     .map(GroupedComment::getComment)
                                     .noneMatch(comment.getComment()::equals)){
-                        // TODO Determine if the SATD was changed or removed
                         satd.addAll(
                                 updatedComments.stream()
                                         .map(newComment -> {
@@ -142,6 +143,53 @@ public class CommitToCommitDiff {
                 }
                 break;
         }
+        return satd;
+    }
+
+    private List<SATDInstance> getSATDDiffFromNewFile(DiffEntry diffEntry, GroupedComment comment) {
+        final List<SATDInstance> satd = new ArrayList<>();
+
+        switch (diffEntry.getChangeType()) {
+            case ADD:
+                satd.add(
+                        new SATDInstance(
+                                diffEntry.getOldPath(),
+                                diffEntry.getNewPath(),
+                                new NullGroupedComment(),
+                                comment,
+                                SATDInstance.SATDResolution.SATD_ADDED
+                        )
+                );
+                break;
+            case MODIFY:
+                // Determine if the SATD was actually added
+                //  This filters out merge commits
+                // Determine if the edit to the file touched the SATD
+                try {
+                    final List<Edit> editsToSATDComment = this.diffFormatter.toFileHeader(diffEntry).toEditList().stream()
+                            .filter(edit -> GitUtil.additionOccursBetweenLines(edit, comment.getStartLine(), comment.getEndLine()))
+                            .collect(Collectors.toList());
+                    final List<GroupedComment> updatedComments = editsToSATDComment.stream()
+                            .flatMap(edit -> this.getCommentsInFileInNewRepository(diffEntry.getNewPath()).stream()
+                                    .filter(c -> GitUtil.deletionOccursBetweenLines(edit, c.getStartLine(), c.getEndLine())))
+                            .collect(Collectors.toList());
+                    if( updatedComments.contains(comment) ) {
+                        satd.add(
+                                new SATDInstance(
+                                        diffEntry.getOldPath(),
+                                        diffEntry.getNewPath(),
+                                        new NullGroupedComment(),
+                                        comment,
+                                        SATDInstance.SATDResolution.SATD_ADDED
+                                )
+                        );
+                    }
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+                break;
+        }
+
         return satd;
     }
 

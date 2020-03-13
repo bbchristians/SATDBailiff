@@ -32,7 +32,7 @@ public class Main {
 
             SATDMiner miner = new SATDMiner(repo, new SATDDetectorImpl());
 
-            miner.writeRepoSATD(miner.getBaseCommit("2cf6933774bec5345e4505948fc1be2f75a66153"),
+            miner.writeRepoSATD(miner.getBaseCommit(null),
                     new MySQLOutputWriter("mySQL.properties"));
 
             miner.cleanRepo();
@@ -40,7 +40,7 @@ public class Main {
             timer.end();
             System.out.println(String.format("Finished analyzing SATD in %s in %,dms",
                     GitUtil.getRepoNameFromGithubURI(repo), timer.readMS()));
-            System.out.println("Mined " + miner.totalCommitsMined.size() + " commits total.");
+//            System.out.println("Mined " + miner.totalCommitsMined.size() + " commits total.");
         }
     }
 }

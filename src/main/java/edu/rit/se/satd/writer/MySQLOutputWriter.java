@@ -1,6 +1,6 @@
 package edu.rit.se.satd.writer;
 
-import edu.rit.se.git.models.CommitMetaData;
+import edu.rit.se.git.commit.CommitMetaData;
 import edu.rit.se.satd.SATDDifference;
 import edu.rit.se.satd.SATDInstance;
 import edu.rit.se.satd.comment.GroupedComment;
@@ -100,7 +100,7 @@ public class MySQLOutputWriter implements OutputWriter {
      * Gets the ID for the SATD file instance, and inserts it into the appropriate table
      * if it is not present
      * @param conn The DB Connection
-     * @param satdInstance The SATD instance to draw models from
+     * @param satdInstance The SATD instance to draw commit from
      * @param useOld True if the old file info in the SATDInstance should be used, else False
      * @return The ID for the SATD file instance
      * @throws SQLException Thrown if any SQL exceptions are encountered.

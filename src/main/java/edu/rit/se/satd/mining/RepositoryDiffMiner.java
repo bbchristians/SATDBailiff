@@ -1,9 +1,7 @@
 package edu.rit.se.satd.mining;
 
 import edu.rit.se.satd.SATDDifference;
-import edu.rit.se.satd.SATDInstance;
-import edu.rit.se.satd.comment.NullGroupedComment;
-import edu.rit.se.util.MappingPair;
+import edu.rit.se.satd.comment.OldToNewCommentMapping;
 import edu.rit.se.git.RepositoryCommitReference;
 import edu.rit.se.satd.comment.GroupedComment;
 import edu.rit.se.satd.detector.SATDDetector;
@@ -50,35 +48,45 @@ public class RepositoryDiffMiner {
         final Map<String, List<GroupedComment>> olderSATD = this.firstRepo.getFilesToSATDOccurrences(
                 this.satdDetector, cToCDiff.getModifiedFilesOld());
 
+        final List<OldToNewCommentMapping> satdInOldNotInNew = olderSATD.keySet().stream()
+                .flatMap(oldFile -> olderSATD.get(oldFile).stream()
+                    .map(comment -> new OldToNewCommentMapping(comment, oldFile)))
+                .collect(Collectors.toList());
+        final List<OldToNewCommentMapping> satdInNewNotInOld = newerSATD.keySet().stream()
+                .flatMap(newFile -> newerSATD.get(newFile).stream()
+                        .map(comment -> new OldToNewCommentMapping(comment, newFile)))
+                .collect(Collectors.toList());
+        alignMappingLists(satdInNewNotInOld, satdInOldNotInNew);
+        alignMappingLists(satdInOldNotInNew, satdInNewNotInOld);
+
+
         // Add SATD Instances that were in the OLD repo, but possibly modified in the new repo
         diff.addSATDInstances(
-                olderSATD.keySet().stream()
-                        .flatMap(fileInOldRepo -> olderSATD.get(fileInOldRepo).stream()
-                                .filter(comment ->
-                                        !newerSATD.keySet().contains(fileInOldRepo) ||
-                                                !newerSATD.get(fileInOldRepo).contains(comment))
-                                .map(comment -> new MappingPair(fileInOldRepo, comment)))
-                        .map(pair -> cToCDiff.loadDiffsFor(pair.getFirst().toString(), (GroupedComment) pair.getSecond()))
+                satdInOldNotInNew.stream()
+                        .filter(OldToNewCommentMapping::isNotMapped)
+                        .map(mapping -> cToCDiff.loadDiffsForFile(mapping.getFile(), mapping.getComment(), true))
                         .flatMap(Collection::stream)
                         .collect(Collectors.toList())
         );
         // Add SATD instances that were in the NEW repo, but not in the old repo
-//        diff.addSATDInstances(
-//                newerSATD.keySet().stream()
-//                        .flatMap(fileInNewRepo -> newerSATD.get(fileInNewRepo).stream()
-//                                .filter(comment ->
-//                                        !olderSATD.keySet().contains(fileInNewRepo) ||
-//                                                !olderSATD.get(fileInNewRepo).contains(comment))
-//                                .map(comment -> new MappingPair(fileInNewRepo, comment)))
-//                        .map(pair -> new SATDInstance(
-//                                "/dev/null",
-//                                pair.getFirst().toString(),
-//                                new NullGroupedComment(),
-//                                (GroupedComment) pair.getSecond(),
-//                                SATDInstance.SATDResolution.SATD_ADDED))
-//                        .collect(Collectors.toList())
-//        );
+        diff.addSATDInstances(
+                satdInNewNotInOld.stream()
+                        .filter(OldToNewCommentMapping::isNotMapped)
+                        .map(mapping -> cToCDiff.loadDiffsForFile(mapping.getFile(), mapping.getComment(), false))
+                        .flatMap(Collection::stream)
+                        .collect(Collectors.toList())
+        );
 
         return diff;
+    }
+
+    private static void alignMappingLists(List<OldToNewCommentMapping> list1, List<OldToNewCommentMapping> list2) {
+        list1.forEach(mappedComment ->
+                list2.stream()
+                        .filter(OldToNewCommentMapping::isNotMapped)
+                        .filter(mappedComment::commentsMatch)
+                        .findFirst()
+                        .ifPresent(mappedComment::mapTo)
+        );
     }
 }
