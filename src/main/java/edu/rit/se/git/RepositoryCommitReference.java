@@ -1,7 +1,9 @@
 package edu.rit.se.git;
 
+import edu.rit.se.satd.comment.GroupedComment;
 import edu.rit.se.satd.detector.SATDDetector;
 import edu.rit.se.util.ElapsedTimer;
+import edu.rit.se.util.JavaParseUtil;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.errors.CorruptObjectException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
@@ -10,8 +12,6 @@ import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
-import edu.rit.se.satd.comment.GroupedComment;
-import edu.rit.se.util.JavaParseUtil;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

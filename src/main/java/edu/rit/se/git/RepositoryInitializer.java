@@ -1,12 +1,12 @@
 package edu.rit.se.git;
 
+import edu.rit.se.util.ElapsedTimer;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
-import edu.rit.se.util.ElapsedTimer;
 
 import java.io.File;
 import java.io.IOException;

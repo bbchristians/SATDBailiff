@@ -1,14 +1,14 @@
 package edu.rit.se.satd;
 
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import org.apache.commons.io.FileUtils;
 import edu.rit.se.git.GitUtil;
 import edu.rit.se.git.RepositoryCommitReference;
 import edu.rit.se.git.RepositoryInitializer;
 import edu.rit.se.satd.detector.SATDDetector;
 import edu.rit.se.satd.mining.RepositoryDiffMiner;
 import edu.rit.se.satd.writer.OutputWriter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;

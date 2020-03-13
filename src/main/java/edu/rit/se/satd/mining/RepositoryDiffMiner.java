@@ -1,9 +1,9 @@
 package edu.rit.se.satd.mining;
 
-import edu.rit.se.satd.SATDDifference;
-import edu.rit.se.satd.comment.OldToNewCommentMapping;
 import edu.rit.se.git.RepositoryCommitReference;
+import edu.rit.se.satd.SATDDifference;
 import edu.rit.se.satd.comment.GroupedComment;
+import edu.rit.se.satd.comment.OldToNewCommentMapping;
 import edu.rit.se.satd.detector.SATDDetector;
 import edu.rit.se.satd.mining.commit.CommitToCommitDiff;
 import lombok.AllArgsConstructor;
@@ -48,34 +48,25 @@ public class RepositoryDiffMiner {
         final Map<String, List<GroupedComment>> olderSATD = this.firstRepo.getFilesToSATDOccurrences(
                 this.satdDetector, cToCDiff.getModifiedFilesOld());
 
-        final List<OldToNewCommentMapping> satdInOldNotInNew = olderSATD.keySet().stream()
+        // Get a list of all SATD instances as a mappable instance
+        final List<OldToNewCommentMapping> oldSATDMappings = olderSATD.keySet().stream()
                 .flatMap(oldFile -> olderSATD.get(oldFile).stream()
                     .map(comment -> new OldToNewCommentMapping(comment, oldFile)))
                 .collect(Collectors.toList());
-        final List<OldToNewCommentMapping> satdInNewNotInOld = newerSATD.keySet().stream()
+        final List<OldToNewCommentMapping> newSATDMappings = newerSATD.keySet().stream()
                 .flatMap(newFile -> newerSATD.get(newFile).stream()
                         .map(comment -> new OldToNewCommentMapping(comment, newFile)))
                 .collect(Collectors.toList());
-        alignMappingLists(satdInNewNotInOld, satdInOldNotInNew);
-        alignMappingLists(satdInOldNotInNew, satdInNewNotInOld);
 
+        // Map the new to old and then old to new, so we can determine which SATD instances
+        // may have changed
+        alignMappingLists(newSATDMappings, oldSATDMappings);
+        alignMappingLists(oldSATDMappings, newSATDMappings);
 
-        // Add SATD Instances that were in the OLD repo, but possibly modified in the new repo
-        diff.addSATDInstances(
-                satdInOldNotInNew.stream()
-                        .filter(OldToNewCommentMapping::isNotMapped)
-                        .map(mapping -> cToCDiff.loadDiffsForFile(mapping.getFile(), mapping.getComment(), true))
-                        .flatMap(Collection::stream)
-                        .collect(Collectors.toList())
-        );
-        // Add SATD instances that were in the NEW repo, but not in the old repo
-        diff.addSATDInstances(
-                satdInNewNotInOld.stream()
-                        .filter(OldToNewCommentMapping::isNotMapped)
-                        .map(mapping -> cToCDiff.loadDiffsForFile(mapping.getFile(), mapping.getComment(), false))
-                        .flatMap(Collection::stream)
-                        .collect(Collectors.toList())
-        );
+        // Add SATD Instances that were in the OLD repo, but couldn't be mapped to the NEW repo
+        mineDiffsFromMappedSATDInstances(diff, cToCDiff, oldSATDMappings, true);
+        // Add SATD instances that were in the NEW repo, but couldn't be mapped to the OLD repo
+        mineDiffsFromMappedSATDInstances(diff, cToCDiff, newSATDMappings, false);
 
         return diff;
     }
@@ -87,6 +78,21 @@ public class RepositoryDiffMiner {
                         .filter(mappedComment::commentsMatch)
                         .findFirst()
                         .ifPresent(mappedComment::mapTo)
+        );
+    }
+
+    private static void mineDiffsFromMappedSATDInstances(SATDDifference diffInstance, CommitToCommitDiff cToCDiff,
+                                                         List<OldToNewCommentMapping> mappings, boolean isOld) {
+        diffInstance.addSATDInstances(
+                mappings.stream()
+                        .filter(OldToNewCommentMapping::isNotMapped)
+                        .map(mapping -> isOld ?
+                                cToCDiff.loadDiffsForOldFile(mapping.getFile(), mapping.getComment()) :
+                                cToCDiff.loadDiffsForNewFIle(mapping.getFile(), mapping.getComment()))
+                        .peek(instances ->
+                                System.out.println("Found " + instances.size() + " unmapped SATD Instances!"))
+                        .flatMap(Collection::stream)
+                        .collect(Collectors.toList())
         );
     }
 }

@@ -42,21 +42,15 @@ public class GroupedComment implements Comparable {
         }
         // Clean up comment
         this.comment = Arrays.stream(oldComment.getContent().trim().split("\n"))
-                .map(String::trim)
-                .map(commentLine -> {
-                    if( commentLine.startsWith("*") ) {
-                        return commentLine.replaceFirst("\\*", "");
-                    }
-                    return commentLine;
-                })
-                .map(String::trim)
+                .map(GroupedComment::cleanCommentLine)
                 .collect(Collectors.joining("\n"));
         this.commentType = oldComment.isBlockComment() ? "Block"
                 : oldComment.isLineComment() ? "Line"
                 : oldComment.isOrphan() ? "Orphan"
                 : oldComment.isJavadocComment() ? "JavaDoc"
                 : "Unknown";
-        // Get containing class and method if found
+
+        // Get containing class and method data if found
         final Optional<ClassOrInterfaceDeclaration> classRoot = oldComment.findRootNode().findAll(ClassOrInterfaceDeclaration.class).stream()
                 .filter(dec -> dec.getRange().isPresent())
                 .filter(dec -> JavaParseUtil.isRangeBetweenBounds(dec.getRange().get(), this.startLine, this.endLine))
@@ -75,20 +69,46 @@ public class GroupedComment implements Comparable {
         }
     }
 
+    /**
+     * Merges this comment with another comment
+     * @param other another comment
+     * @return a new GroupedComment instance that contains the combined
+     * comments
+     */
     public GroupedComment joinWith(GroupedComment other) {
         return new GroupedComment(
                 Integer.min(this.startLine, other.startLine),
                 Integer.max(this.endLine, other.endLine),
-                String.join("\n", this.comment, other.comment),
+                this.startLine < other.startLine ?
+                        String.join("\n", this.comment, other.comment) :
+                        String.join("\n", other.comment, this.comment),
                 this.commentType,
                 this.containingClass,
                 this.containingMethod);
     }
 
+    /**
+     * @param other another comment
+     * @return True if this comment is the same time of comment, and appears directly before
+     * the other comment
+     */
     public boolean precedesDirectly(GroupedComment other) {
         return this.containingClass.equals(other.containingClass) &&
                 this.commentType.equals(other.commentType) &&
                 this.endLine + 1 == other.startLine;
+    }
+
+    /**
+     * Removes Java-syntax items from comment lines
+     * @param commentLine a line of a java comment
+     * @return A cleaned line
+     */
+    private static String cleanCommentLine(String commentLine) {
+        final String newComment = commentLine.trim();
+        if( newComment.startsWith("*") ) {
+            return newComment.replaceFirst("\\*", "").trim();
+        }
+        return newComment;
     }
 
     @Override

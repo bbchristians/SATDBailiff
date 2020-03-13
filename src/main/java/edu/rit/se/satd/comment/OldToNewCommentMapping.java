@@ -1,7 +1,9 @@
 package edu.rit.se.satd.comment;
 
 
-import lombok.*;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class OldToNewCommentMapping {

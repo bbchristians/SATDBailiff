@@ -3,8 +3,8 @@ package edu.rit.se;
 import edu.rit.se.git.GitUtil;
 import edu.rit.se.satd.SATDMiner;
 import edu.rit.se.satd.detector.SATDDetectorImpl;
-import edu.rit.se.util.ElapsedTimer;
 import edu.rit.se.satd.writer.MySQLOutputWriter;
+import edu.rit.se.util.ElapsedTimer;
 
 import java.io.File;
 import java.util.Scanner;

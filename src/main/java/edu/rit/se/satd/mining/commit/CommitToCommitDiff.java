@@ -1,7 +1,9 @@
 package edu.rit.se.satd.mining.commit;
 
+import edu.rit.se.git.GitUtil;
 import edu.rit.se.git.RepositoryCommitReference;
 import edu.rit.se.satd.SATDInstance;
+import edu.rit.se.satd.comment.GroupedComment;
 import edu.rit.se.satd.comment.NullGroupedComment;
 import edu.rit.se.util.JavaParseUtil;
 import edu.rit.se.util.SimilarityUtil;
@@ -11,8 +13,6 @@ import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.diff.Edit;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.treewalk.TreeWalk;
-import edu.rit.se.git.GitUtil;
-import edu.rit.se.satd.comment.GroupedComment;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -54,15 +54,21 @@ public class CommitToCommitDiff {
                 .collect(Collectors.toList());
     }
 
-    public List<SATDInstance> loadDiffsForFile(String filePath, GroupedComment comment, boolean isOldFile) {
+    public List<SATDInstance> loadDiffsForOldFile(String oldFile, GroupedComment comment) {
         return this.diffEntries.stream()
-                .filter(entry -> entry.getOldPath().equals(filePath))
-                .map(diffEntry -> isOldFile ?
-                        this.getSATDFromDiffOldFile(diffEntry, comment)
-                        : this.getSATDDiffFromNewFile(diffEntry, comment))
+                .filter(entry -> entry.getOldPath().equals(oldFile))
+                .map(diffEntry -> this.getSATDFromDiffOldFile(diffEntry, comment))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
 
+    }
+
+    public List<SATDInstance> loadDiffsForNewFIle(String newFile, GroupedComment comment) {
+        return this.diffEntries.stream()
+                .filter(entry -> entry.getNewPath().equals(newFile))
+                .map(diffEntry -> this.getSATDDiffFromNewFile(diffEntry, comment))
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
     }
 
     private List<SATDInstance> getSATDFromDiffOldFile(DiffEntry diffEntry, GroupedComment comment) {
