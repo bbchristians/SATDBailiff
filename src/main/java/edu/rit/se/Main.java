@@ -3,6 +3,7 @@ package edu.rit.se;
 import edu.rit.se.satd.SATDMiner;
 import edu.rit.se.satd.detector.SATDDetectorImpl;
 import edu.rit.se.satd.writer.MySQLOutputWriter;
+import org.apache.commons.cli.*;
 
 import java.io.File;
 import java.util.Scanner;
@@ -10,27 +11,99 @@ import java.util.Scanner;
 
 public class Main {
 
-    private static final String reposFile = "repos_remaining.txt";
-    private static final String OUT_DIR = "out";
+    private static final String ARG_NAME_DB_PROPS = "d";
+    private static final String ARG_NAME_REPOS_FILE = "r";
+    // TODO what is this?
+    private static final String PROJECT_NAME_CLI = "satd_miner";
 
     public static void main(String[] args) throws Exception {
 
-        File inFile = new File(reposFile);
-        Scanner inFileReader = new Scanner(inFile);
+        Options options = getOptions();
 
-        File outDir = new File(OUT_DIR);
-        outDir.mkdirs();
+        try {
 
-        while( inFileReader.hasNext() ) {
+            // Check for help option
+            // This is done first to allow both an optional help option and required args
+            if( checkForHelpOption(args) ) {
+                return; // Only need to print the help options so we are done here
+            }
 
-            final String repo = inFileReader.next();
+            // Parse from command line
+            CommandLineParser parser = new DefaultParser();
+            CommandLine cmd = parser.parse(options, args);
 
-            SATDMiner miner = new SATDMiner(repo, new SATDDetectorImpl());
+            final String reposFile = cmd.getOptionValue(ARG_NAME_REPOS_FILE);
+            final String dbPropsFile = cmd.getOptionValue(ARG_NAME_DB_PROPS);
 
-            miner.writeRepoSATD(miner.getBaseCommit(null),
-                    new MySQLOutputWriter("mySQL.properties"));
+            // Read the supplied repos from the file
+            final File inFile = new File(reposFile);
+            final Scanner inFileReader = new Scanner(inFile);
 
-            miner.cleanRepo();
+            // Find the SATD in each supplied repository
+            while (inFileReader.hasNext()) {
+
+                final String repo = inFileReader.next();
+
+                final SATDMiner miner = new SATDMiner(repo, new SATDDetectorImpl());
+
+                miner.writeRepoSATD(miner.getBaseCommit(null),
+                        new MySQLOutputWriter(dbPropsFile));
+
+                miner.cleanRepo();
+            }
+        } catch (ParseException e) {
+            System.err.println(e.getLocalizedMessage());
         }
+    }
+
+    /**
+     * @return the options for the CLI
+     */
+    private static Options getOptions() {
+        // CLI Logic
+        return new Options()
+                .addOption(Option.builder(ARG_NAME_DB_PROPS)
+                    .longOpt("db-props")
+                    .hasArg()
+                    .argName("FILE")
+                    .desc(".properties file containing database properties")
+                    .required()
+                    .build())
+                .addOption(Option.builder(ARG_NAME_REPOS_FILE)
+                    .longOpt("repos")
+                    .hasArg()
+                    .argName("FILE")
+                    .desc("new-line separated file containing git repositories")
+                    .required()
+                    .build());
+    }
+
+    /**
+     * Checks for and prints the help menu if requested
+     * @param args the args given to the program
+     * @return true if help was requested, else false
+     */
+    private static boolean checkForHelpOption(String[] args) {
+        // Parse from command line
+        Options helpOptions = new Options();
+        Option helpOption = Option.builder("h")
+                .longOpt("help")
+                .desc("display help menu")
+                .build();
+
+        helpOptions.addOption(helpOption);
+        CommandLineParser parser = new DefaultParser();
+        try {
+            CommandLine cmd = parser.parse(helpOptions, args);
+
+            if (cmd.hasOption("h")) {
+                HelpFormatter hf = new HelpFormatter();
+                hf.printHelp(PROJECT_NAME_CLI, getOptions().addOption(helpOption));
+                return true;
+            }
+        } catch (ParseException e) {
+            // A non-help header was found
+        }
+        return false;
     }
 }
