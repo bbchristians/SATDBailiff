@@ -58,6 +58,8 @@ public class SATDMiner {
                 // Filter out the already diffed commits
                 .filter(parentRef -> !this.alreadyDiffedCommits.contains(getMultiRefHash(commitRef, parentRef)))
                 .peek(parentRef -> this.alreadyDiffedCommits.add(getMultiRefHash(commitRef, parentRef)))
+                // Recurse
+                .peek(parentRef -> writeRepoSATD(parentRef, writer))
                 .map(parentRef -> new RepositoryDiffMiner(parentRef, commitRef, this.satdDetector))
                 .map(RepositoryDiffMiner::mineDiff)
                 .forEach(diff -> {
@@ -67,9 +69,6 @@ public class SATDMiner {
                         System.err.println("Error writing diff!");
                     }
                 });
-
-        // Recurse on parents
-        commitRef.getParentCommitReferences().forEach(p -> writeRepoSATD(p, writer));
     }
 
     /**

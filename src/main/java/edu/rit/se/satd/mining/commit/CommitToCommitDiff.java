@@ -177,7 +177,7 @@ public class CommitToCommitDiff {
                             .collect(Collectors.toList());
                     final List<GroupedComment> updatedComments = editsToSATDComment.stream()
                             .flatMap(edit -> this.getCommentsInFileInNewRepository(diffEntry.getNewPath()).stream()
-                                    .filter(c -> GitUtil.deletionOccursBetweenLines(edit, c.getStartLine(), c.getEndLine())))
+                                    .filter(c -> GitUtil.additionOccursBetweenLines(edit, c.getStartLine(), c.getEndLine())))
                             .collect(Collectors.toList());
                     if( updatedComments.contains(comment) ) {
                         satd.add(

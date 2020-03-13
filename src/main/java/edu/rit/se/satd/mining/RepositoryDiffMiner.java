@@ -86,11 +86,12 @@ public class RepositoryDiffMiner {
         diffInstance.addSATDInstances(
                 mappings.stream()
                         .filter(OldToNewCommentMapping::isNotMapped)
+                        .peek(mapping -> System.out.println("Found unmapped comment (isOld="+isOld+"): \n" + mapping.getComment().getComment()))
                         .map(mapping -> isOld ?
                                 cToCDiff.loadDiffsForOldFile(mapping.getFile(), mapping.getComment()) :
                                 cToCDiff.loadDiffsForNewFIle(mapping.getFile(), mapping.getComment()))
                         .peek(instances ->
-                                System.out.println("Found " + instances.size() + " unmapped SATD Instances!"))
+                                System.out.println("Found " + instances.size() + " diffs!"))
                         .flatMap(Collection::stream)
                         .collect(Collectors.toList())
         );
