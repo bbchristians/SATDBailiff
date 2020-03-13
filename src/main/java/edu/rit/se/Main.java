@@ -13,8 +13,7 @@ public class Main {
 
     private static final String ARG_NAME_DB_PROPS = "d";
     private static final String ARG_NAME_REPOS_FILE = "r";
-    // TODO what is this?
-    private static final String PROJECT_NAME_CLI = "satd_miner";
+    private static final String PROJECT_NAME_CLI = "satd-analyzer";
 
     public static void main(String[] args) throws Exception {
 

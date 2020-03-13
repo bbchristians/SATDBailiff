@@ -4,10 +4,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>rit</groupId>
-    <artifactId>satd_analyzer</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <groupId>se.rit.edu</groupId>
+    <artifactId>satd-analyzer</artifactId>
+    <version>1.0-alpha</version>
     <build>
+        <finalName>satd-analyzer</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -17,10 +18,35 @@
                     <target>8</target>
                 </configuration>
             </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.0.0</version>
+                <configuration>
+                    <descriptors>
+                        <descriptor>jar-with-all-dependencies.xml</descriptor>
+                    </descriptors>
+                    <archive>
+                        <manifest>
+                            <!-- Jar file entry point -->
+                            <mainClass>edu.rit.se.Main</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
     <dependencies>
+        <!-- Local SATD Detector Implementation from jar -->
         <dependency>
             <groupId>satd_detector</groupId>
             <artifactId>satd_detector</artifactId>
@@ -28,11 +54,14 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/lib/satd_detector.jar</systemPath>
         </dependency>
+
+        <!-- Git Interface -->
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
             <version>3.5.0.201409260305-r</version>
         </dependency>
+
         <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
         <dependency>
             <groupId>commons-io</groupId>
@@ -51,6 +80,8 @@
             <artifactId>commons-text</artifactId>
             <version>1.8</version>
         </dependency>
+
+        <!-- Java Parser -->
         <dependency>
             <groupId>com.github.javaparser</groupId>
             <artifactId>javaparser-symbol-solver-core</artifactId>
@@ -70,6 +101,5 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
-
 
 </project>
