@@ -125,7 +125,7 @@ public class RepositoryInitializer {
 
     private void endCloneElapsedTimer() {
         this.cloneTimer.end();
-        System.out.println(String.format("Finished cloning: %s in %,dms",
-                GitUtil.getRepoNameFromGithubURI(this.gitURI), this.cloneTimer.readMS()));
+//        System.out.println(String.format("Finished cloning: %s in %,dms",
+//                GitUtil.getRepoNameFromGithubURI(this.gitURI), this.cloneTimer.readMS()));
     }
 }

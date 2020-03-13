@@ -6,7 +6,8 @@ import edu.rit.se.satd.comment.GroupedComment;
 import edu.rit.se.satd.comment.OldToNewCommentMapping;
 import edu.rit.se.satd.detector.SATDDetector;
 import edu.rit.se.satd.mining.commit.CommitToCommitDiff;
-import lombok.AllArgsConstructor;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
 import java.util.Collection;
 import java.util.List;
@@ -16,12 +17,15 @@ import java.util.stream.Collectors;
 /**
  * Mines the differences in SATD between repositories
  */
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class RepositoryDiffMiner {
 
     // Required fields
+    @NonNull
     private RepositoryCommitReference firstRepo;
+    @NonNull
     private RepositoryCommitReference secondRepo;
+    @NonNull
     private SATDDetector satdDetector;
 
     /**
@@ -86,14 +90,15 @@ public class RepositoryDiffMiner {
         diffInstance.addSATDInstances(
                 mappings.stream()
                         .filter(OldToNewCommentMapping::isNotMapped)
-                        .peek(mapping -> System.out.println("Found unmapped comment (isOld="+isOld+"): \n" + mapping.getComment().getComment()))
                         .map(mapping -> isOld ?
                                 cToCDiff.loadDiffsForOldFile(mapping.getFile(), mapping.getComment()) :
                                 cToCDiff.loadDiffsForNewFIle(mapping.getFile(), mapping.getComment()))
-                        .peek(instances ->
-                                System.out.println("Found " + instances.size() + " diffs!"))
                         .flatMap(Collection::stream)
                         .collect(Collectors.toList())
         );
+    }
+
+    public String getDiffString() {
+        return String.format("%s#diff-%s", this.firstRepo.getCommit().getName(), this.secondRepo.getCommit().getName());
     }
 }

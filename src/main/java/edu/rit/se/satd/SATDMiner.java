@@ -4,21 +4,25 @@ import edu.rit.se.git.GitUtil;
 import edu.rit.se.git.RepositoryCommitReference;
 import edu.rit.se.git.RepositoryInitializer;
 import edu.rit.se.satd.detector.SATDDetector;
+import edu.rit.se.satd.mining.MinerStatus;
 import edu.rit.se.satd.mining.RepositoryDiffMiner;
 import edu.rit.se.satd.writer.OutputWriter;
+import edu.rit.se.util.ElapsedTimer;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A class which contains high-level logic for mining SATD Instances from a git repository.
  */
-@RequiredArgsConstructor
 public class SATDMiner {
 
     @NonNull
@@ -30,17 +34,47 @@ public class SATDMiner {
     // once mining has completed
     private RepositoryInitializer repo;
 
-    // A list of the diffs that have already been accounted for to prevent
-    // infinite recursion
-    // Should be populated with results from this.getMultiRefHash()
-    private Set<String> alreadyDiffedCommits = new HashSet<>();
+    // Miner status for console output
+    private MinerStatus status;
+
+    private ElapsedTimer timer = new ElapsedTimer();
+
+    public SATDMiner(String repositoryURI, SATDDetector satdDetector) {
+        this.repositoryURI = repositoryURI;
+        this.satdDetector = satdDetector;
+        this.status = new MinerStatus(GitUtil.getRepoNameFromGithubURI(this.repositoryURI));
+    }
+
+    public void disableStatusOutput() {
+        this.status.setOutputEnabled(false);
+    }
 
     public RepositoryCommitReference getBaseCommit(String head) {
+        this.timer.start();
+        this.status.beginInitialization();
         if( (repo == null || !repo.didInitialize()) && !this.initializeRepo() ) {
             System.err.println("Repository failed to initialize");
             return null;
         }
         return this.repo.getMostRecentCommit(head);
+    }
+
+    /**
+     * Cleans the repository that was mined by the Miner. This should delete all files created
+     * by the miner.
+     */
+    public void cleanRepo() {
+        this.status.beginCleanup();
+        this.repo.cleanRepo();
+        try {
+            // Two files are created, so delete the parent as well
+            FileUtils.deleteDirectory(new File(repo.getRepoDir()).getParentFile());
+        } catch (IOException e) {
+            System.err.println("Error in deleting cleaned git repo.");
+            e.printStackTrace();
+        }
+        this.timer.end();
+        this.status.setComplete(this.timer.readMS());
     }
 
     /**
@@ -51,38 +85,32 @@ public class SATDMiner {
      */
     public void writeRepoSATD(RepositoryCommitReference commitRef, OutputWriter writer) {
         if( commitRef == null ) {
+            this.status.setError();
             return;
         }
-        // Go through each commit, and diff against the adjacent commits
-        commitRef.getParentCommitReferences().stream()
-                // Filter out the already diffed commits
-                .filter(parentRef -> !this.alreadyDiffedCommits.contains(getMultiRefHash(commitRef, parentRef)))
-                .peek(parentRef -> this.alreadyDiffedCommits.add(getMultiRefHash(commitRef, parentRef)))
-                // Recurse
-                .peek(parentRef -> writeRepoSATD(parentRef, writer))
-                .map(parentRef -> new RepositoryDiffMiner(parentRef, commitRef, this.satdDetector))
-                .map(RepositoryDiffMiner::mineDiff)
+        this.status.beginCalculatingDiffs();
+
+        final Set<DiffPair> allDiffPairs =  this.getAllDiffPairs(commitRef);
+
+        this.status.beginMiningSATD();
+        this.status.setNDiffsPromised(allDiffPairs.size());
+
+        allDiffPairs.stream()
+                .map(pair -> new RepositoryDiffMiner(pair.parentRepo, pair.repo, this.satdDetector))
+                .map(repositoryDiffMiner -> {
+                    // Output
+                    this.status.setDisplayWindow(repositoryDiffMiner.getDiffString());
+                    return repositoryDiffMiner.mineDiff();
+                })
                 .forEach(diff -> {
                     try {
                         writer.writeDiff(diff);
+                        this.status.fulfilDiffPromise();
                     } catch (IOException e) {
                         System.err.println("Error writing diff!");
                     }
                 });
-    }
 
-    /**
-     * Cleans the repository that was mined by the Miner. This should delete all files created
-     * by the miner.
-     */
-    public void cleanRepo() {
-        this.repo.cleanRepo();
-        try {
-            FileUtils.deleteDirectory(new File(repo.getRepoDir()));
-        } catch (IOException e) {
-            System.err.println("Error in deleting cleaned git repo.");
-            e.printStackTrace();
-        }
     }
 
     private boolean initializeRepo() {
@@ -90,13 +118,53 @@ public class SATDMiner {
         return this.repo.initRepo();
     }
 
-    /**
-     * Generates a unique hash based off the two given repositories
-     * @param r1 a repository reference
-     * @param r2 a repository reference
-     * @return A unique hash for two compared repositories
-     */
-    private String getMultiRefHash(RepositoryCommitReference r1, RepositoryCommitReference r2) {
-        return r1.getCommit().getName() + r2.getCommit().getName();
+    private Set<DiffPair> getAllDiffPairs(RepositoryCommitReference curRef) {
+        Set<RepositoryCommitReference> visitedCommits = new HashSet<>();
+        Set<RepositoryCommitReference> allCommits = new HashSet<>();
+        allCommits.add(curRef);
+        // Continue until no new commit refs are found
+        while( allCommits.size() > visitedCommits.size() ) {
+            allCommits.addAll(
+                    allCommits.stream()
+                            .filter(ref -> !visitedCommits.contains(ref))
+                            .peek(visitedCommits::add)
+                            .map(RepositoryCommitReference::getParentCommitReferences)
+                            .flatMap(Collection::stream)
+                            .collect(Collectors.toSet())
+            );
+        }
+        return allCommits.stream()
+                .flatMap(ref ->
+                        ref.getParentCommitReferences().stream()
+                                .map(parent -> new DiffPair(ref, parent)
+                        )
+                )
+                .collect(Collectors.toSet());
+
+    }
+
+    @RequiredArgsConstructor
+    private class DiffPair {
+
+        @NonNull
+        @Getter
+        private RepositoryCommitReference repo;
+        @NonNull
+        @Getter
+        private RepositoryCommitReference parentRepo;
+
+        @Override
+        public boolean equals(Object obj) {
+            if( obj instanceof DiffPair ) {
+                return this.repo.getCommit().getName().equals(((DiffPair) obj).repo.getCommit().getName()) &&
+                        this.parentRepo.getCommit().getName().equals(((DiffPair) obj).parentRepo.getCommit().getName());
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return (this.parentRepo.getCommit().getName() + this.repo.getCommit().getName()).hashCode();
+        }
     }
 }

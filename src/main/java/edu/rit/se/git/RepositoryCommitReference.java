@@ -145,8 +145,21 @@ public class RepositoryCommitReference {
     private void endSATDParseTimer() {
         if( this.timer != null ) {
             this.timer.end();
-            System.out.println(String.format("Finished finding SATD in %s/commit/%s in %,dms",
-                    this.projectName, this.commit.getName(), this.timer.readMS()));
+//            System.out.println(String.format("Finished finding SATD in %s/commit/%s in %,dms",
+//                    this.projectName, this.commit.getName(), this.timer.readMS()));
         }
+    }
+
+    @Override
+    public int hashCode() {
+        return this.getCommit().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if( obj instanceof  RepositoryCommitReference ) {
+            return this.getCommit().hashCode() == ((RepositoryCommitReference) obj).getCommit().hashCode();
+        }
+        return false;
     }
 }
