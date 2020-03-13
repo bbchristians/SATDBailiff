@@ -42,12 +42,9 @@ public class Main {
             // Find the SATD in each supplied repository
             while (inFileReader.hasNext()) {
 
-                final String repo = inFileReader.next();
+                final SATDMiner miner = new SATDMiner(inFileReader.next(), new SATDDetectorImpl());
 
-                final SATDMiner miner = new SATDMiner(repo, new SATDDetectorImpl());
-
-                miner.writeRepoSATD(miner.getBaseCommit(null),
-                        new MySQLOutputWriter(dbPropsFile));
+                miner.writeRepoSATD(miner.getBaseCommit(null), new MySQLOutputWriter(dbPropsFile));
 
                 miner.cleanRepo();
             }
