@@ -48,7 +48,7 @@ public class JavaParseUtil {
         if( previousComment != null && !groupedComments.contains(previousComment) ) {
             groupedComments.add(previousComment);
         }
-        return new ArrayList<>(groupedComments);
+        return groupedComments;
     }
 
     /**

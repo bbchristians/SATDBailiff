@@ -215,6 +215,9 @@ public class CommitToCommitDiff {
         // Otherwise, parse and then store the value
         try {
             List<GroupedComment> commentsInFile = JavaParseUtil.parseFileForComments(this.getFileContents(fileName));
+            if( fileName.equals("org.vaadin.smartgwt/src/main/java/org/vaadin/smartgwt/server/form/DynamicForm.java")) {
+                System.out.print("ASDASD");
+            }
             this.parsedCommentsInNewCommit.put(fileName, commentsInFile);
             return commentsInFile;
         } catch (IOException e) {

@@ -1,6 +1,6 @@
 BEGIN;    
 	-- Constants
-	SET @project_name = "3scale/3scale_ws_api_for_java";
+	SET @project_name = "aeshell/aesh";
 
 	-- Query
 	SELECT 
@@ -25,6 +25,6 @@ BEGIN;
         on SATD.second_commit=SecondCommit.commit_hash
         INNER JOIN satd.Projects
         on FirstCommit.p_id=Projects.p_id
-		WHERE Projects.p_name=@project_name
+		-- WHERE Projects.p_name=@project_name
         ORDER BY v2_commit_date DESC;
     
