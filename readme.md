@@ -58,7 +58,7 @@ The project should be built using maven. To build the tool into
 an executable `.jar`, use `mvn clean package`.
 
 This project uses the implementation of another project (https://github.com/Tbabm/SATDDetector-Core) for SATD 
-classification. A `.jar` of this file must be present in `lib/` in order for
+classification. A `.jar` of the linked project must be present in `lib/` in order for
 this project to run. It should be noted, that the SATD classification model included
 in that repository's released binaries differs from the model released with
 this project's binaries. To use a different model in your own implementation,
