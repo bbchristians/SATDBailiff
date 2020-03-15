@@ -72,9 +72,9 @@ public class RepositoryInitializer {
             this.endCloneElapsedTimer();
             this.gitDidInit = true;
         } catch (GitAPIException e) {
-            System.err.println("Git API error in git init. Repository will be skipped.");
+            System.err.println("\nGit API error in git init: " + e.getLocalizedMessage());
         } catch (IOException e) {
-            System.err.println("IOException when setting remote in gew repo.");
+            System.err.println("\nIOException when setting remote in gew repo.");
         }
         return this.gitDidInit;
     }
