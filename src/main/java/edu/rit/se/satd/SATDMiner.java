@@ -3,6 +3,7 @@ package edu.rit.se.satd;
 import edu.rit.se.git.GitUtil;
 import edu.rit.se.git.RepositoryCommitReference;
 import edu.rit.se.git.RepositoryInitializer;
+import edu.rit.se.satd.comment.GroupedComment;
 import edu.rit.se.satd.detector.SATDDetector;
 import edu.rit.se.satd.mining.MinerStatus;
 import edu.rit.se.satd.mining.RepositoryDiffMiner;
@@ -15,9 +16,7 @@ import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -37,12 +36,18 @@ public class SATDMiner {
     // Miner status for console output
     private MinerStatus status;
 
+    private Map<GroupedComment, Integer> satdInstanceMappings = new HashMap<>();
+
     private ElapsedTimer timer = new ElapsedTimer();
+
+    private int curSATDId;
 
     public SATDMiner(String repositoryURI, SATDDetector satdDetector) {
         this.repositoryURI = repositoryURI;
         this.satdDetector = satdDetector;
         this.status = new MinerStatus(GitUtil.getRepoNameFromGithubURI(this.repositoryURI));
+        // Start the SATD ID incrementing on a unique value for each repository
+        this.curSATDId = this.repositoryURI.hashCode();
     }
 
     public void disableStatusOutput() {
@@ -96,12 +101,14 @@ public class SATDMiner {
         this.status.setNDiffsPromised(allDiffPairs.size());
 
         allDiffPairs.stream()
+                .sorted()
                 .map(pair -> new RepositoryDiffMiner(pair.parentRepo, pair.repo, this.satdDetector))
                 .map(repositoryDiffMiner -> {
                     // Output
                     this.status.setDisplayWindow(repositoryDiffMiner.getDiffString());
                     return repositoryDiffMiner.mineDiff();
                 })
+                .map(this::mapSATDInstanceLikeness)
                 .forEach(diff -> {
                     try {
                         writer.writeDiff(diff);
@@ -143,8 +150,67 @@ public class SATDMiner {
 
     }
 
+    /**
+     * Associates all SATDInstances in the diff object with other instances found
+     * in this project
+     * @param diff a SATDDifference object
+     * @return the SATDDifference object
+     * TODO what can be done about instances with the same text, in the same method and class??
+     */
+    private SATDDifference mapSATDInstanceLikeness(SATDDifference diff) {
+        diff.getSatdInstances().forEach(satdInstance -> {
+            switch (satdInstance.getResolution()) {
+                case SATD_ADDED:
+                    // SATD was added, so we know it wont relate to other instances
+                    // It could possibly be duplicated from another instance, but detecting
+                    // that is currently out of scope for this tool.
+                    if( !this.satdInstanceMappings.containsKey(satdInstance.getCommentNew()) ) {
+                        this.satdInstanceMappings.put(satdInstance.getCommentNew(), this.getNewSATDId());
+                    }
+                    satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getCommentNew()));
+                    break;
+                case SATD_CHANGED: case FILE_PATH_CHANGED:
+                    // SATD was changed from the previous version, so update it here
+                    // TODO does this run into issues if the class or method name is changed?
+                    //  -- a case which the tool currently does not account for
+                    if( !this.satdInstanceMappings.containsKey(satdInstance.getCommentOld()) ) {
+                        // Looks like we cannot find the old SATD Instance for whatever reason,
+                        // so make a new one
+                        this.satdInstanceMappings.put(satdInstance.getCommentNew(), this.getNewSATDId());
+                    } else {
+                        // Otherwise it exists, so we can propagate it forward
+                        this.satdInstanceMappings.put(satdInstance.getCommentNew(),
+                                this.satdInstanceMappings.get(satdInstance.getCommentOld()));
+                    }
+                    satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getCommentNew()));
+                    break;
+                case SATD_REMOVED: case FILE_REMOVED:
+                    // SATD was removed from the project, but the satdInstance still needs to have
+                    // its ID set if possible
+                    if( !this.satdInstanceMappings.containsKey(satdInstance.getCommentOld()) ) {
+                        // Looks like we cannot find the old SATD Instance for whatever reason
+                        // This is not a case which should be hit
+                        // TODO does this run into issues if the class or method name is changed?
+                        //  -- a case which the tool currently does not account for
+                        System.err.println("Detected that an SATD Instance was removed without ever " +
+                                "having been added! This should not happen!");
+                        satdInstance.setId(this.getNewSATDId());
+                    } else {
+                        // Otherwise it exists, so we can propagate it forward
+                        satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getCommentOld()));
+                    }
+                    break;
+            }
+        });
+        return diff;
+    }
+
+    private int getNewSATDId() {
+        return ++this.curSATDId;
+    }
+
     @RequiredArgsConstructor
-    private class DiffPair {
+    private class DiffPair implements Comparable {
 
         @NonNull
         @Getter
@@ -165,6 +231,14 @@ public class SATDMiner {
         @Override
         public int hashCode() {
             return (this.parentRepo.getCommit().getName() + this.repo.getCommit().getName()).hashCode();
+        }
+
+        @Override
+        public int compareTo(Object o) {
+            if( o instanceof DiffPair ) {
+                return this.repo.getCommit().getCommitTime() - ((DiffPair) o).repo.getCommit().getCommitTime();
+            }
+            return -1;
         }
     }
 }

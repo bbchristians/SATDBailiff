@@ -4,7 +4,7 @@ BEGIN;
 
 	-- Query
 	SELECT 
-		SATD.satd_id, Projects.p_name as project_name, SATD.resolution,
+		SATD.satd_id, Projects.p_name as project_name, SATD.satd_instance_id, SATD.resolution,
         SecondCommit.commit_hash as resolved_commit_v2, 
 		FirstCommit.commit_date as v1_commit_date,
 			FirstFile.f_path as v1_path, 
@@ -26,5 +26,5 @@ BEGIN;
         INNER JOIN satd.Projects
         on FirstCommit.p_id=Projects.p_id
 		-- WHERE Projects.p_name=@project_name
-        ORDER BY v2_commit_date DESC;
+        ORDER BY satd_id DESC;
     

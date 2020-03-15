@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS satd.Commits(
 
 CREATE TABLE IF NOT EXISTS satd.SATD (
 	satd_id INT AUTO_INCREMENT,
+    satd_instance_id INT, -- Not a key value, used only to associate SATD Instances
     p_id INT,
 	first_commit varchar(256),
     second_commit varchar(256),

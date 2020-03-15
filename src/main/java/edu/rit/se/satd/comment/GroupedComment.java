@@ -133,4 +133,9 @@ public class GroupedComment implements Comparable {
 
         return super.equals(obj);
     }
+
+    @Override
+    public int hashCode() {
+        return (this.comment + this.containingMethod + this.containingClass + this.commentType).hashCode();
+    }
 }

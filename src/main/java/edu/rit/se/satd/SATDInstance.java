@@ -3,27 +3,34 @@ package edu.rit.se.satd;
 import edu.rit.se.satd.comment.GroupedComment;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 
 /**
  * Data class which stores information about the SATD Instance
  */
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class SATDInstance {
 
     // File paths
     @Getter
-    private String oldFile;
+    final private String oldFile;
     @Getter
-    private String newFile;
+    final private String newFile;
     // Comment objects
     @Getter
-    private GroupedComment commentOld;
+    final private GroupedComment commentOld;
     @Getter
-    private GroupedComment commentNew;
+    final private GroupedComment commentNew;
     // Resolution
     @Getter
-    private SATDResolution resolution;
+    final private SATDResolution resolution;
+    // SATD ID to associate with other instances.
+    // Two SATDInstances with the same ID stem from the same SATD Instance
+    @Getter
+    @Setter
+    private int id = -1;
 
     public int getStartLineNumberOldFile() {
         return this.commentOld.getStartLine();
