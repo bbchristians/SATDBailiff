@@ -42,11 +42,9 @@ public class SATDInstance {
     }
 
     public enum SATDResolution {
-        UNKNOWN,
         FILE_REMOVED,
         FILE_PATH_CHANGED,
         SATD_REMOVED,
-        SATD_POSSIBLY_REMOVED,
         SATD_CHANGED,
         SATD_ADDED
     }

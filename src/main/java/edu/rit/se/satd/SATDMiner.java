@@ -107,7 +107,7 @@ public class SATDMiner {
                         writer.writeDiff(diff);
                         this.status.fulfilDiffPromise();
                     } catch (IOException e) {
-                        System.err.println("Error writing diff!");
+                        System.err.println("Error writing diff: " + e.getLocalizedMessage());
                     }
                 });
 

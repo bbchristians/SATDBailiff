@@ -8,7 +8,6 @@ import edu.rit.se.satd.comment.GroupedComment;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.sql.*;
 import java.util.Properties;
 
@@ -41,23 +40,28 @@ public class MySQLOutputWriter implements OutputWriter {
 
     @Override
     public void writeDiff(SATDDifference diff) throws IOException {
+        Connection conn = null;
         try {
-            final Connection conn = DriverManager.getConnection(this.dbURI, this.user, this.pass);
+            conn = DriverManager.getConnection(this.dbURI, this.user, this.pass);
             final int projectId = this.getProjectId(conn, diff.getProjectName(), diff.getProjectURI());
             final String oldCommitId = this.getCommitId(conn, new CommitMetaData(diff.getOldCommit()), projectId);
             final String newCommitId = this.getCommitId(conn, new CommitMetaData(diff.getNewCommit()), projectId);
-            diff.getSatdInstances().forEach(satdInstance -> {
-                try {
-                    final int oldFileId = this.getSATDInFileId(conn, satdInstance, true);
-                    final int newFileId = this.getSATDInFileId(conn, satdInstance, false);
-                    this.getSATDInstanceId(conn, satdInstance, newCommitId, oldCommitId, newFileId, oldFileId);
-                } catch (SQLException e) {
-                    throw new UncheckedIOException(new IOException(e));
-                }
-            });
+            for( SATDInstance satdInstance : diff.getSatdInstances() ) {
+                final int oldFileId = this.getSATDInFileId(conn, satdInstance, true);
+                final int newFileId = this.getSATDInFileId(conn, satdInstance, false);
+                this.getSATDInstanceId(conn, satdInstance, newCommitId, oldCommitId, newFileId, oldFileId);
+            }
         } catch (SQLException e) {
             // Issues with SQL will be wrapped in an IOException to maintain interface consistency
             throw new IOException(e);
+        } finally {
+            if( conn != null ) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    System.err.println("Error closing SQL connection");
+                }
+            }
         }
     }
 
