@@ -29,7 +29,7 @@ in [sql/satd.sql](sql/satd.sql).
 A `.properties` file is used to configure the
 tool to connect to the database. The repository contains a
 sample [.properties](mySQL.properties) file. The supplied 
-`.properties` file should contain all the same fields. Extra fields will
+`.properties` file should contain **all** the same fields. Extra fields will
 be ignored.
 
 #### Running the .JAR

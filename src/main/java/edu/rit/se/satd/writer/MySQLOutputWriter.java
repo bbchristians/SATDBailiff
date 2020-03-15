@@ -23,10 +23,11 @@ public class MySQLOutputWriter implements OutputWriter {
         final Properties properties = new Properties();
         properties.load(new FileInputStream(new File(propertiesPath)));
 
-        this.dbURI = String.format("jdbc:mysql://%s:%s/%s?useSSL=false",
+        this.dbURI = String.format("jdbc:mysql://%s:%s/%s?useSSL=%s",
                 properties.getProperty("URL"),
                 properties.getProperty("PORT"),
-                properties.getProperty("DB"));
+                properties.getProperty("DB"),
+                properties.getProperty("USE_SSL"));
         this.user = properties.getProperty("USERNAME");
         this.pass = properties.getProperty("PASSWORD");
 
