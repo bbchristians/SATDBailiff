@@ -55,11 +55,20 @@
             <systemPath>${project.basedir}/lib/satd_detector.jar</systemPath>
         </dependency>
 
-        <!-- Git Interface -->
+        <!-- https://mvnrepository.com/artifact/org.eclipse.jgit/org.eclipse.jgit -->
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
-            <version>3.5.0.201409260305-r</version>
+            <version>5.2.2.201904231744-r</version>
+        </dependency>
+
+        <!-- JGIT forces inclusion of SLF4J, so this No-operation is included to prevent errors without
+        adding SLF4J to the classpath -->
+        <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-nop -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-nop</artifactId>
+            <version>1.7.25</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->

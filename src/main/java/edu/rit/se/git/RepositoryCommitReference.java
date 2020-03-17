@@ -4,6 +4,9 @@ import edu.rit.se.satd.comment.GroupedComment;
 import edu.rit.se.satd.detector.SATDDetector;
 import edu.rit.se.util.ElapsedTimer;
 import edu.rit.se.util.JavaParseUtil;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.errors.CorruptObjectException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
@@ -24,38 +27,23 @@ import java.util.stream.Collectors;
 /**
  * Class used to represent a commit inside a git repository
  */
+@RequiredArgsConstructor
 public class RepositoryCommitReference {
 
-    private RevCommit commit;
+    @Getter
+    @NonNull
     private Git gitInstance;
+    @Getter
+    @NonNull
     private String projectName;
+    @Getter
+    @NonNull
     private String projectURI;
+    @Getter
+    @NonNull
+    private RevCommit commit;
+
     private Map<String, List<GroupedComment>> satdOccurrences = null;
-
-    private ElapsedTimer timer = null;
-
-    RepositoryCommitReference(Git gitInstance, String projectName, String projectURI, RevCommit commit) {
-        this.commit = commit;
-        this.projectName = projectName;
-        this.projectURI = projectURI;
-        this.gitInstance = gitInstance;
-    }
-
-    public String getProjectName() {
-        return this.projectName;
-    }
-
-    public String getProjectURI() {
-        return this.projectURI;
-    }
-
-    public RevCommit getCommit() {
-        return this.commit;
-    }
-
-    public Git getGitInstance() {
-        return this.gitInstance;
-    }
 
     /**
      * @return A list of the commit's parents
@@ -86,9 +74,6 @@ public class RepositoryCommitReference {
      */
     public Map<String, List<GroupedComment>> getFilesToSATDOccurrences(
             SATDDetector detector, List<String> filesToSearch){
-
-        this.startSATDParseTimer();
-
         final TreeWalk thisRepoWalker = GitUtil.getTreeWalker(this.gitInstance, this.commit);
         final Map<String, List<GroupedComment>> filesToSATDMap = new HashMap<>();
         try {
@@ -124,30 +109,9 @@ public class RepositoryCommitReference {
             e.printStackTrace();
         }
 
-        this.endSATDParseTimer();
         // Store a reference to be returned later to avoid parsing more than once
         this.satdOccurrences = filesToSATDMap;
         return filesToSATDMap;
-    }
-
-    /**
-     * Overwrites and starts a time to record the time it takes to locate SATD In the repository
-     * at the given commit
-     */
-    private void startSATDParseTimer() {
-        this.timer = new ElapsedTimer();
-        this.timer.start();
-    }
-
-    /**
-     * Ends the timer, and reports the time it took to parse the SATD in the repository
-     */
-    private void endSATDParseTimer() {
-        if( this.timer != null ) {
-            this.timer.end();
-//            System.out.println(String.format("Finished finding SATD in %s/commit/%s in %,dms",
-//                    this.projectName, this.commit.getName(), this.timer.readMS()));
-        }
     }
 
     @Override
