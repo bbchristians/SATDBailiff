@@ -12,6 +12,7 @@ import edu.rit.se.util.ElapsedTimer;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -28,6 +29,11 @@ public class SATDMiner {
     private String repositoryURI;
     @NonNull
     private SATDDetector satdDetector;
+
+    @Setter
+    private String githubUsername = null;
+    @Setter
+    private String githubPassword = null;
 
     // A reference to the repository initializes. Stored so it can be cleaned
     // once mining has completed
@@ -57,7 +63,8 @@ public class SATDMiner {
     public RepositoryCommitReference getBaseCommit(String head) {
         this.timer.start();
         this.status.beginInitialization();
-        if( (repo == null || !repo.didInitialize()) && !this.initializeRepo() ) {
+        if( (repo == null || !repo.didInitialize()) &&
+                !this.initializeRepo(this.githubUsername, this.githubPassword) ) {
             System.err.println("Repository failed to initialize");
             return null;
         }
@@ -120,8 +127,11 @@ public class SATDMiner {
 
     }
 
-    private boolean initializeRepo() {
-        this.repo = new RepositoryInitializer(this.repositoryURI, GitUtil.getRepoNameFromGithubURI(this.repositoryURI));
+    private boolean initializeRepo(String username, String password) {
+        this.repo = ( username != null && password != null ) ?
+                new RepositoryInitializer(this.repositoryURI, GitUtil.getRepoNameFromGithubURI(this.repositoryURI),
+                        username, password):
+                new RepositoryInitializer(this.repositoryURI, GitUtil.getRepoNameFromGithubURI(this.repositoryURI));
         return this.repo.initRepo();
     }
 

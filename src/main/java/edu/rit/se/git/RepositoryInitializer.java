@@ -1,6 +1,7 @@
 package edu.rit.se.git;
 
-import edu.rit.se.util.ElapsedTimer;
+import lombok.Getter;
+import lombok.NonNull;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -28,14 +29,19 @@ public class RepositoryInitializer {
     private static final String REPO_OUT_DIR = "repos";
 
     // Constructor fields
+    @Getter
+    @NonNull
     private String repoDir;
+    @NonNull
     private String gitURI;
+
+    @NonNull
+    private String gitUsername = GIT_USERNAME;
+    @NonNull
+    private String gitPassword = GIT_USERNAME;
 
     // Set after initialization
     private Git repoRef = null;
-
-    // Timer for reporting
-    private ElapsedTimer cloneTimer = null;
 
     // Prevents other functionality of the class from being used if the git init fails
     private Boolean gitDidInit = false;
@@ -43,6 +49,13 @@ public class RepositoryInitializer {
     public RepositoryInitializer(String uri, String baseName) {
         this.repoDir = String.join(File.separator, REPO_OUT_DIR, baseName);
         this.gitURI = uri;
+    }
+
+    public RepositoryInitializer(String uri, String baseName, String gitUsername, String gitPassword) {
+        this.repoDir = String.join(File.separator, REPO_OUT_DIR, baseName);
+        this.gitURI = uri;
+        this.gitUsername = gitUsername;
+        this.gitPassword = gitPassword;
     }
 
     /**
@@ -58,10 +71,9 @@ public class RepositoryInitializer {
         }
         newGitRepo.mkdirs();
         try {
-            this.startCloneElapsedTimer();
             // Clone an instance of the repository locally
             this.repoRef = Git.cloneRepository()
-                    .setCredentialsProvider(new UsernamePasswordCredentialsProvider(GIT_USERNAME, GIT_PASSWORD))
+                    .setCredentialsProvider(new UsernamePasswordCredentialsProvider(this.gitUsername, this.gitPassword))
                     .setURI(this.gitURI)
                     .setDirectory(newGitRepo)
                     .setCloneAllBranches(false)
@@ -69,7 +81,6 @@ public class RepositoryInitializer {
             // Add a remote instance to the repository (to be used for tag listing)
             this.repoRef.getRepository().getConfig().setString(REMOTE, ORIGIN, URL, this.gitURI);
             this.repoRef.getRepository().getConfig().save();
-            this.endCloneElapsedTimer();
             this.gitDidInit = true;
         } catch (GitAPIException e) {
             System.err.println("\nGit API error in git init: " + e.getLocalizedMessage());
@@ -110,22 +121,7 @@ public class RepositoryInitializer {
         }
     }
 
-    public String getRepoDir() {
-        return this.repoDir;
-    }
-
     public boolean didInitialize() {
         return this.gitDidInit;
-    }
-
-    private void startCloneElapsedTimer() {
-        this.cloneTimer = new ElapsedTimer();
-        this.cloneTimer.start();
-    }
-
-    private void endCloneElapsedTimer() {
-        this.cloneTimer.end();
-//        System.out.println(String.format("Finished cloning: %s in %,dms",
-//                GitUtil.getRepoNameFromGithubURI(this.gitURI), this.cloneTimer.readMS()));
     }
 }

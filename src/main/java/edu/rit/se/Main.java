@@ -13,6 +13,8 @@ public class Main {
 
     private static final String ARG_NAME_DB_PROPS = "d";
     private static final String ARG_NAME_REPOS_FILE = "r";
+    private static final String ARG_NAME_GH_USERNAME = "u";
+    private static final String ARG_NAME_GH_PASSWORD = "p";
     private static final String PROJECT_NAME_CLI = "satd-analyzer";
 
     public static void main(String[] args) throws Exception {
@@ -43,6 +45,14 @@ public class Main {
 
                 final SATDMiner miner = new SATDMiner(inFileReader.next(), new SATDDetectorImpl());
 
+                // Set username and password if supplied
+                if( cmd.hasOption(ARG_NAME_GH_USERNAME) ) {
+                    miner.setGithubUsername(cmd.getOptionValue(ARG_NAME_GH_USERNAME));
+                }
+                if( cmd.hasOption(ARG_NAME_GH_PASSWORD) ) {
+                    miner.setGithubPassword(cmd.getOptionValue(ARG_NAME_GH_PASSWORD));
+                }
+
                 miner.writeRepoSATD(miner.getBaseCommit(null), new MySQLOutputWriter(dbPropsFile));
 
                 miner.cleanRepo();
@@ -59,19 +69,31 @@ public class Main {
         // CLI Logic
         return new Options()
                 .addOption(Option.builder(ARG_NAME_DB_PROPS)
-                    .longOpt("db-props")
-                    .hasArg()
-                    .argName("FILE")
-                    .desc(".properties file containing database properties")
-                    .required()
-                    .build())
+                        .longOpt("db-props")
+                        .hasArg()
+                        .argName("FILE")
+                        .desc(".properties file containing database properties")
+                        .required()
+                        .build())
                 .addOption(Option.builder(ARG_NAME_REPOS_FILE)
-                    .longOpt("repos")
-                    .hasArg()
-                    .argName("FILE")
-                    .desc("new-line separated file containing git repositories")
-                    .required()
-                    .build());
+                        .longOpt("repos")
+                        .hasArg()
+                        .argName("FILE")
+                        .desc("new-line separated file containing git repositories")
+                        .required()
+                        .build())
+                .addOption(Option.builder(ARG_NAME_GH_USERNAME)
+                        .longOpt("username")
+                        .hasArg()
+                        .argName("USERNAME")
+                        .desc("username for Github authentication")
+                        .build())
+                .addOption(Option.builder(ARG_NAME_GH_PASSWORD)
+                        .longOpt("password")
+                        .hasArg()
+                        .argName("PASSWORD")
+                        .desc("password for Github authentication")
+                        .build());
     }
 
     /**

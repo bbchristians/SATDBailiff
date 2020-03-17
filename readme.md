@@ -46,10 +46,13 @@ The help menu output is as follows.
 
 ```
 usage: satd-analyzer
- -d,--db-props <FILE>   .properties file containing database properties
- -h,--help              display help menu
- -r,--repos <FILE>      new-line separated file containing git
-                        repositories
+ -d,--db-props <FILE>       .properties file containing database
+                            properties
+ -h,--help                  display help menu
+ -p,--password <PASSWORD>   password for Github authentication
+ -r,--repos <FILE>          new-line separated file containing git
+                            repositories
+ -u,--username <USERNAME>   username for Github authentication
 ```
 
 #### Building and Running the Tool

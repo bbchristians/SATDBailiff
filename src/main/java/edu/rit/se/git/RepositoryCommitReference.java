@@ -2,7 +2,6 @@ package edu.rit.se.git;
 
 import edu.rit.se.satd.comment.GroupedComment;
 import edu.rit.se.satd.detector.SATDDetector;
-import edu.rit.se.util.ElapsedTimer;
 import edu.rit.se.util.JavaParseUtil;
 import lombok.Getter;
 import lombok.NonNull;
