@@ -166,6 +166,7 @@ public class CommitToCommitDiff {
                             GitUtil.editOccursInOldFileBetween(edit,
                                     comment.getContainingMethodDeclarationLine(),
                                     comment.getContainingMethodDeclarationLine())) ) {
+                        // Check to see if the name of the containing method/class were updated
                         commentsInNewRepository.stream()
                                 .filter(c -> c.getComment().equals(comment.getComment()))
                                 .filter(c -> !c.getContainingClass().equals(comment.getContainingClass()) ||

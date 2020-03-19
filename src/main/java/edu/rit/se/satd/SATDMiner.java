@@ -171,7 +171,9 @@ public class SATDMiner {
      * TODO what can be done about instances with the same text, in the same method and class??
      */
     private SATDDifference mapSATDInstanceLikeness(SATDDifference diff) {
-        diff.getSatdInstances().forEach(satdInstance -> {
+        diff.getSatdInstances().stream()
+                .distinct()
+                .forEach(satdInstance -> {
             switch (satdInstance.getResolution()) {
                 case SATD_ADDED:
                     // SATD was added, so we know it wont relate to other instances
@@ -184,8 +186,6 @@ public class SATDMiner {
                     break;
                 case SATD_CHANGED: case FILE_PATH_CHANGED:
                     // SATD was changed from the previous version, so update it here
-                    // TODO does this run into issues if the class or method name is changed?
-                    //  -- a case which the tool currently does not account for
                     if( !this.satdInstanceMappings.containsKey(satdInstance.getOldInstance()) ) {
                         // Looks like we cannot find the old SATD Instance for whatever reason,
                         // so make a new one
@@ -203,11 +203,7 @@ public class SATDMiner {
                     if( !this.satdInstanceMappings.containsKey(satdInstance.getOldInstance()) ) {
                         // Looks like we cannot find the old SATD Instance for whatever reason
                         // This is not a case which should be hit
-                        // TODO does this run into issues if the class or method name is changed?
-                        //  -- a case which the tool currently does not account for
-                        //   -- yes, it does!
-                        System.err.println("\nDetected that an SATD Instance was removed without ever " +
-                                "having been added! This should not happen!");
+                        System.err.println("\nError getting satd_instance_id for " + satdInstance.getOldInstance().toString());
                         satdInstance.setId(this.getNewSATDId());
                     } else {
                         // Otherwise it exists, so we can propagate it forward
@@ -224,7 +220,7 @@ public class SATDMiner {
     }
 
     @RequiredArgsConstructor
-    private class DiffPair implements Comparable {
+    public class DiffPair implements Comparable {
 
         @NonNull
         @Getter

@@ -7,7 +7,9 @@ import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.comments.Comment;
 import edu.rit.se.util.JavaParseUtil;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -109,7 +111,7 @@ public class GroupedComment implements Comparable {
                 this.containingClass,
                 this.containingClassDeclarationLine,
                 this.containingMethod,
-                this.containingClassDeclarationLine);
+                this.containingMethodDeclarationLine);
     }
 
     /**

@@ -6,6 +6,7 @@ import edu.rit.se.satd.comment.OldToNewCommentMapping;
 import edu.rit.se.satd.detector.SATDDetector;
 import edu.rit.se.satd.mining.commit.CommitToCommitDiff;
 import edu.rit.se.satd.model.SATDDifference;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -24,6 +25,7 @@ public class RepositoryDiffMiner {
     @NonNull
     private RepositoryCommitReference firstRepo;
     @NonNull
+    @Getter
     private RepositoryCommitReference secondRepo;
     @NonNull
     private SATDDetector satdDetector;

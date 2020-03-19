@@ -50,4 +50,21 @@ public class SATDInstance {
         SATD_ADDED,
         CLASS_OR_METHOD_CHANGED
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if( obj instanceof SATDInstance ) {
+            return this.oldInstance.equals(((SATDInstance) obj).oldInstance) &&
+                    this.newInstance.equals(((SATDInstance) obj).newInstance) &&
+                    this.resolution.equals(((SATDInstance) obj).resolution);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return this.oldInstance.hashCode() +
+                this.newInstance.hashCode() +
+                this.resolution.hashCode();
+    }
 }
