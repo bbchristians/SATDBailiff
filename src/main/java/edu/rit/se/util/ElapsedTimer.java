@@ -1,15 +1,16 @@
 package edu.rit.se.util;
 
+import lombok.NoArgsConstructor;
+
 /**
  * A utility class which provides performance reporting on the
  * runtime duration of various activities done by the system
  */
+@NoArgsConstructor
 public class ElapsedTimer {
 
     private long startTime = -1;
     private long endTime = -1;
-
-    public ElapsedTimer() {}
 
     public void start() {
         if( startTime == -1 ) {

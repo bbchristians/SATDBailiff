@@ -2,6 +2,7 @@ package edu.rit.se.util;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
+import com.github.javaparser.Position;
 import com.github.javaparser.Range;
 import com.github.javaparser.ast.comments.CommentsCollection;
 import edu.rit.se.satd.comment.GroupedComment;
@@ -12,6 +13,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class JavaParseUtil {
+
+    public static Range NULL_RANGE = new Range(new Position(-1, -1), new Position(-1, -1));
 
     /**
      * Gets a list of comments from the input java file
@@ -67,4 +70,5 @@ public class JavaParseUtil {
                         // Starts after the start and ends before the end
                         (range.begin.line >= start && range.end.line <= end);
     }
+
 }

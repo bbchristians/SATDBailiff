@@ -3,10 +3,11 @@ package edu.rit.se.satd;
 import edu.rit.se.git.GitUtil;
 import edu.rit.se.git.RepositoryCommitReference;
 import edu.rit.se.git.RepositoryInitializer;
-import edu.rit.se.satd.comment.GroupedComment;
 import edu.rit.se.satd.detector.SATDDetector;
 import edu.rit.se.satd.mining.MinerStatus;
 import edu.rit.se.satd.mining.RepositoryDiffMiner;
+import edu.rit.se.satd.model.SATDDifference;
+import edu.rit.se.satd.model.SATDInstanceInFile;
 import edu.rit.se.satd.writer.OutputWriter;
 import edu.rit.se.util.ElapsedTimer;
 import lombok.Getter;
@@ -42,7 +43,7 @@ public class SATDMiner {
     // Miner status for console output
     private MinerStatus status;
 
-    private Map<GroupedComment, Integer> satdInstanceMappings = new HashMap<>();
+    private Map<SATDInstanceInFile, Integer> satdInstanceMappings = new HashMap<>();
 
     private ElapsedTimer timer = new ElapsedTimer();
 
@@ -111,7 +112,6 @@ public class SATDMiner {
                 .sorted()
                 .map(pair -> new RepositoryDiffMiner(pair.parentRepo, pair.repo, this.satdDetector))
                 .map(repositoryDiffMiner -> {
-                    // Output
                     this.status.setDisplayWindow(repositoryDiffMiner.getDiffString());
                     return repositoryDiffMiner.mineDiff();
                 })
@@ -151,6 +151,8 @@ public class SATDMiner {
             );
         }
         return allCommits.stream()
+                // Only include non-merge commits
+                .filter(ref -> ref.getParentCommitReferences().size() < 2)
                 .flatMap(ref ->
                         ref.getParentCommitReferences().stream()
                                 .map(parent -> new DiffPair(ref, parent)
@@ -174,40 +176,41 @@ public class SATDMiner {
                     // SATD was added, so we know it wont relate to other instances
                     // It could possibly be duplicated from another instance, but detecting
                     // that is currently out of scope for this tool.
-                    if( !this.satdInstanceMappings.containsKey(satdInstance.getCommentNew()) ) {
-                        this.satdInstanceMappings.put(satdInstance.getCommentNew(), this.getNewSATDId());
+                    if( !this.satdInstanceMappings.containsKey(satdInstance.getNewInstance()) ) {
+                        this.satdInstanceMappings.put(satdInstance.getNewInstance(), this.getNewSATDId());
                     }
-                    satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getCommentNew()));
+                    satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getNewInstance()));
                     break;
                 case SATD_CHANGED: case FILE_PATH_CHANGED:
                     // SATD was changed from the previous version, so update it here
                     // TODO does this run into issues if the class or method name is changed?
                     //  -- a case which the tool currently does not account for
-                    if( !this.satdInstanceMappings.containsKey(satdInstance.getCommentOld()) ) {
+                    if( !this.satdInstanceMappings.containsKey(satdInstance.getOldInstance()) ) {
                         // Looks like we cannot find the old SATD Instance for whatever reason,
                         // so make a new one
-                        this.satdInstanceMappings.put(satdInstance.getCommentNew(), this.getNewSATDId());
+                        this.satdInstanceMappings.put(satdInstance.getNewInstance(), this.getNewSATDId());
                     } else {
                         // Otherwise it exists, so we can propagate it forward
-                        this.satdInstanceMappings.put(satdInstance.getCommentNew(),
-                                this.satdInstanceMappings.get(satdInstance.getCommentOld()));
+                        this.satdInstanceMappings.put(satdInstance.getNewInstance(),
+                                this.satdInstanceMappings.get(satdInstance.getOldInstance()));
                     }
-                    satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getCommentNew()));
+                    satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getNewInstance()));
                     break;
                 case SATD_REMOVED: case FILE_REMOVED:
                     // SATD was removed from the project, but the satdInstance still needs to have
                     // its ID set if possible
-                    if( !this.satdInstanceMappings.containsKey(satdInstance.getCommentOld()) ) {
+                    if( !this.satdInstanceMappings.containsKey(satdInstance.getOldInstance()) ) {
                         // Looks like we cannot find the old SATD Instance for whatever reason
                         // This is not a case which should be hit
                         // TODO does this run into issues if the class or method name is changed?
                         //  -- a case which the tool currently does not account for
-                        System.err.println("Detected that an SATD Instance was removed without ever " +
+                        //   -- yes, it does!
+                        System.err.println("\nDetected that an SATD Instance was removed without ever " +
                                 "having been added! This should not happen!");
                         satdInstance.setId(this.getNewSATDId());
                     } else {
                         // Otherwise it exists, so we can propagate it forward
-                        satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getCommentOld()));
+                        satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getOldInstance()));
                     }
                     break;
             }

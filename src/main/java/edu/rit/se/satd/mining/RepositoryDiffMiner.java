@@ -1,11 +1,11 @@
 package edu.rit.se.satd.mining;
 
 import edu.rit.se.git.RepositoryCommitReference;
-import edu.rit.se.satd.SATDDifference;
 import edu.rit.se.satd.comment.GroupedComment;
 import edu.rit.se.satd.comment.OldToNewCommentMapping;
 import edu.rit.se.satd.detector.SATDDetector;
 import edu.rit.se.satd.mining.commit.CommitToCommitDiff;
+import edu.rit.se.satd.model.SATDDifference;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -64,7 +64,6 @@ public class RepositoryDiffMiner {
 
         // Map the new to old and then old to new, so we can determine which SATD instances
         // may have changed
-        alignMappingLists(newSATDMappings, oldSATDMappings);
         alignMappingLists(oldSATDMappings, newSATDMappings);
 
         // Add SATD Instances that were in the OLD repo, but couldn't be mapped to the NEW repo

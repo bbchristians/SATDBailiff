@@ -1,9 +1,9 @@
 package edu.rit.se.satd.writer;
 
 import edu.rit.se.git.commit.CommitMetaData;
-import edu.rit.se.satd.SATDDifference;
-import edu.rit.se.satd.SATDInstance;
 import edu.rit.se.satd.comment.GroupedComment;
+import edu.rit.se.satd.model.SATDDifference;
+import edu.rit.se.satd.model.SATDInstance;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -112,14 +112,14 @@ public class MySQLOutputWriter implements OutputWriter {
      */
     private int getSATDInFileId(Connection conn, SATDInstance satdInstance, boolean useOld) throws SQLException {
         // Get the correct values from the SATD Instance
-        final String filePath = useOld ? satdInstance.getOldFile()
-                : satdInstance.getNewFile();
+        final String filePath = useOld ? satdInstance.getOldInstance().getFileName()
+                : satdInstance.getNewInstance().getFileName();
         final int startLineNumber = useOld ? satdInstance.getStartLineNumberOldFile()
                 : satdInstance.getStartLineNumberNewFile();
         final int endLineNumber = useOld ? satdInstance.getEndLineNumberOldFile()
                 : satdInstance.getEndLineNumberNewFile();
-        final GroupedComment comment = useOld ? satdInstance.getCommentOld() :
-                satdInstance.getCommentNew();
+        final GroupedComment comment = useOld ? satdInstance.getOldInstance().getComment() :
+                satdInstance.getNewInstance().getComment();
         final PreparedStatement queryStmt = conn.prepareStatement(
                 "SELECT SATDInFile.f_id FROM SATDInFile WHERE " +
                 "SATDInFile.f_comment=? AND SATDInFile.f_path=? AND " +

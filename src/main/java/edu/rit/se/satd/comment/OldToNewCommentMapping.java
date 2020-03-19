@@ -29,6 +29,8 @@ public class OldToNewCommentMapping {
 
     public boolean commentsMatch(OldToNewCommentMapping other) {
         return this.comment.getComment().equals(other.comment.getComment())
+                && this.comment.getContainingMethod().equals(other.comment.getContainingMethod())
+                && this.comment.getContainingClass().equals(other.comment.getContainingClass())
                 && this.file.equals(other.file);
     }
 

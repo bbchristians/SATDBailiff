@@ -1,7 +1,5 @@
-package edu.rit.se.satd;
+package edu.rit.se.satd.model;
 
-import edu.rit.se.satd.comment.GroupedComment;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -13,16 +11,12 @@ import lombok.Setter;
 @RequiredArgsConstructor
 public class SATDInstance {
 
-    // File paths
     @Getter
-    final private String oldFile;
+    final private SATDInstanceInFile oldInstance;
+
     @Getter
-    final private String newFile;
-    // Comment objects
-    @Getter
-    final private GroupedComment commentOld;
-    @Getter
-    final private GroupedComment commentNew;
+    final private SATDInstanceInFile newInstance;
+
     // Resolution
     @Getter
     final private SATDResolution resolution;
@@ -33,19 +27,19 @@ public class SATDInstance {
     private int id = -1;
 
     public int getStartLineNumberOldFile() {
-        return this.commentOld.getStartLine();
+        return this.oldInstance.getComment().getStartLine();
     }
 
     public int getEndLineNumberOldFile() {
-        return this.commentOld.getEndLine();
+        return this.oldInstance.getComment().getEndLine();
     }
 
     public int getStartLineNumberNewFile() {
-        return this.commentNew.getStartLine();
+        return this.newInstance.getComment().getStartLine();
     }
 
     public int getEndLineNumberNewFile() {
-        return this.commentNew.getEndLine();
+        return this.newInstance.getComment().getEndLine();
     }
 
     public enum SATDResolution {
@@ -53,6 +47,7 @@ public class SATDInstance {
         FILE_PATH_CHANGED,
         SATD_REMOVED,
         SATD_CHANGED,
-        SATD_ADDED
+        SATD_ADDED,
+        CLASS_OR_METHOD_CHANGED
     }
 }

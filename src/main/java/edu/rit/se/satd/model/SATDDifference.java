@@ -1,4 +1,4 @@
-package edu.rit.se.satd;
+package edu.rit.se.satd.model;
 
 import lombok.Getter;
 import lombok.NonNull;

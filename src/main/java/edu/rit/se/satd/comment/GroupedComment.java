@@ -1,40 +1,47 @@
 package edu.rit.se.satd.comment;
 
+import com.github.javaparser.Position;
+import com.github.javaparser.Range;
+import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.comments.Comment;
 import edu.rit.se.util.JavaParseUtil;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@NoArgsConstructor(access = AccessLevel.PACKAGE) // For inheritance
-@AllArgsConstructor(access = AccessLevel.PRIVATE) // For internal use only
+import static edu.rit.se.util.JavaParseUtil.NULL_RANGE;
+
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE) // For internal use only
 public class GroupedComment implements Comparable {
 
     private static final String UNKNOWN = "None";
 
     @Getter
-    private int startLine;
+    final private int startLine;
     @Getter
-    private int endLine;
+    final private int endLine;
     @Getter
-    private String comment;
+    final private String comment;
     @Getter
-    private String commentType;
+    final private String commentType;
     @Getter
-    private String containingClass = UNKNOWN;
+    final private String containingClass;
     @Getter
-    private String containingMethod = UNKNOWN;
+    final private int containingClassDeclarationLine;
+    @Getter
+    final private String containingMethod;
+    @Getter
+    final private int containingMethodDeclarationLine;
 
     public GroupedComment(Comment oldComment) {
         if( !oldComment.getRange().isPresent() ) {
             System.err.println("Comment line numbers could not be found.");
+            this.startLine = -1;
+            this.endLine = -1;
         } else {
             this.startLine = oldComment.getRange().get().begin.line;
             this.endLine = oldComment.getRange().get().end.line;
@@ -59,12 +66,29 @@ public class GroupedComment implements Comparable {
                     .map(ClassOrInterfaceDeclaration::getFullyQualifiedName)
                     .map(opt -> opt.orElse(UNKNOWN))
                     .get();
-            this.containingMethod = classRoot.get().findAll(MethodDeclaration.class).stream()
+            this.containingClassDeclarationLine = classRoot
+                    .map(ClassOrInterfaceDeclaration::getName)
+                    .map(Node::getRange)
+                    .get()
+                    .orElse(new Range(new Position(-1, -1), new Position(-1, -1)))
+                    .begin.line;
+            final Optional<MethodDeclaration> thisMethod = classRoot.get().findAll(MethodDeclaration.class).stream()
                     .filter(dec -> dec.getRange().isPresent())
                     .filter(dec -> JavaParseUtil.isRangeBetweenBounds(dec.getRange().get(), this.startLine, this.endLine))
+                    .findFirst();
+            this.containingMethod = thisMethod
                     .map(MethodDeclaration::getNameAsString)
-                    .findFirst()
                     .orElse(UNKNOWN);
+            this.containingMethodDeclarationLine = thisMethod
+                    .map(Node::getRange)
+                    .orElse(Optional.of(NULL_RANGE))
+                    .orElse(NULL_RANGE)
+                    .begin.line;
+        } else {
+            this.containingMethod = UNKNOWN;
+            this.containingMethodDeclarationLine = -1;
+            this.containingClass = UNKNOWN;
+            this.containingClassDeclarationLine = -1;
         }
     }
 
@@ -83,7 +107,9 @@ public class GroupedComment implements Comparable {
                         String.join("\n", other.comment, this.comment),
                 this.commentType,
                 this.containingClass,
-                this.containingMethod);
+                this.containingClassDeclarationLine,
+                this.containingMethod,
+                this.containingClassDeclarationLine);
     }
 
     /**

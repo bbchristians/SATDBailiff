@@ -1,6 +1,6 @@
 package edu.rit.se.satd.writer;
 
-import edu.rit.se.satd.SATDDifference;
+import edu.rit.se.satd.model.SATDDifference;
 
 import java.io.IOException;
 
