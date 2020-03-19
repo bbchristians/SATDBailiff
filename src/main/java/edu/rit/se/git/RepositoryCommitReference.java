@@ -30,17 +30,13 @@ import java.util.stream.Collectors;
 public class RepositoryCommitReference {
 
     @Getter
-    @NonNull
-    private Git gitInstance;
+    final private Git gitInstance;
     @Getter
-    @NonNull
-    private String projectName;
+    final private String projectName;
     @Getter
-    @NonNull
-    private String projectURI;
+    final private String projectURI;
     @Getter
-    @NonNull
-    private RevCommit commit;
+    final private RevCommit commit;
 
     private Map<String, List<GroupedComment>> satdOccurrences = null;
 
@@ -111,6 +107,14 @@ public class RepositoryCommitReference {
         // Store a reference to be returned later to avoid parsing more than once
         this.satdOccurrences = filesToSATDMap;
         return filesToSATDMap;
+    }
+
+    public String getCommitHash() {
+        return this.commit.getName();
+    }
+
+    public int getCommitTime() {
+        return this.commit.getCommitTime();
     }
 
     @Override

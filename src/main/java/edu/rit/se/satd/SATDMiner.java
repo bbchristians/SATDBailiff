@@ -1,5 +1,6 @@
 package edu.rit.se.satd;
 
+import edu.rit.se.git.DevNullCommitReference;
 import edu.rit.se.git.GitUtil;
 import edu.rit.se.git.RepositoryCommitReference;
 import edu.rit.se.git.RepositoryInitializer;
@@ -103,13 +104,12 @@ public class SATDMiner {
         }
         this.status.beginCalculatingDiffs();
 
-        final Set<DiffPair> allDiffPairs =  this.getAllDiffPairs(commitRef);
+        final List<DiffPair> allDiffPairs =  this.getAllDiffPairs(commitRef);
 
         this.status.beginMiningSATD();
         this.status.setNDiffsPromised(allDiffPairs.size());
 
         allDiffPairs.stream()
-                .sorted()
                 .map(pair -> new RepositoryDiffMiner(pair.parentRepo, pair.repo, this.satdDetector))
                 .map(repositoryDiffMiner -> {
                     this.status.setDisplayWindow(repositoryDiffMiner.getDiffString());
@@ -135,9 +135,9 @@ public class SATDMiner {
         return this.repo.initRepo();
     }
 
-    private Set<DiffPair> getAllDiffPairs(RepositoryCommitReference curRef) {
-        Set<RepositoryCommitReference> visitedCommits = new HashSet<>();
-        Set<RepositoryCommitReference> allCommits = new HashSet<>();
+    private List<DiffPair> getAllDiffPairs(RepositoryCommitReference curRef) {
+        final Set<RepositoryCommitReference> visitedCommits = new HashSet<>();
+        final Set<RepositoryCommitReference> allCommits = new HashSet<>();
         allCommits.add(curRef);
         // Continue until no new commit refs are found
         while( allCommits.size() > visitedCommits.size() ) {
@@ -150,7 +150,7 @@ public class SATDMiner {
                             .collect(Collectors.toSet())
             );
         }
-        return allCommits.stream()
+        final List<DiffPair> nonMergeDiffPairs = allCommits.stream()
                 // Only include non-merge commits
                 .filter(ref -> ref.getParentCommitReferences().size() < 2)
                 .flatMap(ref ->
@@ -158,8 +158,9 @@ public class SATDMiner {
                                 .map(parent -> new DiffPair(ref, parent)
                         )
                 )
-                .collect(Collectors.toSet());
-
+                .collect(Collectors.toList());
+        nonMergeDiffPairs.add(0, new DiffPair(nonMergeDiffPairs.get(0).parentRepo, new DevNullCommitReference()));
+        return nonMergeDiffPairs;
     }
 
     /**
@@ -235,21 +236,21 @@ public class SATDMiner {
         @Override
         public boolean equals(Object obj) {
             if( obj instanceof DiffPair ) {
-                return this.repo.getCommit().getName().equals(((DiffPair) obj).repo.getCommit().getName()) &&
-                        this.parentRepo.getCommit().getName().equals(((DiffPair) obj).parentRepo.getCommit().getName());
+                return this.repo.getCommitHash().equals(((DiffPair) obj).repo.getCommitHash()) &&
+                        this.parentRepo.getCommitHash().equals(((DiffPair) obj).parentRepo.getCommitHash());
             }
             return false;
         }
 
         @Override
         public int hashCode() {
-            return (this.parentRepo.getCommit().getName() + this.repo.getCommit().getName()).hashCode();
+            return (this.parentRepo.getCommitHash() + this.repo.getCommitHash()).hashCode();
         }
 
         @Override
         public int compareTo(Object o) {
             if( o instanceof DiffPair ) {
-                return this.repo.getCommit().getCommitTime() - ((DiffPair) o).repo.getCommit().getCommitTime();
+                return this.repo.getCommitTime() - ((DiffPair) o).repo.getCommitTime();
             }
             return -1;
         }

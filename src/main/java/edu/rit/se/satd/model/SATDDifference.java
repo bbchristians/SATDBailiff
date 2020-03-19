@@ -19,16 +19,14 @@ public class SATDDifference {
     // Required fields for maintaining an SATD Difference object
     @Getter
     @NonNull
-    private String projectName;
+    final private String projectName;
     @Getter
     @NonNull
-    private String projectURI;
+    final private String projectURI;
     @Getter
-    @NonNull
-    private RevCommit oldCommit;
+    final private RevCommit oldCommit;
     @Getter
-    @NonNull
-    private RevCommit newCommit;
+    final private RevCommit newCommit;
 
     // The lists of the different types of SATD that can be found in a project
     @Getter

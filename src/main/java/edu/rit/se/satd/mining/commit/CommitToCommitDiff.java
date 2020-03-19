@@ -34,9 +34,9 @@ public class CommitToCommitDiff {
     private Map<String, List<GroupedComment>> parsedCommentsInNewCommit = new HashMap<>();
 
     public CommitToCommitDiff(RepositoryCommitReference oldRepo, RepositoryCommitReference newRepo) {
-        this.gitInstance = oldRepo.getGitInstance();
+        this.gitInstance = newRepo.getGitInstance();
         this.newCommit = newRepo.getCommit();
-        this.diffEntries = GitUtil.getDiffEntries(this.gitInstance, oldRepo.getCommit().getTree(), this.newCommit.getTree())
+        this.diffEntries = GitUtil.getDiffEntries(this.gitInstance, oldRepo.getCommit(), this.newCommit)
                 .stream()
                 .filter(diffEntry -> diffEntry.getOldPath().endsWith(".java") || diffEntry.getNewPath().endsWith(".java"))
                 .collect(Collectors.toList());

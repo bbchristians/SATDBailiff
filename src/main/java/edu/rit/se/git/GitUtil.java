@@ -12,6 +12,7 @@ import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
+import org.eclipse.jgit.treewalk.EmptyTreeIterator;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
 
@@ -52,16 +53,24 @@ public class GitUtil {
     /**
      * Gets all diffs between two revision trees
      * @param gitInstance the Git instance the revisions take place within
-     * @param tree1 a revision tree
-     * @param tree2 a revision tree
+     * @param commit1 a RevCommit
+     * @param commit2 a RevCommit
      * @return A list of all DiffEntries between the two trees
      */
-    public static List<DiffEntry> getDiffEntries(Git gitInstance, RevTree tree1, RevTree tree2) {
+    public static List<DiffEntry> getDiffEntries(Git gitInstance, RevCommit commit1, RevCommit commit2) {
         try {
             TreeWalk tw = new TreeWalk(gitInstance.getRepository());
             tw.setRecursive(true);
-            tw.addTree(tree1);
-            tw.addTree(tree2);
+            if( commit1 != null ) {
+                tw.addTree(commit1.getTree());
+            } else {
+                tw.addTree(new EmptyTreeIterator());
+            }
+            if( commit2 != null ) {
+                tw.addTree(commit2.getTree());
+            } else {
+                tw.addTree(new EmptyTreeIterator());
+            }
 
             RenameDetector rd = new RenameDetector(gitInstance.getRepository());
             rd.addAll(DiffEntry.scan(tw));

@@ -38,8 +38,8 @@ public class RepositoryDiffMiner {
      */
     public SATDDifference mineDiff() {
         final SATDDifference diff = new SATDDifference(
-                this.firstRepo.getProjectName(),
-                this.firstRepo.getProjectURI(),
+                this.secondRepo.getProjectName(),
+                this.secondRepo.getProjectURI(),
                 this.firstRepo.getCommit(),
                 this.secondRepo.getCommit());
 
@@ -98,6 +98,6 @@ public class RepositoryDiffMiner {
     }
 
     public String getDiffString() {
-        return String.format("%s#diff-%s", this.firstRepo.getCommit().getName(), this.secondRepo.getCommit().getName());
+        return String.format("%s#diff-%s", this.firstRepo.getCommitHash(), this.secondRepo.getCommitHash());
     }
 }

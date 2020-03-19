@@ -4,6 +4,8 @@ import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.util.Date;
 
+import static org.eclipse.jgit.diff.DiffEntry.DEV_NULL;
+
 /**
  * Data class for commit metadata
  */
@@ -23,13 +25,17 @@ public class CommitMetaData {
     CommitMetaData() {}
 
     public CommitMetaData(RevCommit commit) {
-        this.hash = commit.getName();
-        this.authorName = commit.getAuthorIdent().getName();
-        this.authorEmail = commit.getAuthorIdent().getEmailAddress();
-        this.authorDate = commit.getAuthorIdent().getWhen();
-        this.committerName = commit.getCommitterIdent().getName();
-        this.committerEmail = commit.getCommitterIdent().getEmailAddress();
-        this.commitDate = commit.getCommitterIdent().getWhen();
+        if( commit != null ) {
+            this.hash = commit.getName();
+            this.authorName = commit.getAuthorIdent().getName();
+            this.authorEmail = commit.getAuthorIdent().getEmailAddress();
+            this.authorDate = commit.getAuthorIdent().getWhen();
+            this.committerName = commit.getCommitterIdent().getName();
+            this.committerEmail = commit.getCommitterIdent().getEmailAddress();
+            this.commitDate = commit.getCommitterIdent().getWhen();
+        } else {
+            this.hash = DEV_NULL;
+        }
     }
 
     public String getHash() {
