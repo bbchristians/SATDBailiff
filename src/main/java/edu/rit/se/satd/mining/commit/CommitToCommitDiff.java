@@ -64,7 +64,7 @@ public class CommitToCommitDiff {
 
     }
 
-    public List<SATDInstance> loadDiffsForNewFIle(String newFile, GroupedComment comment) {
+    public List<SATDInstance> loadDiffsForNewFile(String newFile, GroupedComment comment) {
         return this.diffEntries.stream()
                 .filter(entry -> entry.getNewPath().equals(newFile))
                 .map(diffEntry -> this.getSATDDiffFromNewFile(diffEntry, comment))
@@ -83,8 +83,8 @@ public class CommitToCommitDiff {
                 final GroupedComment newComment = comInNewRepository.stream()
                         .filter(nc -> nc.getComment().equals(comment.getComment()))
                         // TODO how do we account for multiple SATD Instances in the same file with identical comments
-//                        .filter(nc -> nc.getStartLine() == comment.getStartLine())
-//                        .filter(nc -> nc.getEndLine() == comment.getEndLine())
+                        .filter(nc -> nc.getContainingMethod().equals(comment.getContainingMethod()))
+                        .filter(nc -> nc.getContainingClass().equals(comment.getContainingClass()))
                         .findFirst()
                         .orElse(new NullGroupedComment());
                 // If the SATD couldn't be found in the new file, then it must have been removed

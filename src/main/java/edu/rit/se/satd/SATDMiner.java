@@ -158,6 +158,7 @@ public class SATDMiner {
                                 .map(parent -> new DiffPair(ref, parent)
                         )
                 )
+                .sorted()
                 .collect(Collectors.toList());
         nonMergeDiffPairs.add(0, new DiffPair(nonMergeDiffPairs.get(0).parentRepo, new DevNullCommitReference()));
         return nonMergeDiffPairs;
@@ -169,6 +170,7 @@ public class SATDMiner {
      * @param diff a SATDDifference object
      * @return the SATDDifference object
      * TODO what can be done about instances with the same text, in the same method and class??
+     *  Entries like this will have an satdInstanceId of -1
      */
     private SATDDifference mapSATDInstanceLikeness(SATDDifference diff) {
         diff.getSatdInstances().stream()
@@ -203,7 +205,7 @@ public class SATDMiner {
                     if( !this.satdInstanceMappings.containsKey(satdInstance.getOldInstance()) ) {
                         // Looks like we cannot find the old SATD Instance for whatever reason
                         // This is not a case which should be hit
-                        System.err.println("\nError getting satd_instance_id for " + satdInstance.getOldInstance().toString());
+                        System.err.println("\nCould not get satd_instance_id for " + satdInstance.getOldInstance().toString());
                         satdInstance.setId(this.getNewSATDId());
                     } else {
                         // Otherwise it exists, so we can propagate it forward

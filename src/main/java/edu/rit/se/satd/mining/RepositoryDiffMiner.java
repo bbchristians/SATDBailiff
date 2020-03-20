@@ -93,7 +93,7 @@ public class RepositoryDiffMiner {
                         .filter(OldToNewCommentMapping::isNotMapped)
                         .map(mapping -> isOld ?
                                 cToCDiff.loadDiffsForOldFile(mapping.getFile(), mapping.getComment()) :
-                                cToCDiff.loadDiffsForNewFIle(mapping.getFile(), mapping.getComment()))
+                                cToCDiff.loadDiffsForNewFile(mapping.getFile(), mapping.getComment()))
                         .flatMap(Collection::stream)
                         .collect(Collectors.toList())
         );
