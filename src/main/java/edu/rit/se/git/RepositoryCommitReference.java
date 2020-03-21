@@ -86,7 +86,12 @@ public class RepositoryCommitReference {
                     try {
                         comments.addComments(
                                 JavaParseUtil.parseFileForComments(fileLoader.openStream(), curFileName).stream()
-                                        .filter(groupedComment -> detector.isSATD(groupedComment.getComment()))
+                                        // Ignore JavaDocs and Source Code
+                                        .filter(gc ->
+                                                !gc.getCommentType().equals(GroupedComment.TYPE_JAVADOC))
+                                        .filter(gc ->
+                                                !gc.getCommentType().equals(GroupedComment.TYPE_COMMENTED_SOURCE))
+                                        .filter(gc -> detector.isSATD(gc.getComment()))
                                         .collect(Collectors.toList()));
                     } catch (KnownParserException e) {
                         comments.addParseErrorFile(e.getFileName());

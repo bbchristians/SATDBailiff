@@ -39,6 +39,13 @@ public class GroupedComment implements Comparable {
     @Getter
     final private int containingMethodDeclarationLine;
 
+    public static final String TYPE_COMMENTED_SOURCE = "CommentedSource";
+    public static final String TYPE_BLOCK = "Block";
+    public static final String TYPE_LINE = "Line";
+    public static final String TYPE_ORPHAN = "Orphan";
+    public static final String TYPE_JAVADOC = "JavaDoc";
+    public static final String TYPE_UNKNOWN = "Unknown";
+
     public GroupedComment(Comment oldComment) {
         if( !oldComment.getRange().isPresent() ) {
             System.err.println("Comment line numbers could not be found.");
@@ -52,11 +59,12 @@ public class GroupedComment implements Comparable {
         this.comment = Arrays.stream(oldComment.getContent().trim().split("\n"))
                 .map(GroupedComment::cleanCommentLine)
                 .collect(Collectors.joining("\n"));
-        this.commentType = oldComment.isBlockComment() ? "Block"
-                : oldComment.isLineComment() ? "Line"
-                : oldComment.isOrphan() ? "Orphan"
-                : oldComment.isJavadocComment() ? "JavaDoc"
-                : "Unknown";
+        this.commentType = this.comment.contains("{") || this.comment.contains(";") ? TYPE_COMMENTED_SOURCE
+                : oldComment.isBlockComment() ? TYPE_BLOCK
+                : oldComment.isLineComment() ? TYPE_LINE
+                : oldComment.isOrphan() ? TYPE_ORPHAN
+                : oldComment.isJavadocComment() ? TYPE_JAVADOC
+                : TYPE_UNKNOWN;
 
         // Get containing class and method data if found
         final Optional<ClassOrInterfaceDeclaration> classRoot = oldComment.findRootNode().findAll(ClassOrInterfaceDeclaration.class).stream()
@@ -116,12 +124,12 @@ public class GroupedComment implements Comparable {
 
     /**
      * @param other another comment
-     * @return True if this comment is the same time of comment, and appears directly before
-     * the other comment
+     * @return True if this comment is the same type of comment, and appears directly before
+     * the other comment. If this comment is a Commented source comment, then typing of the next comment is ignored
      */
     public boolean precedesDirectly(GroupedComment other) {
         return this.containingClass.equals(other.containingClass) &&
-                this.commentType.equals(other.commentType) &&
+                (this.commentType.equals(other.commentType) || this.commentType.equals(TYPE_COMMENTED_SOURCE))  &&
                 this.endLine + 1 == other.startLine;
     }
 
