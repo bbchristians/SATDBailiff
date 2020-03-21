@@ -1,8 +1,10 @@
 package edu.rit.se.git;
 
 import edu.rit.se.satd.comment.GroupedComment;
+import edu.rit.se.satd.comment.RepositoryComments;
 import edu.rit.se.satd.detector.SATDDetector;
 import edu.rit.se.util.JavaParseUtil;
+import edu.rit.se.util.KnownParserException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.jgit.api.Git;
@@ -66,10 +68,10 @@ public class RepositoryCommitReference {
      * @param filesToSearch a list of files to limit the search to
      * @return a mapping of files to the SATD Occurrences in each of those files
      */
-    public Map<String, List<GroupedComment>> getFilesToSATDOccurrences(
-            SATDDetector detector, List<String> filesToSearch){
+    public Map<String, RepositoryComments> getFilesToSATDOccurrences(
+            SATDDetector detector, List<String> filesToSearch) {
         final TreeWalk thisRepoWalker = GitUtil.getTreeWalker(this.gitInstance, this.commit);
-        final Map<String, List<GroupedComment>> filesToSATDMap = new HashMap<>();
+        final Map<String, RepositoryComments> filesToSATDMap = new HashMap<>();
         try {
             // Walk through each Java file in the repository at the time of the commit
             while (thisRepoWalker.next()) {
@@ -77,22 +79,23 @@ public class RepositoryCommitReference {
                 final String curFileName = thisRepoWalker.getPathString();
 
                 if( filesToSearch.contains(curFileName)) {
-
-                    // See if the parse was cached
-                    if( this.satdOccurrences != null && this.satdOccurrences.containsKey(curFileName) ) {
-                        filesToSATDMap.put(curFileName, this.satdOccurrences.get(curFileName));
-                    } else {
-                        // Get loader to load file contents into memory
-                        final ObjectLoader fileLoader = this.gitInstance.getRepository()
-                                .open(thisRepoWalker.getObjectId(0));
-                        // Parse Java file for SATD and add it to the map
-                        filesToSATDMap.put(
-                                curFileName,
-                                JavaParseUtil.parseFileForComments(fileLoader.openStream()).stream()
+                    // Get loader to load file contents into memory
+                    final ObjectLoader fileLoader = this.gitInstance.getRepository()
+                            .open(thisRepoWalker.getObjectId(0));
+                    final RepositoryComments comments = new RepositoryComments();
+                    try {
+                        comments.addComments(
+                                JavaParseUtil.parseFileForComments(fileLoader.openStream(), curFileName).stream()
                                         .filter(groupedComment -> detector.isSATD(groupedComment.getComment()))
-                                        .collect(Collectors.toList())
-                        );
+                                        .collect(Collectors.toList()));
+                    } catch (KnownParserException e) {
+                        comments.addParseErrorFile(e.getFileName());
                     }
+                    // Parse Java file for SATD and add it to the map
+                    filesToSATDMap.put(
+                            curFileName,
+                            comments
+                    );
                 }
             }
         } catch (MissingObjectException | IncorrectObjectTypeException | CorruptObjectException e) {
@@ -103,8 +106,6 @@ public class RepositoryCommitReference {
             e.printStackTrace();
         }
 
-        // Store a reference to be returned later to avoid parsing more than once
-        this.satdOccurrences = filesToSATDMap;
         return filesToSATDMap;
     }
 

@@ -21,9 +21,12 @@ public class JavaParseUtil {
      * @param file An input stream containing the contents of a java file to parse for comments
      * @return a list of grouped comments that correlate to comments from the parsed java file
      */
-    public static List<GroupedComment> parseFileForComments(InputStream file) {
+    public static List<GroupedComment> parseFileForComments(InputStream file, String fileName) throws KnownParserException {
         final JavaParser parser = new JavaParser();
         final ParseResult parsedFile = parser.parse(file);
+        if( !parsedFile.getProblems().isEmpty() ) {
+            throw new KnownParserException(fileName);
+        }
         final List<GroupedComment> allComments = parsedFile.getCommentsCollection().isPresent() ?
                 ((CommentsCollection)parsedFile.getCommentsCollection().get())
                         .getComments()

@@ -1,7 +1,7 @@
 package edu.rit.se.git;
 
 
-import edu.rit.se.satd.comment.GroupedComment;
+import edu.rit.se.satd.comment.RepositoryComments;
 import edu.rit.se.satd.detector.SATDDetector;
 
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ public class DevNullCommitReference extends RepositoryCommitReference {
     }
 
     @Override
-    public Map<String, List<GroupedComment>> getFilesToSATDOccurrences(
+    public Map<String, RepositoryComments> getFilesToSATDOccurrences(
             SATDDetector detector, List<String> filesToSearch) {
         return new HashMap<>();
     }

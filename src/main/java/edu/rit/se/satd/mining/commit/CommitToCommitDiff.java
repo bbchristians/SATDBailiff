@@ -4,9 +4,11 @@ import edu.rit.se.git.GitUtil;
 import edu.rit.se.git.RepositoryCommitReference;
 import edu.rit.se.satd.comment.GroupedComment;
 import edu.rit.se.satd.comment.NullGroupedComment;
+import edu.rit.se.satd.comment.RepositoryComments;
 import edu.rit.se.satd.model.SATDInstance;
 import edu.rit.se.satd.model.SATDInstanceInFile;
 import edu.rit.se.util.JavaParseUtil;
+import edu.rit.se.util.KnownParserException;
 import edu.rit.se.util.SimilarityUtil;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.diff.DiffEntry;
@@ -21,6 +23,8 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.eclipse.jgit.diff.DiffEntry.DEV_NULL;
 
 public class CommitToCommitDiff {
 
@@ -78,13 +82,13 @@ public class CommitToCommitDiff {
 
         switch (diffEntry.getChangeType()) {
             case RENAME:
-                final List<GroupedComment> comInNewRepository =
+                final RepositoryComments comInNewRepository =
                         this.getCommentsInFileInNewRepository(diffEntry.getNewPath());
-                final GroupedComment newComment = comInNewRepository.stream()
+                final GroupedComment newComment = comInNewRepository.getComments().stream()
                         .filter(nc -> nc.getComment().equals(comment.getComment()))
                         // TODO how do we account for multiple SATD Instances in the same file with identical comments
+                        //  In the same class and method?
                         .filter(nc -> nc.getContainingMethod().equals(comment.getContainingMethod()))
-                        .filter(nc -> nc.getContainingClass().equals(comment.getContainingClass()))
                         .findFirst()
                         .orElse(new NullGroupedComment());
                 // If the SATD couldn't be found in the new file, then it must have been removed
@@ -114,10 +118,10 @@ public class CommitToCommitDiff {
                             .filter(edit -> GitUtil.editOccursInOldFileBetween(edit, comment.getStartLine(), comment.getEndLine()))
                             .collect(Collectors.toList());
                     // Find the comments in the new repository version
-                    final List<GroupedComment> commentsInNewRepository = this.getCommentsInFileInNewRepository(diffEntry.getNewPath());
+                    final RepositoryComments commentsInNewRepository = this.getCommentsInFileInNewRepository(diffEntry.getNewPath());
                     // Find the comments created by deleting
                     final List<GroupedComment> updatedComments = editsToSATDComment.stream()
-                            .flatMap( edit -> commentsInNewRepository.stream()
+                            .flatMap( edit -> commentsInNewRepository.getComments().stream()
                                     .filter( c -> GitUtil.editOccursInNewFileBetween(edit, c.getStartLine(), c.getEndLine())))
                             .collect(Collectors.toList());
                     // If changes were made to the SATD comment, and now the comment is missing
@@ -167,7 +171,7 @@ public class CommitToCommitDiff {
                                     comment.getContainingMethodDeclarationLine(),
                                     comment.getContainingMethodDeclarationLine())) ) {
                         // Check to see if the name of the containing method/class were updated
-                        commentsInNewRepository.stream()
+                        commentsInNewRepository.getComments().stream()
                                 .filter(c -> c.getComment().equals(comment.getComment()))
                                 .filter(c -> !c.getContainingClass().equals(comment.getContainingClass()) ||
                                         !c.getContainingMethod().equals(comment.getContainingMethod()))
@@ -201,28 +205,22 @@ public class CommitToCommitDiff {
             case ADD:
                 satd.add(
                         new SATDInstance(
-                                new SATDInstanceInFile(diffEntry.getOldPath(), new NullGroupedComment()),
+                                new SATDInstanceInFile(DEV_NULL, new NullGroupedComment()),
                                 new SATDInstanceInFile(diffEntry.getNewPath(), comment),
                                 SATDInstance.SATDResolution.SATD_ADDED
                         )
                 );
                 break;
             case MODIFY:
-                // Determine if the SATD was actually added
-                //  This filters out merge commits
                 // Determine if the edit to the file touched the SATD
                 try {
                     final List<Edit> editsToSATDComment = this.diffFormatter.toFileHeader(diffEntry).toEditList().stream()
                             .filter(edit -> GitUtil.editOccursInNewFileBetween(edit, comment.getStartLine(), comment.getEndLine()))
                             .collect(Collectors.toList());
-                    final List<GroupedComment> updatedComments = editsToSATDComment.stream()
-                            .flatMap(edit -> this.getCommentsInFileInNewRepository(diffEntry.getNewPath()).stream()
-                                    .filter(c -> GitUtil.editOccursInNewFileBetween(edit, c.getStartLine(), c.getEndLine())))
-                            .collect(Collectors.toList());
-                    if( updatedComments.contains(comment) ) {
+                    if( !editsToSATDComment.isEmpty() ) {
                         satd.add(
                                 new SATDInstance(
-                                        new SATDInstanceInFile(diffEntry.getOldPath(), new NullGroupedComment()),
+                                        new SATDInstanceInFile(DEV_NULL, new NullGroupedComment()),
                                         new SATDInstanceInFile(diffEntry.getNewPath(), comment),
                                         SATDInstance.SATDResolution.SATD_ADDED
                                 )
@@ -245,20 +243,16 @@ public class CommitToCommitDiff {
         return formatter;
     }
 
-    private List<GroupedComment> getCommentsInFileInNewRepository(String fileName) {
-        if( this.parsedCommentsInNewCommit.containsKey(fileName) ) {
-            // Return the value if already parsed
-            return this.parsedCommentsInNewCommit.get(fileName);
-        }
-        // Otherwise, parse and then store the value
+    private RepositoryComments getCommentsInFileInNewRepository(String fileName) {
+        final RepositoryComments comments = new RepositoryComments();
         try {
-            List<GroupedComment> commentsInFile = JavaParseUtil.parseFileForComments(this.getFileContents(fileName));
-            this.parsedCommentsInNewCommit.put(fileName, commentsInFile);
-            return commentsInFile;
+            comments.addComments(JavaParseUtil.parseFileForComments(this.getFileContents(fileName), fileName));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        } catch (KnownParserException e) {
+            comments.addParseErrorFile(e.getFileName());
         }
-
+        return comments;
     }
 
     private InputStream getFileContents(String fileName) throws IOException {
@@ -277,6 +271,5 @@ public class CommitToCommitDiff {
             }
         };
     }
-
 
 }
