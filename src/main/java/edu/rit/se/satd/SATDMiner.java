@@ -121,6 +121,7 @@ public class SATDMiner {
                         writer.writeDiff(diff);
                         this.status.fulfilDiffPromise();
                     } catch (IOException e) {
+                        this.status.addErrorEncountered();
                         System.err.println("Error writing diff: " + e.getLocalizedMessage());
                     }
                 });
@@ -206,6 +207,7 @@ public class SATDMiner {
                         // Looks like we cannot find the old SATD Instance for whatever reason
                         // This is not a case which should be hit
                         System.err.println("\nCould not get satd_instance_id for " + satdInstance.getOldInstance().toString());
+                        this.status.addErrorEncountered();
                         satdInstance.setId(this.getNewSATDId());
                     } else {
                         // Otherwise it exists, so we can propagate it forward

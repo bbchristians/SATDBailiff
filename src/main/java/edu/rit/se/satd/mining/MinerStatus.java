@@ -21,6 +21,7 @@ public class MinerStatus {
 
     private int nDiffsPromised = 0;
     private int nDiffsComplete = 0;
+    private int nErrorsEncountered = 0;
     private String displayWindow = STATUS_INITIALIZING;
     private String status = STATUS_INITIALIZING;
 
@@ -33,6 +34,11 @@ public class MinerStatus {
 
     public void fulfilDiffPromise() {
         this.nDiffsComplete++;
+        this.updateOutput();
+    }
+
+    public void addErrorEncountered() {
+        this.nErrorsEncountered++;
         this.updateOutput();
     }
 
@@ -82,13 +88,15 @@ public class MinerStatus {
 
     private void updateOutput() {
         if( outputEnabled ) {
-            System.out.print(String.format("\r%s -- %-20s|%s| (%.1f%%, %d/%d) -- %s",
+            System.out.print(String.format("\r%s -- %-20s|%s| (%.1f%%, %d/%d, %d error%s) -- %s",
                     this.repoName,
                     this.status,
                     this.getLoadBar(),
                     100 * this.getPercComplete(),
                     this.nDiffsComplete,
                     this.nDiffsPromised,
+                    this.nErrorsEncountered,
+                    nErrorsEncountered != 1 ? "s" : "",
                     this.displayWindow));
         }
     }
