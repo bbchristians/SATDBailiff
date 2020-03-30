@@ -33,10 +33,6 @@ public class CommitToCommitDiff {
     private DiffFormatter diffFormatter;
     private List<DiffEntry> diffEntries;
 
-    // Store the comments found in each file in the new commit as they are parsed to
-    // avoid parsing the same java file multiple times
-    private Map<String, List<GroupedComment>> parsedCommentsInNewCommit = new HashMap<>();
-
     public CommitToCommitDiff(RepositoryCommitReference oldRepo, RepositoryCommitReference newRepo) {
         this.gitInstance = newRepo.getGitInstance();
         this.newCommit = newRepo.getCommit();
@@ -159,7 +155,8 @@ public class CommitToCommitDiff {
                                                             SATDInstance.SATDResolution.SATD_REMOVED);
                                             }
                                         })
-                                        .collect(Collectors.toList()));
+                                        .collect(Collectors.toList())
+                        );
                         return satd;
                     }
                     // If the comment was updated and they are identical to the old comment
@@ -186,7 +183,7 @@ public class CommitToCommitDiff {
                                 .map(nc -> new SATDInstance(
                                         new SATDInstanceInFile(diffEntry.getOldPath(), comment),
                                         new SATDInstanceInFile(diffEntry.getNewPath(), nc),
-                                        SATDInstance.SATDResolution.SATD_CHANGED))
+                                        SATDInstance.SATDResolution.CLASS_OR_METHOD_CHANGED))
                                 .findFirst()
                                 .ifPresent(satd::add);
                     }

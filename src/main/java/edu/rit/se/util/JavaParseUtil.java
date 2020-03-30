@@ -9,8 +9,13 @@ import edu.rit.se.satd.comment.GroupedComment;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static edu.rit.se.satd.comment.GroupedComment.TYPE_COMMENTED_SOURCE;
 
 public class JavaParseUtil {
 
@@ -27,19 +32,23 @@ public class JavaParseUtil {
         if( !parsedFile.getProblems().isEmpty() ) {
             throw new KnownParserException(fileName);
         }
-        final List<GroupedComment> allComments = parsedFile.getCommentsCollection().isPresent() ?
+        final Iterator<GroupedComment> allComments = parsedFile.getCommentsCollection().isPresent() ?
                 ((CommentsCollection)parsedFile.getCommentsCollection().get())
                         .getComments()
                         .stream()
                         .filter(comment -> !comment.isJavadocComment())
                         .map(GroupedComment::new)
+                        .filter(comment -> !comment.getCommentType().equals(TYPE_COMMENTED_SOURCE))
                         .sorted()
-                        .collect(Collectors.toList())
-                : new ArrayList<>();
+                        .iterator()
+                : Collections.emptyIterator();
 
         final List<GroupedComment> groupedComments = new ArrayList<>();
         GroupedComment previousComment = null;
-        for( GroupedComment thisComment : allComments ) {
+        while( allComments.hasNext() ) {
+
+            final GroupedComment thisComment = allComments.next();
+
             if( previousComment != null && previousComment.precedesDirectly(thisComment) ) {
                 previousComment = previousComment.joinWith(thisComment);
             } else {
