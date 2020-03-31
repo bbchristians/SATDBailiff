@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A class which contains high-level logic for mining SATD Instances from a git repository.
@@ -154,14 +155,16 @@ public class SATDMiner {
         final List<DiffPair> nonMergeDiffPairs = allCommits.stream()
                 // Only include non-merge commits
                 .filter(ref -> ref.getParentCommitReferences().size() < 2)
-                .flatMap(ref ->
-                        ref.getParentCommitReferences().stream()
-                                .map(parent -> new DiffPair(ref, parent)
-                        )
-                )
+                .flatMap(ref -> {
+                    if( ref.getParentCommitReferences().isEmpty() ) {
+                        return Stream.of(new DiffPair(ref, new DevNullCommitReference()));
+                    } else {
+                        return ref.getParentCommitReferences().stream()
+                                .map(parent -> new DiffPair(ref, parent));
+                    }
+                })
                 .sorted()
                 .collect(Collectors.toList());
-        nonMergeDiffPairs.add(0, new DiffPair(nonMergeDiffPairs.get(0).parentRepo, new DevNullCommitReference()));
         return nonMergeDiffPairs;
     }
 
@@ -171,7 +174,7 @@ public class SATDMiner {
      * @param diff a SATDDifference object
      * @return the SATDDifference object
      * TODO what can be done about instances with the same text, in the same method and class??
-     *  Entries like this will have an satdInstanceId of -1
+     *  Entries like this will have a new satdInstanceId generated
      */
     private SATDDifference mapSATDInstanceLikeness(SATDDifference diff) {
         diff.getSatdInstances().stream()
