@@ -212,7 +212,7 @@ public class CommitToCommitDiff {
                         )
                 );
                 break;
-            case MODIFY:
+            case MODIFY: case RENAME:
                 // Determine if the edit to the file touched the SATD
                 try {
                     final List<Edit> editsToSATDComment = this.diffFormatter.toFileHeader(diffEntry).toEditList().stream()

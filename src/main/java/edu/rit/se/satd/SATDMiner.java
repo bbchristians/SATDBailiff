@@ -192,8 +192,10 @@ public class SATDMiner {
                 case SATD_CHANGED: case FILE_PATH_CHANGED: case CLASS_OR_METHOD_CHANGED:
                     // SATD was changed from the previous version, so update it here
                     if( !this.satdInstanceMappings.containsKey(satdInstance.getOldInstance()) ) {
-                        // Looks like we cannot find the old SATD Instance for whatever reason,
-                        // so make a new one
+                        // Looks like we cannot find the old SATD Instance for whatever reason
+                        // This is not a case which should be hit
+                        System.err.println("\nCould not get satd_instance_id for " + satdInstance.getOldInstance().toString());
+                        this.status.addErrorEncountered();
                         this.satdInstanceMappings.put(satdInstance.getNewInstance(), this.getNewSATDId());
                     } else {
                         // Otherwise it exists, so we can propagate it forward
