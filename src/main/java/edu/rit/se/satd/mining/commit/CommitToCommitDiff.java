@@ -11,6 +11,7 @@ import edu.rit.se.util.JavaParseUtil;
 import edu.rit.se.util.KnownParserException;
 import edu.rit.se.util.SimilarityUtil;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.diff.DiffAlgorithm;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.diff.Edit;
@@ -33,6 +34,8 @@ public class CommitToCommitDiff {
     private DiffFormatter diffFormatter;
     private List<DiffEntry> diffEntries;
 
+    public static DiffAlgorithm diffAlgo = DiffAlgorithm.getAlgorithm(DiffAlgorithm.SupportedAlgorithm.MYERS);
+
     public CommitToCommitDiff(RepositoryCommitReference oldRepo, RepositoryCommitReference newRepo) {
         this.gitInstance = newRepo.getGitInstance();
         this.newCommit = newRepo.getCommit();
@@ -41,6 +44,7 @@ public class CommitToCommitDiff {
                 .filter(diffEntry -> diffEntry.getOldPath().endsWith(".java") || diffEntry.getNewPath().endsWith(".java"))
                 .collect(Collectors.toList());
         this.diffFormatter = this.getFormatter(this.gitInstance);
+        this.diffFormatter.setDiffAlgorithm(CommitToCommitDiff.diffAlgo);
     }
 
     public List<String> getModifiedFilesNew() {

@@ -3,8 +3,10 @@ package edu.rit.se;
 import edu.rit.se.satd.SATDMiner;
 import edu.rit.se.satd.comment.IgnorableWords;
 import edu.rit.se.satd.detector.SATDDetectorImpl;
+import edu.rit.se.satd.mining.commit.CommitToCommitDiff;
 import edu.rit.se.satd.writer.MySQLOutputWriter;
 import org.apache.commons.cli.*;
+import org.eclipse.jgit.diff.DiffAlgorithm;
 
 import java.io.File;
 import java.util.*;
@@ -17,6 +19,7 @@ public class Main {
     private static final String ARG_NAME_GH_USERNAME = "u";
     private static final String ARG_NAME_GH_PASSWORD = "p";
     private static final String ARG_NAME_IGNORE_WORDS = "i";
+    private static final String ARG_NAME_DIFF_ALGORITHM = "a";
     private static final String PROJECT_NAME_CLI = "satd-analyzer";
 
     public static void main(String[] args) throws Exception {
@@ -42,6 +45,23 @@ public class Main {
                 populateIgnoredWordsFile(cmd.getOptionValue(ARG_NAME_IGNORE_WORDS));
             } else {
                 IgnorableWords.noIgnorableWords();
+            }
+
+            if( cmd.hasOption(ARG_NAME_DIFF_ALGORITHM) ) {
+                final String algoName = cmd.getOptionValue(ARG_NAME_DIFF_ALGORITHM).toUpperCase();
+                switch (algoName) {
+                    case "MYERS":
+                        CommitToCommitDiff.diffAlgo = DiffAlgorithm.getAlgorithm(
+                                DiffAlgorithm.SupportedAlgorithm.MYERS);
+                        break;
+                    case "HISTOGRAM":
+                        CommitToCommitDiff.diffAlgo = DiffAlgorithm.getAlgorithm(
+                                DiffAlgorithm.SupportedAlgorithm.HISTOGRAM);
+                        break;
+                    default:
+                        System.err.println("Invalid diff algorithm supplied: " + algoName +
+                                "\nDefaulted to using Myers.");
+                }
             }
 
             // Read the supplied repos from the file
@@ -108,6 +128,14 @@ public class Main {
                         .argName("WORDS")
                         .desc("a text file containing words to ignore. \n" +
                                 "Comments containing any word in the text file will be ignored")
+                        .build())
+                .addOption(Option.builder(ARG_NAME_DIFF_ALGORITHM)
+                        .longOpt("diff-algorithm")
+                        .hasArg()
+                        .argName("ALGORITHM")
+                        .desc("the algorithm to use for diffing (Must be supported by JGit): \n" +
+                                "- MYERS (default)\n" +
+                                "- HISTOGRAM")
                         .build());
     }
 
