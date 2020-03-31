@@ -152,7 +152,7 @@ public class SATDMiner {
                             .collect(Collectors.toSet())
             );
         }
-        final List<DiffPair> nonMergeDiffPairs = allCommits.stream()
+        return allCommits.stream()
                 // Only include non-merge commits
                 .filter(ref -> ref.getParentCommitReferences().size() < 2)
                 .flatMap(ref -> {
@@ -165,7 +165,6 @@ public class SATDMiner {
                 })
                 .sorted()
                 .collect(Collectors.toList());
-        return nonMergeDiffPairs;
     }
 
     /**
@@ -190,7 +189,7 @@ public class SATDMiner {
                     }
                     satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getNewInstance()));
                     break;
-                case SATD_CHANGED: case FILE_PATH_CHANGED:
+                case SATD_CHANGED: case FILE_PATH_CHANGED: case CLASS_OR_METHOD_CHANGED:
                     // SATD was changed from the previous version, so update it here
                     if( !this.satdInstanceMappings.containsKey(satdInstance.getOldInstance()) ) {
                         // Looks like we cannot find the old SATD Instance for whatever reason,
