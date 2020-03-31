@@ -6,14 +6,13 @@ import com.github.javaparser.Position;
 import com.github.javaparser.Range;
 import com.github.javaparser.ast.comments.CommentsCollection;
 import edu.rit.se.satd.comment.GroupedComment;
+import edu.rit.se.satd.comment.IgnorableWords;
 
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static edu.rit.se.satd.comment.GroupedComment.TYPE_COMMENTED_SOURCE;
 
@@ -39,6 +38,8 @@ public class JavaParseUtil {
                         .filter(comment -> !comment.isJavadocComment())
                         .map(GroupedComment::new)
                         .filter(comment -> !comment.getCommentType().equals(TYPE_COMMENTED_SOURCE))
+                        .filter(comment -> IgnorableWords.getIgnorableWords().stream()
+                                .noneMatch(word -> comment.getComment().contains(word)))
                         .sorted()
                         .iterator()
                 : Collections.emptyIterator();

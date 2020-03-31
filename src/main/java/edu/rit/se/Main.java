@@ -1,12 +1,13 @@
 package edu.rit.se;
 
 import edu.rit.se.satd.SATDMiner;
+import edu.rit.se.satd.comment.IgnorableWords;
 import edu.rit.se.satd.detector.SATDDetectorImpl;
 import edu.rit.se.satd.writer.MySQLOutputWriter;
 import org.apache.commons.cli.*;
 
 import java.io.File;
-import java.util.Scanner;
+import java.util.*;
 
 
 public class Main {
@@ -15,6 +16,7 @@ public class Main {
     private static final String ARG_NAME_REPOS_FILE = "r";
     private static final String ARG_NAME_GH_USERNAME = "u";
     private static final String ARG_NAME_GH_PASSWORD = "p";
+    private static final String ARG_NAME_IGNORE_WORDS = "i";
     private static final String PROJECT_NAME_CLI = "satd-analyzer";
 
     public static void main(String[] args) throws Exception {
@@ -35,6 +37,12 @@ public class Main {
 
             final String reposFile = cmd.getOptionValue(ARG_NAME_REPOS_FILE);
             final String dbPropsFile = cmd.getOptionValue(ARG_NAME_DB_PROPS);
+
+            if( cmd.hasOption(ARG_NAME_IGNORE_WORDS) ) {
+                populateIgnoredWordsFile(cmd.getOptionValue(ARG_NAME_IGNORE_WORDS));
+            } else {
+                IgnorableWords.noIgnorableWords();
+            }
 
             // Read the supplied repos from the file
             final File inFile = new File(reposFile);
@@ -93,6 +101,13 @@ public class Main {
                         .hasArg()
                         .argName("PASSWORD")
                         .desc("password for Github authentication")
+                        .build())
+                .addOption(Option.builder(ARG_NAME_IGNORE_WORDS)
+                        .longOpt("ignore")
+                        .hasArg()
+                        .argName("WORDS")
+                        .desc("a text file containing words to ignore. \n" +
+                                "Comments containing any word in the text file will be ignored")
                         .build());
     }
 
@@ -123,5 +138,16 @@ public class Main {
             // A non-help header was found
         }
         return false;
+    }
+
+    private static void populateIgnoredWordsFile(String fileName) throws Exception {
+        final File f = new File(fileName);
+        final Scanner r = new Scanner(f);
+        final Set<String> words = new HashSet<>();
+        while (r.hasNextLine()) {
+            words.addAll(Arrays.asList(r.next().trim().split(" ")));
+        }
+        IgnorableWords.populateIgnorableWords(words);
+        r.close();
     }
 }

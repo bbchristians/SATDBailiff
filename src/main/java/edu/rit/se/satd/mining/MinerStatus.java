@@ -69,10 +69,12 @@ public class MinerStatus {
 
     public void setComplete(long msElapsed) {
         this.status = STATUS_COMPLETE;
-        System.out.println(String.format("\rCompleted analyzing %d diffs in %,dms (%.2fms/diff) -- %s",
+        System.out.println(String.format("\rCompleted analyzing %d diffs in %,dms (%.2fms/diff, %d error%s) -- %s",
                 this.nDiffsComplete,
                 msElapsed,
                 ((float)msElapsed)/this.nDiffsComplete,
+                this.nErrorsEncountered,
+                this.nErrorsEncountered != 1 ? "s" : "",
                 this.repoName)
         );
     }
