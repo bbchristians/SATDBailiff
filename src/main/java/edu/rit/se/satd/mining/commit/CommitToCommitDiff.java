@@ -115,14 +115,15 @@ public class CommitToCommitDiff {
                     // get the edits to the file, and the deletions to the SATD we're concerned about
                     final List<Edit> editsToFile = this.diffFormatter.toFileHeader(diffEntry).toEditList();
                     final List<Edit> editsToSATDComment = editsToFile.stream()
-                            .filter(edit -> GitUtil.editOccursInOldFileBetween(edit, comment.getStartLine(), comment.getEndLine()))
+                            .filter(edit -> editImpactedComment(edit, comment))
                             .collect(Collectors.toList());
                     // Find the comments in the new repository version
-                    final RepositoryComments commentsInNewRepository = this.getCommentsInFileInNewRepository(diffEntry.getNewPath());
+                    final RepositoryComments commentsInNewRepository =
+                            this.getCommentsInFileInNewRepository(diffEntry.getNewPath());
                     // Find the comments created by deleting
                     final List<GroupedComment> updatedComments = editsToSATDComment.stream()
                             .flatMap( edit -> commentsInNewRepository.getComments().stream()
-                                    .filter( c -> GitUtil.editOccursInNewFileBetween(edit, c.getStartLine(), c.getEndLine())))
+                                    .filter( c -> editImpactedComment(edit, c)))
                             .collect(Collectors.toList());
                     // If changes were made to the SATD comment, and now the comment is missing
                     if( updatedComments.isEmpty() && !editsToSATDComment.isEmpty()) {
@@ -165,12 +166,8 @@ public class CommitToCommitDiff {
                     }
                     // If the comment was updated and they are identical to the old comment
                     if( editsToFile.stream().anyMatch( edit ->
-                            GitUtil.editOccursInOldFileBetween(edit,
-                                    comment.getContainingClassDeclarationLine(),
-                                    comment.getContainingClassDeclarationLine()) ||
-                            GitUtil.editOccursInOldFileBetween(edit,
-                                    comment.getContainingMethodDeclarationLine(),
-                                    comment.getContainingMethodDeclarationLine())) ) {
+                            editImpactedContainingClass(edit, comment) ||
+                            editImpactedContainingMethod(edit, comment))) {
                         // Check to see if the name of the containing method/class were updated
                         commentsInNewRepository.getComments().stream()
                                 .filter(c -> c.getComment().equals(comment.getComment()))
@@ -178,18 +175,14 @@ public class CommitToCommitDiff {
                                         !c.getContainingMethod().equals(comment.getContainingMethod()))
                                 // Determine if the comment's method or class was renamed
                                 .filter(c -> editsToFile.stream().anyMatch( edit ->
-                                        GitUtil.editOccursInNewFileBetween(edit,
-                                                c.getContainingClassDeclarationLine(),
-                                                c.getContainingClassDeclarationLine()) ||
-                                        GitUtil.editOccursInNewFileBetween(edit,
-                                                c.getContainingMethodDeclarationLine(),
-                                                c.getContainingMethodDeclarationLine())))
+                                        editImpactedContainingClass(edit, c) || editImpactedContainingMethod(edit, c)))
                                 .map(nc -> new SATDInstance(
                                         new SATDInstanceInFile(diffEntry.getOldPath(), comment),
                                         new SATDInstanceInFile(diffEntry.getNewPath(), nc),
                                         SATDInstance.SATDResolution.CLASS_OR_METHOD_CHANGED))
                                 .findFirst()
                                 .ifPresent(satd::add);
+                        return satd;
                     }
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
@@ -257,20 +250,25 @@ public class CommitToCommitDiff {
     }
 
     private InputStream getFileContents(String fileName) throws IOException {
-        final TreeWalk treeWalk = GitUtil.getTreeWalker(this.gitInstance, this.newCommit);
-        while (treeWalk.next()) {
-            if( treeWalk.getPathString().equals(fileName) ) {
-                return this.gitInstance.getRepository().open(treeWalk.getObjectId(0)).openStream();
-            }
-        }
-        System.err.println("File not found -- this SHOULD NOT happen!");
-        // Return a blank stream if the file was not found
-        return new InputStream() {
-            @Override
-            public int read() {
-                return -1;  // end of stream
-            }
-        };
+        return this.gitInstance.getRepository().open(
+                TreeWalk.forPath(this.gitInstance.getRepository(), fileName, this.newCommit.getTree()).getObjectId(0)
+        ).openStream();
+    }
+
+    private boolean editImpactedComment(Edit edit, GroupedComment comment) {
+        return GitUtil.editOccursInOldFileBetween(edit, comment.getStartLine(), comment.getEndLine());
+    }
+
+    private boolean editImpactedContainingMethod(Edit edit, GroupedComment comment) {
+        return GitUtil.editOccursInOldFileBetween(edit,
+                comment.getContainingMethodDeclarationLine(),
+                comment.getContainingMethodDeclarationLine());
+    }
+
+    private boolean editImpactedContainingClass(Edit edit, GroupedComment comment) {
+        return GitUtil.editOccursInOldFileBetween(edit,
+                comment.getContainingClassDeclarationLine(),
+                comment.getContainingClassDeclarationLine());
     }
 
 }
