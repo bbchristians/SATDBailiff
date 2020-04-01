@@ -115,7 +115,7 @@ public class CommitToCommitDiff {
                     // get the edits to the file, and the deletions to the SATD we're concerned about
                     final List<Edit> editsToFile = this.diffFormatter.toFileHeader(diffEntry).toEditList();
                     final List<Edit> editsToSATDComment = editsToFile.stream()
-                            .filter(edit -> editImpactedComment(edit, comment))
+                            .filter(edit -> editImpactedOldComment(edit, comment))
                             .collect(Collectors.toList());
                     // Find the comments in the new repository version
                     final RepositoryComments commentsInNewRepository =
@@ -123,7 +123,7 @@ public class CommitToCommitDiff {
                     // Find the comments created by deleting
                     final List<GroupedComment> updatedComments = editsToSATDComment.stream()
                             .flatMap( edit -> commentsInNewRepository.getComments().stream()
-                                    .filter( c -> editImpactedComment(edit, c)))
+                                    .filter( c -> editImpactedNewComment(edit, c)))
                             .collect(Collectors.toList());
                     // If changes were made to the SATD comment, and now the comment is missing
                     if( updatedComments.isEmpty() && !editsToSATDComment.isEmpty()) {
@@ -255,8 +255,12 @@ public class CommitToCommitDiff {
         ).openStream();
     }
 
-    private boolean editImpactedComment(Edit edit, GroupedComment comment) {
+    private boolean editImpactedOldComment(Edit edit, GroupedComment comment) {
         return GitUtil.editOccursInOldFileBetween(edit, comment.getStartLine(), comment.getEndLine());
+    }
+
+    private boolean editImpactedNewComment(Edit edit, GroupedComment comment) {
+        return GitUtil.editOccursInNewFileBetween(edit, comment.getStartLine(), comment.getEndLine());
     }
 
     private boolean editImpactedContainingMethod(Edit edit, GroupedComment comment) {
