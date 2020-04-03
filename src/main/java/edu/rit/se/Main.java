@@ -9,7 +9,10 @@ import org.apache.commons.cli.*;
 import org.eclipse.jgit.diff.DiffAlgorithm;
 
 import java.io.File;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Scanner;
+import java.util.Set;
 
 
 public class Main {

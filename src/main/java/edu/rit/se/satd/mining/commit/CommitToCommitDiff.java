@@ -22,7 +22,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.eclipse.jgit.diff.DiffEntry.DEV_NULL;
@@ -31,7 +33,6 @@ public class CommitToCommitDiff {
 
     private Git gitInstance;
     private RevCommit newCommit;
-    private DiffFormatter diffFormatter;
     private List<DiffEntry> diffEntries;
 
     public static DiffAlgorithm diffAlgo = DiffAlgorithm.getAlgorithm(DiffAlgorithm.SupportedAlgorithm.MYERS);
@@ -43,8 +44,6 @@ public class CommitToCommitDiff {
                 .stream()
                 .filter(diffEntry -> diffEntry.getOldPath().endsWith(".java") || diffEntry.getNewPath().endsWith(".java"))
                 .collect(Collectors.toList());
-        this.diffFormatter = this.getFormatter(this.gitInstance);
-        this.diffFormatter.setDiffAlgorithm(CommitToCommitDiff.diffAlgo);
     }
 
     public List<String> getModifiedFilesNew() {
@@ -77,7 +76,7 @@ public class CommitToCommitDiff {
     }
 
     // TODO Can the SATD ID be set here?
-    private List<SATDInstance> getSATDFromDiffOldFile(DiffEntry diffEntry, GroupedComment comment) {
+    private List<SATDInstance> getSATDFromDiffOldFile(DiffEntry diffEntry, GroupedComment oldComment) {
         final List<SATDInstance> satd = new ArrayList<>();
 
         switch (diffEntry.getChangeType()) {
@@ -85,10 +84,10 @@ public class CommitToCommitDiff {
                 final RepositoryComments comInNewRepository =
                         this.getCommentsInFileInNewRepository(diffEntry.getNewPath());
                 final GroupedComment newComment = comInNewRepository.getComments().stream()
-                        .filter(nc -> nc.getComment().equals(comment.getComment()))
+                        .filter(nc -> nc.getComment().equals(oldComment.getComment()))
                         // TODO how do we account for multiple SATD Instances in the same file with identical comments
                         //  In the same class and method?
-                        .filter(nc -> nc.getContainingMethod().equals(comment.getContainingMethod()))
+                        .filter(nc -> nc.getContainingMethod().equals(oldComment.getContainingMethod()))
                         .findFirst()
                         .orElse(new NullGroupedComment());
                 // If the SATD couldn't be found in the new file, then it must have been removed
@@ -96,7 +95,7 @@ public class CommitToCommitDiff {
                         SATDInstance.SATDResolution.SATD_REMOVED : SATDInstance.SATDResolution.FILE_PATH_CHANGED;
                 satd.add(
                         new SATDInstance(
-                                new SATDInstanceInFile(diffEntry.getOldPath(), comment),
+                                new SATDInstanceInFile(diffEntry.getOldPath(), oldComment),
                                 new SATDInstanceInFile(diffEntry.getNewPath(), newComment),
                                 resolution
                 ));
@@ -104,95 +103,91 @@ public class CommitToCommitDiff {
             case DELETE:
                 satd.add(
                         new SATDInstance(
-                                new SATDInstanceInFile(diffEntry.getOldPath(), comment),
+                                new SATDInstanceInFile(diffEntry.getOldPath(), oldComment),
                                 new SATDInstanceInFile(diffEntry.getNewPath(), new NullGroupedComment()),
                                 SATDInstance.SATDResolution.FILE_REMOVED
                         )
                 );
                 break;
             case MODIFY:
-                try {
-                    // get the edits to the file, and the deletions to the SATD we're concerned about
-                    final List<Edit> editsToFile = this.diffFormatter.toFileHeader(diffEntry).toEditList();
-                    final List<Edit> editsToSATDComment = editsToFile.stream()
-                            .filter(edit -> editImpactedOldComment(edit, comment))
-                            .collect(Collectors.toList());
-                    // Find the comments in the new repository version
-                    final RepositoryComments commentsInNewRepository =
-                            this.getCommentsInFileInNewRepository(diffEntry.getNewPath());
-                    // Find the comments created by deleting
-                    final List<GroupedComment> updatedComments = editsToSATDComment.stream()
-                            .flatMap( edit -> commentsInNewRepository.getComments().stream()
-                                    .filter( c -> editImpactedNewComment(edit, c)))
-                            .collect(Collectors.toList());
-                    // If changes were made to the SATD comment, and now the comment is missing
-                    if( updatedComments.isEmpty() && !editsToSATDComment.isEmpty()) {
-                        satd.add(
-                                new SATDInstance(
-                                        new SATDInstanceInFile(diffEntry.getOldPath(), comment),
-                                        new SATDInstanceInFile(diffEntry.getNewPath(), new NullGroupedComment()),
-                                        SATDInstance.SATDResolution.SATD_REMOVED
-                                )
-                        );
-                        return satd;
-                    }
-                    // If an updated comment was found, and it is not identical to the old comment
-                    if( !updatedComments.isEmpty() &&
+                // get the edits to the file, and the deletions to the SATD we're concerned about
+                final List<Edit> editsToFile = this.getEdits(diffEntry);
+                final List<Edit> editsToSATDComment = editsToFile.stream()
+                        .filter(edit -> editImpactedOldComment(edit, oldComment))
+                        .collect(Collectors.toList());
+                // Find the comments in the new repository version
+                final RepositoryComments commentsInNewRepository =
+                        this.getCommentsInFileInNewRepository(diffEntry.getNewPath());
+                // Find the comments created by deleting
+                final List<GroupedComment> updatedComments = editsToSATDComment.stream()
+                        .flatMap( edit -> commentsInNewRepository.getComments().stream()
+                                .filter( c -> editImpactedNewComment(edit, c)))
+                        .collect(Collectors.toList());
+                // If changes were made to the SATD comment, and now the comment is missing
+                if( updatedComments.isEmpty() && !editsToSATDComment.isEmpty()) {
+                    satd.add(
+                            new SATDInstance(
+                                    new SATDInstanceInFile(diffEntry.getOldPath(), oldComment),
+                                    new SATDInstanceInFile(diffEntry.getNewPath(), new NullGroupedComment()),
+                                    SATDInstance.SATDResolution.SATD_REMOVED
+                            )
+                    );
+                    return satd;
+                }
+                // If an updated comment was found, and it is not identical to the old comment
+                if( !updatedComments.isEmpty() &&
+                        updatedComments.stream()
+                                .map(GroupedComment::getComment)
+                                .noneMatch(oldComment.getComment()::equals)){
+                    satd.addAll(
                             updatedComments.stream()
-                                    .map(GroupedComment::getComment)
-                                    .noneMatch(comment.getComment()::equals)){
-                        satd.addAll(
-                                updatedComments.stream()
-                                        .map(nc -> {
-                                            // If the comment that was added is similar enough to the old comment
-                                            if( SimilarityUtil.commentsAreSimilar(comment, nc) ) {
-                                                    // We know the comment was changed
-                                                    return new SATDInstance(
-                                                            new SATDInstanceInFile(diffEntry.getOldPath(), comment),
-                                                            new SATDInstanceInFile(diffEntry.getNewPath(), nc),
-                                                            SATDInstance.SATDResolution.SATD_CHANGED);
-                                            } else {
-                                                    // We know the comment was removed, and the one that was added
-                                                    // was a different comment
-                                                    return new SATDInstance(
-                                                            new SATDInstanceInFile(diffEntry.getOldPath(), comment),
-                                                            new SATDInstanceInFile(diffEntry.getNewPath(), new NullGroupedComment()),
-                                                            SATDInstance.SATDResolution.SATD_REMOVED);
-                                            }
-                                        })
-                                        .collect(Collectors.toList())
-                        );
-                        return satd;
-                    }
-                    // If the comment was updated and they are identical to the old comment
-                    if( editsToFile.stream().anyMatch( edit ->
-                            editImpactedContainingClass(edit, comment) ||
-                            editImpactedContainingMethod(edit, comment))) {
-                        // Check to see if the name of the containing method/class were updated
-                        commentsInNewRepository.getComments().stream()
-                                .filter(c -> c.getComment().equals(comment.getComment()))
-                                .filter(c -> !c.getContainingClass().equals(comment.getContainingClass()) ||
-                                        !c.getContainingMethod().equals(comment.getContainingMethod()))
-                                // Determine if the comment's method or class was renamed
-                                .filter(c -> editsToFile.stream().anyMatch( edit ->
-                                        editImpactedContainingClass(edit, c) || editImpactedContainingMethod(edit, c)))
-                                .map(nc -> new SATDInstance(
-                                        new SATDInstanceInFile(diffEntry.getOldPath(), comment),
-                                        new SATDInstanceInFile(diffEntry.getNewPath(), nc),
-                                        SATDInstance.SATDResolution.CLASS_OR_METHOD_CHANGED))
-                                .findFirst()
-                                .ifPresent(satd::add);
-                        return satd;
-                    }
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
+                                    .map(nc -> {
+                                        // If the comment that was added is similar enough to the old comment
+                                        if( SimilarityUtil.commentsAreSimilar(oldComment, nc) ) {
+                                            // We know the comment was changed
+                                            return new SATDInstance(
+                                                    new SATDInstanceInFile(diffEntry.getOldPath(), oldComment),
+                                                    new SATDInstanceInFile(diffEntry.getNewPath(), nc),
+                                                    SATDInstance.SATDResolution.SATD_CHANGED);
+                                        } else {
+                                            // We know the comment was removed, and the one that was added
+                                            // was a different comment
+                                            return new SATDInstance(
+                                                    new SATDInstanceInFile(diffEntry.getOldPath(), oldComment),
+                                                    new SATDInstanceInFile(diffEntry.getNewPath(), new NullGroupedComment()),
+                                                    SATDInstance.SATDResolution.SATD_REMOVED);
+                                        }
+                                    })
+                                    .collect(Collectors.toList())
+                    );
+                    return satd;
+                }
+                // If the comment was updated and they are identical to the old comment
+                if( editsToFile.stream().anyMatch( edit ->
+                        editImpactedContainingClass(edit, oldComment) ||
+                                editImpactedContainingMethod(edit, oldComment))) {
+                    // Check to see if the name of the containing method/class were updated
+                    commentsInNewRepository.getComments().stream()
+                            .filter(c -> c.getComment().equals(oldComment.getComment()))
+                            .filter(c -> !c.getContainingClass().equals(oldComment.getContainingClass()) ||
+                                    !c.getContainingMethod().equals(oldComment.getContainingMethod()))
+                            // Determine if the comment's method or class was renamed
+                            .filter(c -> editsToFile.stream().anyMatch( edit ->
+                                    editImpactedContainingClass(edit, c) || editImpactedContainingMethod(edit, c)))
+                            .map(nc -> new SATDInstance(
+                                    new SATDInstanceInFile(diffEntry.getOldPath(), oldComment),
+                                    new SATDInstanceInFile(diffEntry.getNewPath(), nc),
+                                    SATDInstance.SATDResolution.CLASS_OR_METHOD_CHANGED))
+                            .findFirst()
+                            .ifPresent(satd::add);
+                    return satd;
                 }
                 break;
         }
         return satd;
     }
 
-    private List<SATDInstance> getSATDDiffFromNewFile(DiffEntry diffEntry, GroupedComment comment) {
+    private List<SATDInstance> getSATDDiffFromNewFile(DiffEntry diffEntry, GroupedComment newComment) {
         final List<SATDInstance> satd = new ArrayList<>();
 
         switch (diffEntry.getChangeType()) {
@@ -200,41 +195,42 @@ public class CommitToCommitDiff {
                 satd.add(
                         new SATDInstance(
                                 new SATDInstanceInFile(DEV_NULL, new NullGroupedComment()),
-                                new SATDInstanceInFile(diffEntry.getNewPath(), comment),
+                                new SATDInstanceInFile(diffEntry.getNewPath(), newComment),
                                 SATDInstance.SATDResolution.SATD_ADDED
                         )
                 );
                 break;
             case MODIFY: case RENAME: case COPY:
                 // Determine if the edit to the file touched the SATD
-                try {
-                    final List<Edit> editsToSATDComment = this.diffFormatter.toFileHeader(diffEntry).toEditList().stream()
-                            .filter(edit -> GitUtil.editOccursInNewFileBetween(edit, comment.getStartLine(), comment.getEndLine()))
-                            .collect(Collectors.toList());
-                    if( !editsToSATDComment.isEmpty() ) {
-                        satd.add(
-                                new SATDInstance(
-                                        new SATDInstanceInFile(DEV_NULL, new NullGroupedComment()),
-                                        new SATDInstanceInFile(diffEntry.getNewPath(), comment),
-                                        SATDInstance.SATDResolution.SATD_ADDED
-                                )
+                this.getEdits(diffEntry).stream()
+                        .filter(edit -> GitUtil.editOccursInNewFileBetween(
+                                edit, newComment.getStartLine(), newComment.getEndLine()))
+                        .findAny()
+                        .ifPresent(edit ->
+                                satd.add(
+                                        new SATDInstance(
+                                                new SATDInstanceInFile(DEV_NULL, new NullGroupedComment()),
+                                                new SATDInstanceInFile(diffEntry.getNewPath(), newComment),
+                                                SATDInstance.SATDResolution.SATD_ADDED
+                                        ))
                         );
-                    }
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
                 break;
         }
 
         return satd;
     }
 
-    private DiffFormatter getFormatter(Git gitInstance) {
+    private List<Edit> getEdits(DiffEntry entry) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         DiffFormatter formatter = new DiffFormatter(outputStream);
-        formatter.setRepository(gitInstance.getRepository());
+        formatter.setRepository(this.gitInstance.getRepository());
         formatter.setContext(0);
-        return formatter;
+        formatter.setDiffAlgorithm(CommitToCommitDiff.diffAlgo);
+        try {
+            return formatter.toFileHeader(entry).toEditList();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private RepositoryComments getCommentsInFileInNewRepository(String fileName) {
