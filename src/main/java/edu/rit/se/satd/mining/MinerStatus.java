@@ -2,6 +2,7 @@ package edu.rit.se.satd.mining;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -24,6 +25,7 @@ public class MinerStatus {
     private int nErrorsEncountered = 0;
     private String displayWindow = STATUS_INITIALIZING;
     private String status = STATUS_INITIALIZING;
+    private int lastPrintLen = 0;
 
     private boolean outputEnabled = true;
 
@@ -69,6 +71,7 @@ public class MinerStatus {
 
     public void setComplete(long msElapsed) {
         this.status = STATUS_COMPLETE;
+        System.out.print("\r" + StringUtils.repeat(" ", this.lastPrintLen));
         System.out.println(String.format("\rCompleted analyzing %d diffs in %,dms (%.2fms/diff, %d error%s) -- %s",
                 this.nDiffsComplete,
                 msElapsed,
@@ -90,7 +93,8 @@ public class MinerStatus {
 
     private void updateOutput() {
         if( outputEnabled ) {
-            System.out.print(String.format("\r%s -- %-20s|%s| (%.1f%%, %d/%d, %d error%s) -- %s",
+            System.out.print("\r" + StringUtils.repeat(" ", this.lastPrintLen));
+            String out = String.format("\r%s -- %-20s|%s| (%.1f%%, %d/%d, %d error%s) -- %s",
                     this.repoName,
                     this.status,
                     this.getLoadBar(),
@@ -99,7 +103,9 @@ public class MinerStatus {
                     this.nDiffsPromised,
                     this.nErrorsEncountered,
                     nErrorsEncountered != 1 ? "s" : "",
-                    this.displayWindow));
+                    this.displayWindow);
+            this.lastPrintLen = out.length();
+            System.out.print(out);
         }
     }
 
