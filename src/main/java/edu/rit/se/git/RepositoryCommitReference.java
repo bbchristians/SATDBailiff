@@ -39,8 +39,6 @@ public class RepositoryCommitReference {
     @Getter
     final private RevCommit commit;
 
-    private Map<String, List<GroupedComment>> satdOccurrences = null;
-
     /**
      * @return A list of the commit's parents
      */

@@ -114,6 +114,9 @@ public class SATDMiner {
                 .map(pair -> new RepositoryDiffMiner(pair.parentRepo, pair.repo, this.satdDetector))
                 .map(repositoryDiffMiner -> {
                     this.status.setDisplayWindow(repositoryDiffMiner.getDiffString());
+                    if ( repositoryDiffMiner.getSecondRepo().getCommitHash().equals("bd283b6166145df99ce9f868d9902ea3fd5b75a4")) {
+                        System.err.println("ASD");
+                    }
                     return repositoryDiffMiner.mineDiff();
                 })
                 .map(this::mapSATDInstanceLikeness)

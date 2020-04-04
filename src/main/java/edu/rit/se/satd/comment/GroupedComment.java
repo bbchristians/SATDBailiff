@@ -133,6 +133,10 @@ public class GroupedComment implements Comparable {
                 this.endLine + 1 == other.startLine;
     }
 
+    public int numLines() {
+        return 1 + this.endLine - this.startLine;
+    }
+
     /**
      * Removes Java-syntax items from comment lines
      * @param commentLine a line of a java comment

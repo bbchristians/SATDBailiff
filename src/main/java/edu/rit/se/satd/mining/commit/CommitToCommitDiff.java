@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static edu.rit.se.satd.comment.NullGroupedComment.NULL_FIELD;
 import static org.eclipse.jgit.diff.DiffEntry.DEV_NULL;
 
 public class CommitToCommitDiff {
@@ -113,7 +114,7 @@ public class CommitToCommitDiff {
                 // get the edits to the file, and the deletions to the SATD we're concerned about
                 final List<Edit> editsToFile = this.getEdits(diffEntry);
                 final List<Edit> editsToSATDComment = editsToFile.stream()
-                        .filter(edit -> editImpactedComment(edit, oldComment, true))
+                        .filter(edit -> editImpactedComment(edit, oldComment, 0, true))
                         .collect(Collectors.toList());
                 // Find the comments in the new repository version
                 final RepositoryComments commentsInNewRepository =
@@ -121,7 +122,7 @@ public class CommitToCommitDiff {
                 // Find the comments created by deleting
                 final List<GroupedComment> updatedComments = editsToSATDComment.stream()
                         .flatMap( edit -> commentsInNewRepository.getComments().stream()
-                                .filter( c -> editImpactedComment(edit, c, false)))
+                                .filter( c -> editImpactedComment(edit, c, Math.max(0, oldComment.numLines() - c.numLines()), false)))
                         .collect(Collectors.toList());
                 // If changes were made to the SATD comment, and now the comment is missing
                 if( updatedComments.isEmpty() && !editsToSATDComment.isEmpty()) {
@@ -163,9 +164,9 @@ public class CommitToCommitDiff {
                     return satd;
                 }
                 // If the comment was updated and they are identical to the old comment
-                if( editsToFile.stream().anyMatch( edit ->
-                        editImpactedContainingClass(edit, oldComment, true) ||
-                                editImpactedContainingMethod(edit, oldComment, true))) {
+                if(oldComment.getContainingMethod().equals(NULL_FIELD) ||
+                        oldComment.getContainingClass().equals(NULL_FIELD) ||
+                        editsTouchedClassOrMethodSignatureOldComment(editsToFile, oldComment)) {
                     // Check to see if the name of the containing method/class were updated
                     commentsInNewRepository.getComments().stream()
                             .filter(c -> c.getComment().equals(oldComment.getComment()))
@@ -252,9 +253,11 @@ public class CommitToCommitDiff {
         ).openStream();
     }
 
-    private boolean editImpactedComment(Edit edit, GroupedComment comment, boolean isOld) {
-        return isOld ? GitUtil.editOccursInOldFileBetween(edit, comment.getStartLine(), comment.getEndLine())
-                : GitUtil.editOccursInNewFileBetween(edit, comment.getStartLine(), comment.getEndLine());
+    private boolean editImpactedComment(Edit edit, GroupedComment comment, int boundIncrease, boolean isOld) {
+        return isOld ? GitUtil.editOccursInOldFileBetween(edit,
+                comment.getStartLine() - boundIncrease, comment.getEndLine() + boundIncrease)
+                : GitUtil.editOccursInNewFileBetween(edit,
+                comment.getStartLine() - boundIncrease, comment.getEndLine() + boundIncrease);
     }
 
     private boolean editImpactedContainingMethod(Edit edit, GroupedComment comment, boolean isOld) {
@@ -275,6 +278,12 @@ public class CommitToCommitDiff {
                 : GitUtil.editOccursInNewFileBetween(edit,
                     comment.getContainingClassDeclarationLine(),
                     comment.getContainingClassDeclarationLine());
+    }
+
+    private boolean editsTouchedClassOrMethodSignatureOldComment(List<Edit> edits, GroupedComment oldComment) {
+        return edits.stream().anyMatch( edit ->
+                editImpactedContainingClass(edit, oldComment, true) ||
+                        editImpactedContainingMethod(edit, oldComment, true));
     }
 
 }

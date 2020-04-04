@@ -38,7 +38,7 @@ public class RepositoryInitializer {
     @NonNull
     private String gitUsername = GIT_USERNAME;
     @NonNull
-    private String gitPassword = GIT_USERNAME;
+    private String gitPassword = GIT_PASSWORD;
 
     // Set after initialization
     private Git repoRef = null;
@@ -101,7 +101,7 @@ public class RepositoryInitializer {
                             head != null ? head : Constants.HEAD))
             );
         } catch (IOException e) {
-            System.err.println("Could not parse the supplied commit for the repository: " + head);
+            System.err.println("\nCould not parse the supplied commit for the repository: " + head);
         }
         return null;
     }
@@ -117,7 +117,7 @@ public class RepositoryInitializer {
         try {
             FileUtils.deleteDirectory(repo);
         } catch (IOException e) {
-            System.err.println("Error deleting git repo");
+            System.err.println("\nError deleting git repo");
         }
     }
 

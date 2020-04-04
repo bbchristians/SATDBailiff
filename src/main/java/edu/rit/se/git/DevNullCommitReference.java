@@ -40,7 +40,7 @@ public class DevNullCommitReference extends RepositoryCommitReference {
 
     @Override
     public int hashCode() {
-        return "dev/null".hashCode();
+        return DEV_NULL.hashCode();
     }
 
     @Override
