@@ -105,7 +105,7 @@ public class MinerStatus {
 
     private String getLoadBar() {
         return IntStream.range(0, 11)
-                .mapToObj(i -> i <= 10 * this.getPercComplete() ? "█" : "░")
+                .mapToObj(i -> i <= 10 * this.getPercComplete() ? "▰" : "▱")
                 .collect(Collectors.joining());
     }
 
