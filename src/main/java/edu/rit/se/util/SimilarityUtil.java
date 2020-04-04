@@ -11,7 +11,7 @@ public class SimilarityUtil {
     // A constant value which determines the Levenshtein distance which a comment
     // must share with another comment in order to assume one was modified to become
     // the other
-    private static final double LEVENSHTEIN_DISTANCE_MIN = 0.50;
+    private static double LEVENSHTEIN_DISTANCE_MIN = 0.50;
 
     /**
      * Determines if the two comments are similar enough to constitute them being classified
@@ -28,5 +28,9 @@ public class SimilarityUtil {
         return LEVENSHTEIN_DISTANCE_MIN >= new LevenshteinDistance()
                 .apply(comment1.getComment(), comment2.getComment()) /
                     (double)Integer.max(comment1.getComment().length(), comment2.getComment().length());
+    }
+
+    public static void setLevenshteinDistanceMin(double newMin) {
+        LEVENSHTEIN_DISTANCE_MIN = newMin;
     }
 }

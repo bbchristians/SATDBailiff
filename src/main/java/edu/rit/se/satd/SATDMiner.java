@@ -51,6 +51,9 @@ public class SATDMiner {
 
     private int curSATDId;
 
+    @Getter
+    private static boolean errorOutputEnabled = true;
+
     public SATDMiner(String repositoryURI, SATDDetector satdDetector) {
         this.repositoryURI = repositoryURI;
         this.satdDetector = satdDetector;
@@ -61,6 +64,10 @@ public class SATDMiner {
 
     public void disableStatusOutput() {
         this.status.setOutputEnabled(false);
+    }
+
+    public static void disableErrorOutput() {
+        errorOutputEnabled = false;
     }
 
     public RepositoryCommitReference getBaseCommit(String head) {
@@ -197,7 +204,10 @@ public class SATDMiner {
                     if( !this.satdInstanceMappings.containsKey(satdInstance.getOldInstance()) ) {
                         // Looks like we cannot find the old SATD Instance for whatever reason
                         // This is not a case which should be hit
-                        System.err.println("\nCould not get satd_instance_id for " + satdInstance.getOldInstance().toString());
+                        if( isErrorOutputEnabled() ) {
+                            System.err.println("\nCould not get satd_instance_id for " +
+                                    satdInstance.getOldInstance().toString());
+                        }
                         this.status.addErrorEncountered();
                         this.satdInstanceMappings.put(satdInstance.getNewInstance(), this.getNewSATDId());
                     } else {
@@ -213,7 +223,10 @@ public class SATDMiner {
                     if( !this.satdInstanceMappings.containsKey(satdInstance.getOldInstance()) ) {
                         // Looks like we cannot find the old SATD Instance for whatever reason
                         // This is not a case which should be hit
-                        System.err.println("\nCould not get satd_instance_id for " + satdInstance.getOldInstance().toString());
+                        if( isErrorOutputEnabled() ) {
+                            System.err.println("\nCould not get satd_instance_id for " +
+                                    satdInstance.getOldInstance().toString());
+                        }
                         this.status.addErrorEncountered();
                         satdInstance.setId(this.getNewSATDId());
                     } else {

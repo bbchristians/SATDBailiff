@@ -46,13 +46,25 @@ The help menu output is as follows.
 
 ```
 usage: satd-analyzer
- -d,--db-props <FILE>       .properties file containing database
-                            properties
- -h,--help                  display help menu
- -p,--password <PASSWORD>   password for Github authentication
- -r,--repos <FILE>          new-line separated file containing git
-                            repositories
- -u,--username <USERNAME>   username for Github authentication
+ -a,--diff-algorithm <ALGORITHM>   the algorithm to use for diffing (Must
+                                   be supported by JGit):
+                                   - MYERS (default)
+                                   - HISTOGRAM
+ -d,--db-props <FILE>              .properties file containing database
+                                   properties
+ -e,--show-errors                  shows errors in output
+ -h,--help                         display help menu
+ -i,--ignore <WORDS>               a text file containing words to ignore.
+                                   Comments containing any word in the
+                                   text file will be ignored
+ -l,--n_levenshtein <0.0-1.0>      the normalized levenshtein distance
+                                   threshold which determines what
+                                   similarity must be met to qualify SATD
+                                   instances as changed
+ -p,--password <PASSWORD>          password for Github authentication
+ -r,--repos <FILE>                 new-line separated file containing git
+                                   repositories
+ -u,--username <USERNAME>          username for Github authentication
 ```
 
 #### Building and Running the Tool

@@ -5,6 +5,7 @@ import edu.rit.se.satd.comment.IgnorableWords;
 import edu.rit.se.satd.detector.SATDDetectorImpl;
 import edu.rit.se.satd.mining.commit.CommitToCommitDiff;
 import edu.rit.se.satd.writer.MySQLOutputWriter;
+import edu.rit.se.util.SimilarityUtil;
 import org.apache.commons.cli.*;
 import org.eclipse.jgit.diff.DiffAlgorithm;
 
@@ -23,6 +24,8 @@ public class Main {
     private static final String ARG_NAME_GH_PASSWORD = "p";
     private static final String ARG_NAME_IGNORE_WORDS = "i";
     private static final String ARG_NAME_DIFF_ALGORITHM = "a";
+    private static final String ARG_NAME_ERROR_OUTPUT = "e";
+    private static final String ARG_NAME_NORMALIZED_LEVENSHTEIN_DISTANCE = "l";
     private static final String PROJECT_NAME_CLI = "satd-analyzer";
 
     public static void main(String[] args) throws Exception {
@@ -66,6 +69,15 @@ public class Main {
                                 "\nDefaulted to using Myers.");
                 }
             }
+
+            if( !cmd.hasOption(ARG_NAME_ERROR_OUTPUT) ) {
+                SATDMiner.disableErrorOutput();
+            }
+
+            SimilarityUtil.setLevenshteinDistanceMin(
+                    Double.parseDouble(
+                            cmd.getOptionValue(
+                                    ARG_NAME_NORMALIZED_LEVENSHTEIN_DISTANCE, "0.5")));
 
             // Read the supplied repos from the file
             final File inFile = new File(reposFile);
@@ -139,6 +151,18 @@ public class Main {
                         .desc("the algorithm to use for diffing (Must be supported by JGit): \n" +
                                 "- MYERS (default)\n" +
                                 "- HISTOGRAM")
+                        .build())
+                .addOption(Option.builder(ARG_NAME_ERROR_OUTPUT)
+                        .longOpt("show-errors")
+                        .desc("shows errors in output")
+                        .build())
+                .addOption(Option.builder(ARG_NAME_NORMALIZED_LEVENSHTEIN_DISTANCE)
+                        .longOpt("n_levenshtein")
+                        .hasArg()
+                        .type(Number.class)
+                        .argName("0.0-1.0")
+                        .desc("the normalized levenshtein distance threshold which determines what similarity " +
+                                "must be met to qualify SATD instances as changed")
                         .build());
     }
 

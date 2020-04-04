@@ -1,4 +1,3 @@
-https://github.com/360-innovations/vaadinsmartgwt
 https://github.com/3scale/3scale_ws_api_for_java
 https://github.com/3wks/thundr
 https://github.com/99soft/rocoto
@@ -82,7 +81,6 @@ https://github.com/bryncooke/cdi-unit
 https://github.com/buchen/portfolio
 https://github.com/buddycloud/buddycloud-media-server
 https://github.com/buddycloud/buddycloud-server-java
-https://github.com/c24-technologies/c24-spring
 https://github.com/caelum/caelum-stella
 https://github.com/caelum/tubaina
 https://github.com/caelum/vraptor-environment
