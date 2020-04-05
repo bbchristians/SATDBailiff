@@ -180,7 +180,6 @@ https://github.com/edwardkort/wwidesigner
 https://github.com/efsavage/ajah
 https://github.com/enough-software/j2mepolish
 https://github.com/epfldata/squall
-https://github.com/esheri3/owasp-csrfguard
 https://github.com/esteinberg/plantuml4idea
 https://github.com/eu-emi/canl-java
 https://github.com/evanchooly/javabot
