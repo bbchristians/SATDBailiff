@@ -434,7 +434,6 @@ https://github.com/markehme/factionsplus
 https://github.com/markkerzner/freeeed
 https://github.com/mashape/unirest-java
 https://github.com/massivecraft/factions
-https://github.com/maven-gae-plugin/maven-gae-plugin
 https://github.com/maven-nar/nar-maven-plugin
 https://github.com/maxmind/geoip-api-java
 https://github.com/mballance/sveditor
