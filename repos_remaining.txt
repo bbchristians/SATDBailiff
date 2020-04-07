@@ -468,7 +468,6 @@ https://github.com/mozilla-metrics/bagheera
 https://github.com/mrdon/maven-yamlpom-plugin
 https://github.com/mrniko/netty-socketio
 https://github.com/mrpdaemon/encfs-java
-https://github.com/msbarry/xtest
 https://github.com/msgpack/msgpack-java
 https://github.com/mtedone/podam
 https://github.com/mulesoft/facebook-connector
