@@ -508,7 +508,6 @@ https://github.com/nysenate/openlegislation
 https://github.com/oauth-apis/apis
 https://github.com/obeonetwork/informationsystem
 https://github.com/obeonetwork/togaf-designer
-https://github.com/obeonetwork/uml-designer
 https://github.com/objectledge/maven-extensions
 https://github.com/ocpsoft/prettyfaces
 https://github.com/ocpsoft/prettytime
