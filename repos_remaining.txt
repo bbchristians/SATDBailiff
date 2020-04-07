@@ -520,7 +520,6 @@ https://github.com/onebusaway/onebusaway-gtfs-modules
 https://github.com/onepremise/greview
 https://github.com/opcoach/training
 https://github.com/open2jamorg/open2jam
-https://github.com/openattestation/openattestation
 https://github.com/openbel/openbel-framework
 https://github.com/openelisglobal/openelisglobal-core
 https://github.com/openhmis/openmrs-module-openhmis.commons
