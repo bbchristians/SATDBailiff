@@ -1,0 +1,5 @@
+https://github.com/apache/camel
+https://github.com/GerritCodeReview/gerrit
+https://github.com/apache/hadoop
+https://github.com/apache/log4j
+https://github.com/apache/tomcat
