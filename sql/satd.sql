@@ -24,10 +24,10 @@ CREATE TABLE IF NOT EXISTS satd.Commits(
     p_id INT,
     author_name varchar(256),
     author_email varchar(256),
-    author_date DATE,
+    author_date DATETIME,
     committer_name varchar(256),
     committer_email varchar(256),
-    commit_date DATE,
+    commit_date DATETIME,
     PRIMARY KEY (commit_hash),
     FOREIGN KEY (p_id) REFERENCES Projects(p_id)
 );
