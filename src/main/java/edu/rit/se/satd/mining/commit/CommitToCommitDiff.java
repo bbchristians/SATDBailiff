@@ -139,7 +139,7 @@ public class CommitToCommitDiff {
                 if( !updatedComments.isEmpty() &&
                         updatedComments.stream()
                                 .map(GroupedComment::getComment)
-                                .noneMatch(oldComment.getComment()::equals)){
+                                .noneMatch(oldComment.getComment()::equals)) {
                     satd.addAll(
                             updatedComments.stream()
                                     .map(nc -> {

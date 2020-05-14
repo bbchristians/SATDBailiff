@@ -196,6 +196,12 @@ public class SATDMiner {
                     // that is currently out of scope for this tool.
                     if( !this.satdInstanceMappings.containsKey(satdInstance.getNewInstance()) ) {
                         this.satdInstanceMappings.put(satdInstance.getNewInstance(), this.getNewSATDId());
+                    } else {
+                        if( isErrorOutputEnabled() ) {
+                            System.err.println("\nGot extra SATD_ADDED instance for " +
+                                    satdInstance.getOldInstance().toString());
+                        }
+                        this.status.addErrorEncountered();
                     }
                     satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getNewInstance()));
                     break;

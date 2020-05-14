@@ -6,6 +6,7 @@ import edu.rit.se.satd.comment.RepositoryComments;
 import edu.rit.se.satd.detector.SATDDetector;
 import edu.rit.se.satd.mining.commit.CommitToCommitDiff;
 import edu.rit.se.satd.model.SATDDifference;
+import edu.rit.se.satd.model.SATDInstance;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -79,10 +80,20 @@ public class RepositoryDiffMiner {
         // may have changed
         alignMappingLists(oldSATDMappings, newSATDMappings, erroredFiles);
 
-        // Add SATD Instances that were in the OLD repo, but couldn't be mapped to the NEW repo
-        mineDiffsFromMappedSATDInstances(diff, cToCDiff, oldSATDMappings, true);
+        // Get all instances that can be mined from the old repository's mapping data
+        final List<SATDInstance> oldInstances = mineDiffsFromMappedSATDInstances(cToCDiff, oldSATDMappings, true);
+        // Use the new instance to avoid double-detecting instances that may not have
+        // been mapped on the first pass through
+        alignMappingLists(newSATDMappings, oldInstances.stream()
+                .map(SATDInstance::getNewInstance)
+                .map(ni -> new OldToNewCommentMapping(ni.getComment(), ni.getFileName()))
+                .collect(Collectors.toList()), erroredFiles);
         // Add SATD instances that were in the NEW repo, but couldn't be mapped to the OLD repo
-        mineDiffsFromMappedSATDInstances(diff, cToCDiff, newSATDMappings, false);
+        final List<SATDInstance> newInstances = mineDiffsFromMappedSATDInstances(cToCDiff, newSATDMappings, false);
+
+        diff.addSATDInstances(oldInstances);
+        diff.addSATDInstances(newInstances);
+
 
         return diff;
     }
@@ -104,20 +115,19 @@ public class RepositoryDiffMiner {
                 .forEach(c -> c.mapTo(null));
     }
 
-    private static void mineDiffsFromMappedSATDInstances(SATDDifference diffInstance, CommitToCommitDiff cToCDiff,
-                                                         List<OldToNewCommentMapping> mappings, boolean isOld) {
-        diffInstance.addSATDInstances(
-                mappings.stream()
+    private static List<SATDInstance> mineDiffsFromMappedSATDInstances(CommitToCommitDiff cToCDiff,
+                                                                       List<OldToNewCommentMapping> mappings,
+                                                                       boolean isOld) {
+        return mappings.stream()
                         .filter(OldToNewCommentMapping::isNotMapped)
                         .map(mapping -> isOld ?
                                 cToCDiff.loadDiffsForOldFile(mapping.getFile(), mapping.getComment()) :
                                 cToCDiff.loadDiffsForNewFile(mapping.getFile(), mapping.getComment()))
                         .flatMap(Collection::stream)
-                        .collect(Collectors.toList())
-        );
+                        .collect(Collectors.toList());
     }
 
     public String getDiffString() {
-        return String.format("%s#diff-%s", this.firstRepo.getCommitHash(), this.secondRepo.getCommitHash());
+        return this.secondRepo.getCommitHash();
     }
 }

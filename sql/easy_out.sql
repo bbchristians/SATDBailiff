@@ -1,15 +1,16 @@
 BEGIN;    
 	-- Constants
-	SET @project_name = "aeshell/aesh";
+	SET @project_name = "aaberg/sql2o";
+    Set @instance_id = "-2011115859";
 
 	-- Query
 	SELECT 
 		SATD.satd_id, Projects.p_name as project_name, SATD.satd_instance_id, SATD.resolution,
-        SecondCommit.commit_hash as resolved_commit_v2, 
-		FirstCommit.commit_date as v1_commit_date,
+         SecondCommit.commit_hash as resolution_commit, 
 			FirstFile.f_path as v1_path, 
 			FirstFile.containing_class as v1_class, FirstFile.containing_method as v1_method,
             FirstFile.f_comment as v1_comment, 
+		SecondCommit.commit_hash as v2_commit, 
 		SecondCommit.commit_date as v2_commit_date,
 			SecondFile.f_path as v2_path, 
 			SecondFile.containing_class as v2_class, SecondFile.containing_method as v2_method,
@@ -25,6 +26,7 @@ BEGIN;
         on SATD.second_commit=SecondCommit.commit_hash
         INNER JOIN satd.Projects
         on FirstCommit.p_id=Projects.p_id
-		-- WHERE Projects.p_name=@project_name
+		WHERE Projects.p_name=@project_name
+        -- WHERE SATD.satd_instance_id=@instance_id
         ORDER BY satd_id DESC;
     
