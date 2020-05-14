@@ -93,8 +93,8 @@ public class MinerStatus {
 
     private void updateOutput() {
         if( outputEnabled ) {
-            System.out.print("\r" + StringUtils.repeat(" ", this.lastPrintLen));
-            String out = String.format("\r%s -- %-20s|%s| (%.1f%%, %d/%d, %d error%s) -- %s",
+            System.out.print("\r" + StringUtils.repeat(" ", this.lastPrintLen) + "\r");
+            String out = String.format("\r%s -- %-20s|%s| (%.1f%%, %d/%d, %d error%s) -- %s\r",
                     this.repoName,
                     this.status,
                     this.getLoadBar(),
