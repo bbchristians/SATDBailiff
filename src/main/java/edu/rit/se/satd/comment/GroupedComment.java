@@ -1,6 +1,5 @@
 package edu.rit.se.satd.comment;
 
-import com.github.javaparser.Position;
 import com.github.javaparser.Range;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -33,11 +32,15 @@ public class GroupedComment implements Comparable {
     @Getter
     final private String containingClass;
     @Getter
-    final private int containingClassDeclarationLine;
+    final private int containingClassDeclarationLineStart;
+    @Getter
+    final private int containingClassDeclarationLineEnd;
     @Getter
     final private String containingMethod;
     @Getter
-    final private int containingMethodDeclarationLine;
+    final private int containingMethodDeclarationLineStart;
+    @Getter
+    final private int containingMethodDeclarationLineEnd;
 
     public static final String TYPE_COMMENTED_SOURCE = "CommentedSource";
     public static final String TYPE_BLOCK = "Block";
@@ -72,33 +75,40 @@ public class GroupedComment implements Comparable {
                 .filter(dec -> JavaParseUtil.isRangeBetweenBounds(dec.getRange().get(), this.startLine, this.endLine))
                 .findFirst();
         if( classRoot.isPresent() ) {
+            // Class Data
             this.containingClass = classRoot
                     .map(ClassOrInterfaceDeclaration::getFullyQualifiedName)
                     .map(opt -> opt.orElse(UNKNOWN))
                     .get();
-            this.containingClassDeclarationLine = classRoot
+            final Range classRange = classRoot
                     .map(ClassOrInterfaceDeclaration::getName)
                     .map(Node::getRange)
                     .get()
-                    .orElse(new Range(new Position(-1, -1), new Position(-1, -1)))
-                    .begin.line;
+                    .orElse(NULL_RANGE);
+            this.containingClassDeclarationLineStart = classRange.begin.line;
+            this.containingClassDeclarationLineEnd = classRange.end.line;
+
+            // Method Data
             final Optional<MethodDeclaration> thisMethod = classRoot.get().findAll(MethodDeclaration.class).stream()
                     .filter(dec -> dec.getRange().isPresent())
                     .filter(dec -> JavaParseUtil.isRangeBetweenBounds(dec.getRange().get(), this.startLine, this.endLine))
                     .findFirst();
             this.containingMethod = thisMethod
-                    .map(MethodDeclaration::getNameAsString)
+                    .map(asd -> asd.getDeclarationAsString(false, false, false))
                     .orElse(UNKNOWN);
-            this.containingMethodDeclarationLine = thisMethod
+            final Range methodRange = thisMethod
                     .map(Node::getRange)
                     .orElse(Optional.of(NULL_RANGE))
-                    .orElse(NULL_RANGE)
-                    .begin.line;
+                    .orElse(NULL_RANGE);
+            this.containingMethodDeclarationLineStart = methodRange.begin.line;
+            this.containingMethodDeclarationLineEnd = methodRange.end.line;
         } else {
             this.containingMethod = UNKNOWN;
-            this.containingMethodDeclarationLine = -1;
+            this.containingMethodDeclarationLineStart = -1;
+            this.containingMethodDeclarationLineEnd = -1;
             this.containingClass = UNKNOWN;
-            this.containingClassDeclarationLine = -1;
+            this.containingClassDeclarationLineStart = -1;
+            this.containingClassDeclarationLineEnd = -1;
         }
     }
 
@@ -117,9 +127,11 @@ public class GroupedComment implements Comparable {
                         String.join("\n", other.comment, this.comment),
                 this.commentType,
                 this.containingClass,
-                this.containingClassDeclarationLine,
+                this.containingClassDeclarationLineStart,
+                this.containingClassDeclarationLineEnd,
                 this.containingMethod,
-                this.containingMethodDeclarationLine);
+                this.containingMethodDeclarationLineStart,
+                this.containingMethodDeclarationLineEnd);
     }
 
     /**

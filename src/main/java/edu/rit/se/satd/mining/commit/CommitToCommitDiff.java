@@ -263,21 +263,21 @@ public class CommitToCommitDiff {
     private boolean editImpactedContainingMethod(Edit edit, GroupedComment comment, boolean isOld) {
         return isOld ?
                 GitUtil.editOccursInOldFileBetween(edit,
-                    comment.getContainingMethodDeclarationLine(),
-                    comment.getContainingMethodDeclarationLine())
+                    comment.getContainingMethodDeclarationLineStart(),
+                    comment.getContainingMethodDeclarationLineEnd())
                 : GitUtil.editOccursInNewFileBetween(edit,
-                    comment.getContainingMethodDeclarationLine(),
-                    comment.getContainingMethodDeclarationLine());
+                    comment.getContainingMethodDeclarationLineStart(),
+                    comment.getContainingMethodDeclarationLineEnd());
     }
 
     private boolean editImpactedContainingClass(Edit edit, GroupedComment comment, boolean isOld) {
         return isOld ?
                 GitUtil.editOccursInOldFileBetween(edit,
-                    comment.getContainingClassDeclarationLine(),
-                    comment.getContainingClassDeclarationLine())
+                    comment.getContainingClassDeclarationLineStart(),
+                    comment.getContainingClassDeclarationLineEnd())
                 : GitUtil.editOccursInNewFileBetween(edit,
-                    comment.getContainingClassDeclarationLine(),
-                    comment.getContainingClassDeclarationLine());
+                    comment.getContainingClassDeclarationLineStart(),
+                    comment.getContainingClassDeclarationLineEnd());
     }
 
     private boolean editsTouchedClassOrMethodSignatureOldComment(List<Edit> edits, GroupedComment oldComment) {

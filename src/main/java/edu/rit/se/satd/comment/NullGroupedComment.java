@@ -7,6 +7,7 @@ public class NullGroupedComment extends GroupedComment {
 
     public NullGroupedComment() {
         super(NULL_FIELD_INT, NULL_FIELD_INT, NULL_FIELD, NULL_FIELD,
-                NULL_FIELD, NULL_FIELD_INT, NULL_FIELD, NULL_FIELD_INT);
+                NULL_FIELD, NULL_FIELD_INT, NULL_FIELD_INT,
+                NULL_FIELD, NULL_FIELD_INT, NULL_FIELD_INT);
     }
 }

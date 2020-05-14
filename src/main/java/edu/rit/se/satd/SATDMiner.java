@@ -197,11 +197,7 @@ public class SATDMiner {
                     if( !this.satdInstanceMappings.containsKey(satdInstance.getNewInstance()) ) {
                         this.satdInstanceMappings.put(satdInstance.getNewInstance(), this.getNewSATDId());
                     } else {
-                        if( isErrorOutputEnabled() ) {
-                            System.err.println("\nGot extra SATD_ADDED instance for " +
-                                    satdInstance.getOldInstance().toString());
-                        }
-                        this.status.addErrorEncountered();
+                        System.err.println("here!");
                     }
                     satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getNewInstance()));
                     break;
@@ -238,6 +234,7 @@ public class SATDMiner {
                     } else {
                         // Otherwise it exists, so we can propagate it forward
                         satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getOldInstance()));
+                        this.satdInstanceMappings.remove(satdInstance.getOldInstance());
                     }
                     break;
             }
