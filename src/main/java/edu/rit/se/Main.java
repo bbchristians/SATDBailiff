@@ -86,19 +86,26 @@ public class Main {
             // Find the SATD in each supplied repository
             while (inFileReader.hasNext()) {
 
-                final SATDMiner miner = new SATDMiner(inFileReader.next(), new SATDDetectorImpl());
+                final String[] repoEntry = inFileReader.next().split(",");
 
-                // Set username and password if supplied
-                if( cmd.hasOption(ARG_NAME_GH_USERNAME) ) {
-                    miner.setGithubUsername(cmd.getOptionValue(ARG_NAME_GH_USERNAME));
+                if( repoEntry.length > 0 ) {
+
+                    final SATDMiner miner = new SATDMiner(repoEntry[0], new SATDDetectorImpl());
+
+                    final String headCommit = repoEntry.length > 1 ? repoEntry[1] : null;
+
+                    // Set username and password if supplied
+                    if (cmd.hasOption(ARG_NAME_GH_USERNAME)) {
+                        miner.setGithubUsername(cmd.getOptionValue(ARG_NAME_GH_USERNAME));
+                    }
+                    if (cmd.hasOption(ARG_NAME_GH_PASSWORD)) {
+                        miner.setGithubPassword(cmd.getOptionValue(ARG_NAME_GH_PASSWORD));
+                    }
+
+                    miner.writeRepoSATD(miner.getBaseCommit(headCommit), new MySQLOutputWriter(dbPropsFile));
+
+                    miner.cleanRepo();
                 }
-                if( cmd.hasOption(ARG_NAME_GH_PASSWORD) ) {
-                    miner.setGithubPassword(cmd.getOptionValue(ARG_NAME_GH_PASSWORD));
-                }
-
-                miner.writeRepoSATD(miner.getBaseCommit(null), new MySQLOutputWriter(dbPropsFile));
-
-                miner.cleanRepo();
             }
         } catch (ParseException e) {
             System.err.println(e.getLocalizedMessage());
@@ -122,7 +129,8 @@ public class Main {
                         .longOpt("repos")
                         .hasArg()
                         .argName("FILE")
-                        .desc("new-line separated file containing git repositories")
+                        .desc(".csv file containing git repositories" +
+                                "\n<repository-REQUIRED>,<terminal_commit-OPTIONAL>")
                         .required()
                         .build())
                 .addOption(Option.builder(ARG_NAME_GH_USERNAME)
