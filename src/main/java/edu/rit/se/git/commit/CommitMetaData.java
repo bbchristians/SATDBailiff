@@ -1,5 +1,6 @@
 package edu.rit.se.git.commit;
 
+import lombok.Getter;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.util.Date;
@@ -11,14 +12,21 @@ import static org.eclipse.jgit.diff.DiffEntry.DEV_NULL;
  */
 public class CommitMetaData {
 
+    @Getter
     private String hash;
 
+    @Getter
     private String authorName;
+    @Getter
     private String authorEmail;
+    @Getter
     private Date authorDate;
 
+    @Getter
     private String committerName;
+    @Getter
     private String committerEmail;
+    @Getter
     private Date commitDate;
 
     // For inheritance
@@ -36,34 +44,6 @@ public class CommitMetaData {
         } else {
             this.hash = DEV_NULL;
         }
-    }
-
-    public String getHash() {
-        return this.hash;
-    }
-
-    public String getAuthorName() {
-        return this.authorName;
-    }
-
-    public String getAuthorEmail() {
-        return this.authorEmail;
-    }
-
-    public Date getAuthorDate() {
-        return this.authorDate;
-    }
-
-    public String getCommitterName() {
-        return this.committerName;
-    }
-
-    public String getCommitterEmail() {
-        return this.committerEmail;
-    }
-
-    public Date getCommitDate() {
-        return this.commitDate;
     }
 
     @Override
