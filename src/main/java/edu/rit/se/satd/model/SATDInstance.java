@@ -25,6 +25,11 @@ public class SATDInstance {
     @Getter
     @Setter
     private int id = -1;
+    // SATD Duplication ID to differentiate instances if they
+    // align in all other ways
+    @Getter
+    @Setter
+    private int duplicationId = 0;
 
     public int getStartLineNumberOldFile() {
         return this.oldInstance.getComment().getStartLine();
@@ -56,7 +61,8 @@ public class SATDInstance {
         if( obj instanceof SATDInstance ) {
             return this.oldInstance.equals(((SATDInstance) obj).oldInstance) &&
                     this.newInstance.equals(((SATDInstance) obj).newInstance) &&
-                    this.resolution.equals(((SATDInstance) obj).resolution);
+                    this.resolution.equals(((SATDInstance) obj).resolution) &&
+                    this.duplicationId == ((SATDInstance) obj).duplicationId;
         }
         return false;
     }
@@ -65,6 +71,7 @@ public class SATDInstance {
     public int hashCode() {
         return this.oldInstance.hashCode() +
                 this.newInstance.hashCode() +
-                this.resolution.hashCode();
+                this.resolution.hashCode() +
+                this.duplicationId;
     }
 }

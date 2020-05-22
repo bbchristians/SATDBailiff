@@ -179,22 +179,23 @@ public class SATDMiner {
      * in this project
      * @param diff a SATDDifference object
      * @return the SATDDifference object
-     * TODO what can be done about instances with the same text, in the same method and class??
-     *  Entries like this will have a new satdInstanceId generated
      */
     private SATDDifference mapSATDInstanceLikeness(SATDDifference diff) {
-        diff.getSatdInstances().stream()
-                .distinct()
+        diff.getSatdInstances()
                 .forEach(satdInstance -> {
             switch (satdInstance.getResolution()) {
                 case SATD_ADDED:
-                    // SATD was added, so we know it wont relate to other instances
+                    // SATD was added, so we know it won't relate to other instances
                     // It could possibly be duplicated from another instance, but detecting
                     // that is currently out of scope for this tool.
                     if( !this.satdInstanceMappings.containsKey(satdInstance.getNewInstance()) ) {
                         this.satdInstanceMappings.put(satdInstance.getNewInstance(), this.getNewSATDId());
                     } else {
-                        System.err.println("here!");
+                        if( isErrorOutputEnabled() ) {
+                            System.err.println("\nMultiple SATD_ADDED instances for " +
+                                    satdInstance.getOldInstance().toString());
+                        }
+                        this.status.addErrorEncountered();
                     }
                     satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getNewInstance()));
                     break;

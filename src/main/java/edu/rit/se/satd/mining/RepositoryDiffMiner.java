@@ -11,10 +11,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -61,10 +58,12 @@ public class RepositoryDiffMiner {
                 .flatMap(oldFile -> olderSATD.get(oldFile).getComments().stream()
                     .map(comment -> new OldToNewCommentMapping(comment, oldFile)))
                 .collect(Collectors.toList());
+        populateDuplicationIds(oldSATDMappings);
         final List<OldToNewCommentMapping> newSATDMappings = newerSATD.keySet().stream()
                 .flatMap(newFile -> newerSATD.get(newFile).getComments().stream()
                         .map(comment -> new OldToNewCommentMapping(comment, newFile)))
                 .collect(Collectors.toList());
+        populateDuplicationIds(newSATDMappings);
         final List<String> erroredFiles = new ArrayList<>();
         // Add errored files to known errors
         erroredFiles.addAll(newerSATD.values().stream()
@@ -120,11 +119,25 @@ public class RepositoryDiffMiner {
                                                                        boolean isOld) {
         return mappings.stream()
                         .filter(OldToNewCommentMapping::isNotMapped)
-                        .map(mapping -> isOld ?
-                                cToCDiff.loadDiffsForOldFile(mapping.getFile(), mapping.getComment()) :
-                                cToCDiff.loadDiffsForNewFile(mapping.getFile(), mapping.getComment()))
-                        .flatMap(Collection::stream)
+                        .flatMap(mapping -> {
+                                    final List<SATDInstance> minedInstances = (isOld ?
+                                            cToCDiff.loadDiffsForOldFile(mapping.getFile(), mapping.getComment()) :
+                                            cToCDiff.loadDiffsForNewFile(mapping.getFile(), mapping.getComment()));
+                                    return minedInstances.stream()
+                                            .peek(a -> a.setDuplicationId(mapping.getDuplicationId()));
+                        })
                         .collect(Collectors.toList());
+    }
+
+    private static void populateDuplicationIds(List<OldToNewCommentMapping> mappingList) {
+        final Map<OldToNewCommentMapping, Integer> curDupIds = new HashMap<>();
+        mappingList.forEach(mapping -> {
+            if( !curDupIds.containsKey(mapping) ) {
+                curDupIds.put(mapping, 0);
+            }
+            mapping.setDuplicationId(curDupIds.get(mapping));
+            curDupIds.put(mapping, curDupIds.get(mapping) + 1);
+        });
     }
 
     public String getDiffString() {

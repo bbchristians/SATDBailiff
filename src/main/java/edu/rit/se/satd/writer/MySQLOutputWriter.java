@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.*;
+import java.util.Calendar;
 import java.util.Properties;
 
 public class MySQLOutputWriter implements OutputWriter {
@@ -220,14 +221,14 @@ public class MySQLOutputWriter implements OutputWriter {
                 updateStmt.setString(4, commitMetaData.getCommitterName()); // committer_name
                 updateStmt.setString(5, commitMetaData.getCommitterEmail()); // committer_email
                 if( commitMetaData.getAuthorDate() != null ) {
-                    updateStmt.setDate(6, new Date(commitMetaData.getAuthorDate().getTime())); // author_date
+                    updateStmt.setTimestamp(6, new Timestamp(commitMetaData.getAuthorDate().getTime()), Calendar.getInstance()); // author_date
                 } else {
-                    updateStmt.setDate(6, null);
+                    updateStmt.setTimestamp(6, null);
                 }
                 if( commitMetaData.getCommitDate() != null ) {
-                    updateStmt.setDate(7, new Date(commitMetaData.getCommitDate().getTime())); // commit_date
+                    updateStmt.setTimestamp(7, new Timestamp(commitMetaData.getCommitDate().getTime())); // commit_date
                 } else {
-                    updateStmt.setDate(7, null);
+                    updateStmt.setTimestamp(7, null);
                 }
                 updateStmt.setInt(8, projectId);
                 updateStmt.executeUpdate();

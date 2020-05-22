@@ -76,7 +76,6 @@ public class CommitToCommitDiff {
                 .collect(Collectors.toList());
     }
 
-    // TODO Can the SATD ID be set here?
     private List<SATDInstance> getSATDFromDiffOldFile(DiffEntry diffEntry, GroupedComment oldComment) {
         final List<SATDInstance> satd = new ArrayList<>();
 
@@ -86,8 +85,6 @@ public class CommitToCommitDiff {
                         this.getCommentsInFileInNewRepository(diffEntry.getNewPath());
                 final GroupedComment newComment = comInNewRepository.getComments().stream()
                         .filter(nc -> nc.getComment().equals(oldComment.getComment()))
-                        // TODO how do we account for multiple SATD Instances in the same file with identical comments
-                        //  In the same class and method?
                         .filter(nc -> nc.getContainingMethod().equals(oldComment.getContainingMethod()))
                         .findFirst()
                         .orElse(new NullGroupedComment());
@@ -133,7 +130,6 @@ public class CommitToCommitDiff {
                                     SATDInstance.SATDResolution.SATD_REMOVED
                             )
                     );
-                    return satd;
                 }
                 // If an updated comment was found, and it is not identical to the old comment
                 if( !updatedComments.isEmpty() &&
@@ -161,9 +157,7 @@ public class CommitToCommitDiff {
                                     })
                                     .collect(Collectors.toList())
                     );
-                    return satd;
                 }
-                // If the comment was updated and they are identical to the old comment
                 if(oldComment.getContainingMethod().equals(NULL_FIELD) ||
                         oldComment.getContainingClass().equals(NULL_FIELD) ||
                         editsTouchedClassOrMethodSignatureOldComment(editsToFile, oldComment)) {
