@@ -1,5 +1,5 @@
-https://github.com/apache/camel
-https://github.com/GerritCodeReview/gerrit
-https://github.com/apache/hadoop
-https://github.com/apache/log4j
-https://github.com/apache/tomcat
+https://github.com/apache/camel,9d83855589bb8bfc3233433e21b3ce9c1f4d6d86
+https://github.com/GerritCodeReview/gerrit,83415257b4e1d96e561560a0923a5b3cfacddb22
+https://github.com/apache/hadoop,23f937e3b718f607d4fc975610ab3a03265f0f7e
+https://github.com/apache/log4j,94eff9a041300970516ea866f8f0420d1cc75355
+https://github.com/apache/tomcat,4166a2b96f482f8bf7b0024836dab53d3594710e
