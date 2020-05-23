@@ -181,8 +181,9 @@ public class SATDMiner {
      * @return the SATDDifference object
      */
     private SATDDifference mapSATDInstanceLikeness(SATDDifference diff) {
-        diff.getSatdInstances()
-                .forEach(satdInstance -> {
+        diff.getSatdInstances().stream()
+            .distinct()
+            .forEach(satdInstance -> {
             switch (satdInstance.getResolution()) {
                 case SATD_ADDED:
                     // SATD was added, so we know it won't relate to other instances
