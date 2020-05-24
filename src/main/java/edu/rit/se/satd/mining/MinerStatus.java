@@ -27,6 +27,9 @@ public class MinerStatus {
     private String status = STATUS_INITIALIZING;
     private int lastPrintLen = 0;
 
+    // Fields for time remaining
+    private long timeMiningStarted = -1;
+
     private boolean outputEnabled = true;
 
     public void setNDiffsPromised(int promised) {
@@ -61,6 +64,7 @@ public class MinerStatus {
 
     public void beginMiningSATD() {
         this.status = STATUS_MINING_SATD;
+        this.timeMiningStarted = System.currentTimeMillis();
         this.updateOutput();
     }
 
@@ -93,11 +97,11 @@ public class MinerStatus {
 
     private void updateOutput() {
         if( outputEnabled ) {
-            System.out.print("\r" + StringUtils.repeat(" ", this.lastPrintLen) + "\r");
-            String out = String.format("\r%s -- %-20s|%s| (%.1f%%, %d/%d, %d error%s) -- %s\r",
+            String out = String.format("\r%s -- %-20s|%s| %s (%.1f%%, %d/%d, %d error%s) -- %s\r",
                     this.repoName,
                     this.status,
                     this.getLoadBar(),
+                    this.getTimeRemaining(),
                     100 * this.getPercComplete(),
                     this.nDiffsComplete,
                     this.nDiffsPromised,
@@ -105,7 +109,7 @@ public class MinerStatus {
                     nErrorsEncountered != 1 ? "s" : "",
                     this.displayWindow);
             this.lastPrintLen = out.length();
-            System.out.print(out);
+            System.out.print("\r" + StringUtils.repeat(" ", this.lastPrintLen) + "\r" + out);
         }
     }
 
@@ -113,6 +117,21 @@ public class MinerStatus {
         return IntStream.range(0, 11)
                 .mapToObj(i -> i <= 10 * this.getPercComplete() ? "▰" : "▱")
                 .collect(Collectors.joining());
+    }
+
+    private String getTimeRemaining() {
+        if( this.timeMiningStarted == -1 || this.nDiffsComplete < 1 ) {
+            return "-";
+        }
+        final long estimatedMSRemaining = (System.currentTimeMillis() - this.timeMiningStarted)
+                * (this.nDiffsPromised - this.nDiffsComplete)
+                / this.nDiffsComplete;
+        final long estimatedSecRemaining = estimatedMSRemaining / 1000;
+        if( estimatedSecRemaining < 60 ) {
+            return String.format("%ds remaining", estimatedSecRemaining);
+        }
+        final long estimatedMinsRemaining = estimatedSecRemaining / 60;
+        return String.format("%d min%s remaining", estimatedMinsRemaining, estimatedMinsRemaining == 1 ? "" : "s");
     }
 
     private float getPercComplete() {
