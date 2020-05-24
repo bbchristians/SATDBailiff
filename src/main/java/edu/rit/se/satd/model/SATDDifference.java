@@ -36,4 +36,9 @@ public class SATDDifference {
         this.satdInstances.addAll(satd);
     }
 
+    public SATDDifference usingNewInstances(List<SATDInstance> satd) {
+        this.satdInstances = satd;
+        return this;
+    }
+
 }

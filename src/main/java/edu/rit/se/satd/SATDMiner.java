@@ -8,6 +8,7 @@ import edu.rit.se.satd.detector.SATDDetector;
 import edu.rit.se.satd.mining.MinerStatus;
 import edu.rit.se.satd.mining.RepositoryDiffMiner;
 import edu.rit.se.satd.model.SATDDifference;
+import edu.rit.se.satd.model.SATDInstance;
 import edu.rit.se.satd.model.SATDInstanceInFile;
 import edu.rit.se.satd.writer.OutputWriter;
 import edu.rit.se.util.ElapsedTimer;
@@ -176,69 +177,80 @@ public class SATDMiner {
 
     /**
      * Associates all SATDInstances in the diff object with other instances found
-     * in this project
-     * @param diff a SATDDifference object
+     * in this project and removes duplicate entries
+     * @param diff an SATDDifference object
      * @return the SATDDifference object
      */
     private SATDDifference mapSATDInstanceLikeness(SATDDifference diff) {
-        diff.getSatdInstances().stream()
-            .distinct()
-            .forEach(satdInstance -> {
-            switch (satdInstance.getResolution()) {
-                case SATD_ADDED:
-                    // SATD was added, so we know it won't relate to other instances
-                    // It could possibly be duplicated from another instance, but detecting
-                    // that is currently out of scope for this tool.
-                    if( !this.satdInstanceMappings.containsKey(satdInstance.getNewInstance()) ) {
-                        this.satdInstanceMappings.put(satdInstance.getNewInstance(), this.getNewSATDId());
-                    } else {
-                        if( isErrorOutputEnabled() ) {
-                            System.err.println("\nMultiple SATD_ADDED instances for " +
-                                    satdInstance.getOldInstance().toString());
-                        }
-                        this.status.addErrorEncountered();
+        return diff.usingNewInstances(
+                diff.getSatdInstances().stream()
+                        .distinct()
+                        .map(this::mapInstanceToNewInstanceId)
+                        .collect(Collectors.toList())
+        );
+    }
+
+    /**
+     * Maps an SATD instance to a previously located instance ID if one can be found.
+     * If one is not found, then a new ID is generated where applicable.
+     * @param satdInstance an SATD Instance
+     * @return the SATD Instance
+     */
+    private SATDInstance mapInstanceToNewInstanceId(SATDInstance satdInstance) {
+        switch (satdInstance.getResolution()) {
+            case SATD_ADDED:
+                // SATD was added, so we know it won't relate to other instances
+                // It could possibly be duplicated from another instance, but detecting
+                // that is currently out of scope for this tool.
+                if( !this.satdInstanceMappings.containsKey(satdInstance.getNewInstance()) ) {
+                    this.satdInstanceMappings.put(satdInstance.getNewInstance(), this.getNewSATDId());
+                } else {
+                    if( isErrorOutputEnabled() ) {
+                        System.err.println("\nMultiple SATD_ADDED instances for " +
+                                satdInstance.getOldInstance().toString());
                     }
-                    satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getNewInstance()));
-                    break;
-                case SATD_CHANGED: case FILE_PATH_CHANGED: case CLASS_OR_METHOD_CHANGED:
-                    // SATD was changed from the previous version, so update it here
-                    if( !this.satdInstanceMappings.containsKey(satdInstance.getOldInstance()) ) {
-                        // Looks like we cannot find the old SATD Instance for whatever reason
-                        // This is not a case which should be hit
-                        if( isErrorOutputEnabled() ) {
-                            System.err.println("\nCould not get satd_instance_id for " +
-                                    satdInstance.getOldInstance().toString());
-                        }
-                        this.status.addErrorEncountered();
-                        this.satdInstanceMappings.put(satdInstance.getNewInstance(), this.getNewSATDId());
-                    } else {
-                        // Otherwise it exists, so we can propagate it forward
-                        this.satdInstanceMappings.put(satdInstance.getNewInstance(),
-                                this.satdInstanceMappings.get(satdInstance.getOldInstance()));
+                    this.status.addErrorEncountered();
+                }
+                satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getNewInstance()));
+                break;
+            case SATD_CHANGED: case FILE_PATH_CHANGED: case CLASS_OR_METHOD_CHANGED:
+                // SATD was changed from the previous version, so update it here
+                if( !this.satdInstanceMappings.containsKey(satdInstance.getOldInstance()) ) {
+                    // Looks like we cannot find the old SATD Instance for whatever reason
+                    // This is not a case which should be hit
+                    if( isErrorOutputEnabled() ) {
+                        System.err.println("\nCould not get satd_instance_id for " +
+                                satdInstance.getOldInstance().toString());
                     }
-                    satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getNewInstance()));
-                    break;
-                case SATD_REMOVED: case FILE_REMOVED:
-                    // SATD was removed from the project, but the satdInstance still needs to have
-                    // its ID set if possible
-                    if( !this.satdInstanceMappings.containsKey(satdInstance.getOldInstance()) ) {
-                        // Looks like we cannot find the old SATD Instance for whatever reason
-                        // This is not a case which should be hit
-                        if( isErrorOutputEnabled() ) {
-                            System.err.println("\nCould not get satd_instance_id for " +
-                                    satdInstance.getOldInstance().toString());
-                        }
-                        this.status.addErrorEncountered();
-                        satdInstance.setId(this.getNewSATDId());
-                    } else {
-                        // Otherwise it exists, so we can propagate it forward
-                        satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getOldInstance()));
-                        this.satdInstanceMappings.remove(satdInstance.getOldInstance());
+                    this.status.addErrorEncountered();
+                    this.satdInstanceMappings.put(satdInstance.getNewInstance(), this.getNewSATDId());
+                } else {
+                    // Otherwise it exists, so we can propagate it forward
+                    this.satdInstanceMappings.put(satdInstance.getNewInstance(),
+                            this.satdInstanceMappings.get(satdInstance.getOldInstance()));
+                }
+                satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getNewInstance()));
+                break;
+            case SATD_REMOVED: case FILE_REMOVED:
+                // SATD was removed from the project, but the satdInstance still needs to have
+                // its ID set if possible
+                if( !this.satdInstanceMappings.containsKey(satdInstance.getOldInstance()) ) {
+                    // Looks like we cannot find the old SATD Instance for whatever reason
+                    // This is not a case which should be hit
+                    if( isErrorOutputEnabled() ) {
+                        System.err.println("\nCould not get satd_instance_id for " +
+                                satdInstance.getOldInstance().toString());
                     }
-                    break;
-            }
-        });
-        return diff;
+                    this.status.addErrorEncountered();
+                    satdInstance.setId(this.getNewSATDId());
+                } else {
+                    // Otherwise it exists, so we can propagate it forward
+                    satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getOldInstance()));
+                    this.satdInstanceMappings.remove(satdInstance.getOldInstance());
+                }
+                break;
+        }
+        return satdInstance;
     }
 
     private int getNewSATDId() {
