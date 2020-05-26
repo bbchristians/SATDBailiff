@@ -8,17 +8,27 @@ import edu.rit.se.satd.model.SATDInstance;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.sql.*;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class MySQLOutputWriter implements OutputWriter {
 
     private static final int COMMENTS_MAX_CHARS = 4096;
 
-    private String dbURI;
-    private String user;
-    private String pass;
+    private final Map<String, Integer> cachedProjectKeys = new HashMap<>();
+
+    private final String dbURI;
+    private final String user;
+    private final String pass;
+
+    private final ScheduledThreadPoolExecutor finalWriteExecutor;
+
 
     public MySQLOutputWriter(String propertiesPath) throws IOException {
         final Properties properties = new Properties();
@@ -31,6 +41,8 @@ public class MySQLOutputWriter implements OutputWriter {
                 properties.getProperty("USE_SSL"));
         this.user = properties.getProperty("USERNAME");
         this.pass = properties.getProperty("PASSWORD");
+        final int maxConnections = Integer.parseInt(properties.getProperty("MAX_CONNECTIONS", "151"));
+        this.finalWriteExecutor = new ScheduledThreadPoolExecutor( Math.max(1, maxConnections - 1));
 
         try {
             // Load driver
@@ -44,15 +56,42 @@ public class MySQLOutputWriter implements OutputWriter {
     public void writeDiff(SATDDifference diff) throws IOException {
         Connection conn = null;
         try {
+            // Write the first part synchronously, because we don't want it duplicated
+            // and duplication is possible.
             conn = DriverManager.getConnection(this.dbURI, this.user, this.pass);
-            final int projectId = this.getProjectId(conn, diff.getProjectName(), diff.getProjectURI());
+            int projectId;
+            // Cache project key to shorten each write by one query
+            if( this.cachedProjectKeys.containsKey(diff.getProjectName()) ) {
+                projectId = this.cachedProjectKeys.get(diff.getProjectName());
+            } else {
+                projectId = this.getProjectId(conn, diff.getProjectName(), diff.getProjectURI());
+                this.cachedProjectKeys.put(diff.getProjectName(), projectId);
+            }
             final String oldCommitId = this.getCommitId(conn, new CommitMetaData(diff.getOldCommit()), projectId);
             final String newCommitId = this.getCommitId(conn, new CommitMetaData(diff.getNewCommit()), projectId);
-            for( SATDInstance satdInstance : diff.getSatdInstances() ) {
-                final int oldFileId = this.getSATDInFileId(conn, satdInstance, true);
-                final int newFileId = this.getSATDInFileId(conn, satdInstance, false);
-                this.getSATDInstanceId(conn, satdInstance, newCommitId, oldCommitId, newFileId, oldFileId);
-            }
+
+            // Now finish the remaining writes async and allow time for the previous writer to complete.
+            final Connection asyncConn = conn;
+            conn = null;
+            final Thread writeLastAsync = new Thread(() -> {
+                try {
+                    for (SATDInstance satdInstance : diff.getSatdInstances()) {
+                        final int oldFileId = this.getSATDInFileId(asyncConn, satdInstance, true);
+                        final int newFileId = this.getSATDInFileId(asyncConn, satdInstance, false);
+                        this.getSATDInstanceId(asyncConn, satdInstance, newCommitId, oldCommitId, newFileId, oldFileId, projectId);
+                    }
+                } catch (SQLException e) {
+                    throw new UncheckedIOException(new IOException(e));
+                } finally {
+                    try {
+                        asyncConn.close();
+                    } catch (SQLException e) {
+                        System.err.println("Error closing SQL connection in thread");
+                    }
+                }
+            });
+            finalWriteExecutor.schedule(writeLastAsync, 100, TimeUnit.MILLISECONDS);
+
         } catch (SQLException e) {
             // Issues with SQL will be wrapped in an IOException to maintain interface consistency
             throw new IOException(e);
@@ -159,7 +198,8 @@ public class MySQLOutputWriter implements OutputWriter {
     }
 
     private int getSATDInstanceId(Connection conn, SATDInstance satdInstance,
-                                  String newCommitHash, String oldCommitHash, int newFileId, int oldFileId) throws SQLException{
+                                  String newCommitHash, String oldCommitHash,
+                                  int newFileId, int oldFileId, int projectId) throws SQLException{
         final PreparedStatement queryStmt = conn.prepareStatement(
                 "SELECT SATD.satd_id FROM SATD WHERE SATD.first_commit=? AND " +
                         "SATD.second_commit=? AND SATD.first_file=? AND SATD.second_file=?"
@@ -176,8 +216,8 @@ public class MySQLOutputWriter implements OutputWriter {
             // Otherwise, add it and then return the newly generated key
             final PreparedStatement updateStmt = conn.prepareStatement(
                     "INSERT INTO SATD(first_commit, second_commit, first_file, second_file, " +
-                            "resolution, satd_instance_id) " +
-                            "VALUES (?,?,?,?,?,?)",
+                            "resolution, satd_instance_id, p_id) " +
+                            "VALUES (?,?,?,?,?,?,?)",
                     Statement.RETURN_GENERATED_KEYS);
             updateStmt.setString(1, oldCommitHash); // first_commit
             updateStmt.setString(2, newCommitHash); // second_commit
@@ -185,6 +225,7 @@ public class MySQLOutputWriter implements OutputWriter {
             updateStmt.setInt(4, newFileId); // second_file
             updateStmt.setString(5, satdInstance.getResolution().name()); // resolution
             updateStmt.setInt(6, satdInstance.getId()); // satd_instance_id
+            updateStmt.setInt(7, projectId); // p_id
             updateStmt.executeUpdate();
             final ResultSet updateRes = updateStmt.getGeneratedKeys();
             if (updateRes.next()) {

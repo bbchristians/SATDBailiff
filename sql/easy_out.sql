@@ -1,7 +1,7 @@
 BEGIN;    
 	-- Constants
-	SET @project_name = "aaberg/sql2o";
-    Set @instance_id = "-2011115859";
+	SET @project_name = "apache/camel";
+    Set @instance_id = "-1";
 
 	-- Query
 	SELECT 
@@ -12,21 +12,25 @@ BEGIN;
             FirstFile.f_comment as v1_comment, 
 		SecondCommit.commit_hash as v2_commit, 
 		SecondCommit.commit_date as v2_commit_date,
+		SecondCommit.author_date as v2_author_date,
 			SecondFile.f_path as v2_path, 
 			SecondFile.containing_class as v2_class, SecondFile.containing_method as v2_method,
             SecondFile.f_comment as v2_comment
 		FROM satd.SATD
 		INNER JOIN satd.SATDInFile as FirstFile
-        ON SATD.first_file = FirstFile.f_id
+			ON SATD.first_file = FirstFile.f_id
 		INNER JOIN satd.SATDInFile as SecondFile
-        ON SATD.second_file = SecondFile.f_id
+			ON SATD.second_file = SecondFile.f_id
 		INNER JOIN satd.Commits as FirstCommit
-        on SATD.first_commit=FirstCommit.commit_hash
+			ON SATD.first_commit = FirstCommit.commit_hash 
+				AND SATD.p_id = FirstCommit.p_id
 		INNER JOIN satd.Commits as SecondCommit
-        on SATD.second_commit=SecondCommit.commit_hash
+			ON SATD.second_commit = SecondCommit.commit_hash
+				AND SATD.p_id = SecondCommit.p_id
         INNER JOIN satd.Projects
-        on FirstCommit.p_id=Projects.p_id
-		WHERE Projects.p_name=@project_name
+			ON SATD.p_id=Projects.p_id
+		-- WHERE Projects.p_name=@project_name 
+        -- AND SecondCommit.commit_hash="849ae58cfb2d68bf8f6c7a5ee6598fc7363a4b67"
         -- WHERE SATD.satd_instance_id=@instance_id
         ORDER BY satd_id DESC;
     
