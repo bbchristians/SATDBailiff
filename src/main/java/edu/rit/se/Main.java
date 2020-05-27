@@ -5,6 +5,7 @@ import edu.rit.se.satd.comment.IgnorableWords;
 import edu.rit.se.satd.detector.SATDDetectorImpl;
 import edu.rit.se.satd.mining.commit.CommitToCommitDiff;
 import edu.rit.se.satd.writer.MySQLOutputWriter;
+import edu.rit.se.satd.writer.OutputWriter;
 import edu.rit.se.util.SimilarityUtil;
 import org.apache.commons.cli.*;
 import org.eclipse.jgit.diff.DiffAlgorithm;
@@ -102,8 +103,10 @@ public class Main {
                         miner.setGithubPassword(cmd.getOptionValue(ARG_NAME_GH_PASSWORD));
                     }
 
-                    miner.writeRepoSATD(miner.getBaseCommit(headCommit), new MySQLOutputWriter(dbPropsFile));
+                    OutputWriter writer = new MySQLOutputWriter(dbPropsFile);
+                    miner.writeRepoSATD(miner.getBaseCommit(headCommit), writer);
 
+                    writer.close();
                     miner.cleanRepo();
                 }
             }

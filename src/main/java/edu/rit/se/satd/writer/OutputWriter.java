@@ -13,4 +13,9 @@ public interface OutputWriter {
      */
     void writeDiff(SATDDifference diff) throws IOException;
 
+    /**
+     * Finishes any write processes and terminated the writer
+     */
+    void close();
+
 }

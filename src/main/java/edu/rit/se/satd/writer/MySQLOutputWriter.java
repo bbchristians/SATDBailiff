@@ -285,5 +285,11 @@ public class MySQLOutputWriter implements OutputWriter {
         return str.substring(0, Math.min(str.length(), length));
     }
 
+    @Override
+    public void close() {
+        // Shutdown the executor and then run each remaining task
+        this.finalWriteExecutor.shutdownNow().forEach(Runnable::run);
+    }
+
 
 }
