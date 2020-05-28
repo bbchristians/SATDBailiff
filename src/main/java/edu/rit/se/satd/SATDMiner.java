@@ -124,7 +124,7 @@ public class SATDMiner {
                     this.status.setDisplayWindow(repositoryDiffMiner.getDiffString());
                     return repositoryDiffMiner.mineDiff();
                 })
-                .map(this::mapSATDInstanceLikeness)
+                .map(this::mapInstancesInDiffToPriorInstances)
                 .forEach(diff -> {
                     try {
                         writer.writeDiff(diff);
@@ -181,7 +181,7 @@ public class SATDMiner {
      * @param diff an SATDDifference object
      * @return the SATDDifference object
      */
-    private SATDDifference mapSATDInstanceLikeness(SATDDifference diff) {
+    private SATDDifference mapInstancesInDiffToPriorInstances(SATDDifference diff) {
         return diff.usingNewInstances(
                 diff.getSatdInstances().stream()
                         .distinct()
@@ -284,7 +284,13 @@ public class SATDMiner {
         @Override
         public int compareTo(Object o) {
             if( o instanceof DiffPair ) {
-                return this.repo.getCommitTime() - ((DiffPair) o).repo.getCommitTime();
+                int commitTimeDiff = this.repo.getCommitTime() - ((DiffPair) o).repo.getCommitTime();
+                // If the commits were committed at the same time, look at the authored date
+                // to determine which came first
+                if( commitTimeDiff == 0 ) {
+                    return Long.compare(this.repo.getAuthoredTime(), ((DiffPair) o).repo.getAuthoredTime());
+                }
+                return commitTimeDiff;
             }
             return -1;
         }

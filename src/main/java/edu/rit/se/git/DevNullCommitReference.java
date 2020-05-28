@@ -28,6 +28,11 @@ public class DevNullCommitReference extends RepositoryCommitReference {
     }
 
     @Override
+    public long getAuthoredTime() {
+        return -1;
+    }
+
+    @Override
     public List<RepositoryCommitReference> getParentCommitReferences() {
         return new ArrayList<>();
     }

@@ -42,7 +42,7 @@ public class RepositoryCommitReference {
     public List<RepositoryCommitReference> getParentCommitReferences() {
         // Debugging code -- should NOT be included in any releases.
         // Used to start a search at a specific commit
-//        if( this.commit.getName().equals("bff409f2b8a090d8103e85cdbe4643a99d3b44f9") ) {
+//        if( this.commit.getName().equals("d0597fefd54392f640dcc751a328841f052799bf") ) {
 //            return new ArrayList<>();
 //        }
         final RevWalk rw = new RevWalk(this.gitInstance.getRepository());
@@ -116,6 +116,10 @@ public class RepositoryCommitReference {
 
     public String getCommitHash() {
         return this.commit.getName();
+    }
+
+    public long getAuthoredTime() {
+        return this.commit.getAuthorIdent().getWhen().getTime();
     }
 
     public int getCommitTime() {
