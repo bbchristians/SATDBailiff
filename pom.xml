@@ -6,7 +6,7 @@
 
     <groupId>se.rit.edu</groupId>
     <artifactId>satd-analyzer</artifactId>
-    <version>1.0-alpha</version>
+    <version>0.6-beta</version>
     <build>
         <finalName>satd-analyzer</finalName>
         <plugins>
