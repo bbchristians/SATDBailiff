@@ -45,7 +45,8 @@ public class RepositoryDiffMiner {
                 this.secondRepo.getCommit());
 
         // Load the diffs between versions
-        final CommitToCommitDiff cToCDiff = new CommitToCommitDiff(this.firstRepo, this.secondRepo);
+        final CommitToCommitDiff cToCDiff = new CommitToCommitDiff(
+                this.firstRepo, this.secondRepo, this.satdDetector);
 
         // Get the SATD occurrences for each repo
         final Map<String, RepositoryComments> newerSATD = this.secondRepo.getFilesToSATDOccurrences(

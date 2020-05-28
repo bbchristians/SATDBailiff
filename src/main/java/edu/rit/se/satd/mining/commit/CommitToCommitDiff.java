@@ -5,6 +5,7 @@ import edu.rit.se.git.RepositoryCommitReference;
 import edu.rit.se.satd.comment.GroupedComment;
 import edu.rit.se.satd.comment.NullGroupedComment;
 import edu.rit.se.satd.comment.RepositoryComments;
+import edu.rit.se.satd.detector.SATDDetector;
 import edu.rit.se.satd.model.SATDInstance;
 import edu.rit.se.satd.model.SATDInstanceInFile;
 import edu.rit.se.util.JavaParseUtil;
@@ -32,19 +33,22 @@ import static org.eclipse.jgit.diff.DiffEntry.DEV_NULL;
 
 public class CommitToCommitDiff {
 
-    private Git gitInstance;
-    private RevCommit newCommit;
-    private List<DiffEntry> diffEntries;
+    private final Git gitInstance;
+    private final RevCommit newCommit;
+    private final List<DiffEntry> diffEntries;
+    private final SATDDetector detector;
 
     public static DiffAlgorithm diffAlgo = DiffAlgorithm.getAlgorithm(DiffAlgorithm.SupportedAlgorithm.MYERS);
 
-    public CommitToCommitDiff(RepositoryCommitReference oldRepo, RepositoryCommitReference newRepo) {
+    public CommitToCommitDiff(RepositoryCommitReference oldRepo,
+                              RepositoryCommitReference newRepo, SATDDetector detector) {
         this.gitInstance = newRepo.getGitInstance();
         this.newCommit = newRepo.getCommit();
         this.diffEntries = GitUtil.getDiffEntries(this.gitInstance, oldRepo.getCommit(), this.newCommit)
                 .stream()
                 .filter(diffEntry -> diffEntry.getOldPath().endsWith(".java") || diffEntry.getNewPath().endsWith(".java"))
                 .collect(Collectors.toList());
+        this.detector = detector;
     }
 
     public List<String> getModifiedFilesNew() {
@@ -140,12 +144,25 @@ public class CommitToCommitDiff {
                             updatedComments.stream()
                                     .map(nc -> {
                                         // If the comment that was added is similar enough to the old comment
+                                        // we can infer that the comment was changed
                                         if( SimilarityUtil.commentsAreSimilar(oldComment, nc) ) {
-                                            // We know the comment was changed
-                                            return new SATDInstance(
-                                                    new SATDInstanceInFile(diffEntry.getOldPath(), oldComment),
-                                                    new SATDInstanceInFile(diffEntry.getNewPath(), nc),
-                                                    SATDInstance.SATDResolution.SATD_CHANGED);
+                                            // If the new comment is still SATD, then the instance is changed
+                                            if( this.detector.isSATD(nc.getComment()) ) {
+                                                return new SATDInstance(
+                                                        new SATDInstanceInFile(diffEntry.getOldPath(), oldComment),
+                                                        new SATDInstanceInFile(diffEntry.getNewPath(), nc),
+                                                        SATDInstance.SATDResolution.SATD_CHANGED);
+                                            }
+                                            // Otherwise the part of the comment that was making the comment SATD
+                                            // was removed, and so it can be determined that the SATD instance
+                                            // was removed
+                                            else {
+                                                return new SATDInstance(
+                                                        new SATDInstanceInFile(diffEntry.getOldPath(), oldComment),
+                                                        new SATDInstanceInFile(diffEntry.getNewPath(), nc),
+                                                        SATDInstance.SATDResolution.SATD_REMOVED);
+                                            }
+
                                         } else {
                                             // We know the comment was removed, and the one that was added
                                             // was a different comment
