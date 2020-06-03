@@ -5,13 +5,13 @@ import edu.rit.se.git.GitUtil;
 import edu.rit.se.git.RepositoryCommitReference;
 import edu.rit.se.git.RepositoryInitializer;
 import edu.rit.se.satd.detector.SATDDetector;
-import edu.rit.se.satd.mining.MinerStatus;
 import edu.rit.se.satd.mining.RepositoryDiffMiner;
+import edu.rit.se.satd.mining.ui.ElapsedTimer;
+import edu.rit.se.satd.mining.ui.MinerStatus;
 import edu.rit.se.satd.model.SATDDifference;
 import edu.rit.se.satd.model.SATDInstance;
 import edu.rit.se.satd.model.SATDInstanceInFile;
 import edu.rit.se.satd.writer.OutputWriter;
-import edu.rit.se.util.ElapsedTimer;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -102,8 +102,8 @@ public class SATDMiner {
 
     /**
      * Iterates over all supplied commits, and outputs a difference in SATD occurrences between
-     * each adjacent commit reference in commitRefs
-     * @param commitRef a list of supplied commit references to be diffed for SATD
+     * each adjacent diff reference in commitRefs
+     * @param commitRef a list of supplied diff references to be diffed for SATD
      * @param writer an OutputWriter that will handle the output of the miner
      */
     public void writeRepoSATD(RepositoryCommitReference commitRef, OutputWriter writer) {
@@ -149,7 +149,7 @@ public class SATDMiner {
         final Set<RepositoryCommitReference> visitedCommits = new HashSet<>();
         final Set<RepositoryCommitReference> allCommits = new HashSet<>();
         allCommits.add(curRef);
-        // Continue until no new commit refs are found
+        // Continue until no new diff refs are found
         while( allCommits.size() > visitedCommits.size() ) {
             allCommits.addAll(
                     allCommits.stream()

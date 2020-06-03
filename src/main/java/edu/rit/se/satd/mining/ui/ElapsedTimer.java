@@ -1,4 +1,4 @@
-package edu.rit.se.util;
+package edu.rit.se.satd.mining.ui;
 
 import lombok.NoArgsConstructor;
 
@@ -16,7 +16,7 @@ public class ElapsedTimer {
         if( startTime == -1 ) {
             this.startTime = System.currentTimeMillis();
         } else {
-            System.err.println("Tried to start timer that was already started.");
+            System.err.println("\nTried to start timer that was already started.");
         }
     }
 
@@ -24,7 +24,7 @@ public class ElapsedTimer {
         if( endTime == -1 && startTime != -1 ) {
             this.endTime = System.currentTimeMillis();
         } else {
-            System.err.println("Tried to end time that was already ended or hasn't been started.");
+            System.err.println("\nTried to end time that was already ended or hasn't been started.");
         }
     }
 
@@ -32,7 +32,7 @@ public class ElapsedTimer {
         if( this.endTime != -1 && this.startTime != -1 ) {
             return this.endTime - this.startTime;
         }
-        System.err.println("Tried to read time from incomplete timer.");
+        System.err.println("\nTried to read time from incomplete timer.");
         return -1;
     }
 

@@ -1,6 +1,6 @@
 package edu.rit.se.util;
 
-import edu.rit.se.satd.comment.GroupedComment;
+import edu.rit.se.satd.comment.model.GroupedComment;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 
 /**

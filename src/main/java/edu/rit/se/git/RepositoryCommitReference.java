@@ -1,7 +1,7 @@
 package edu.rit.se.git;
 
-import edu.rit.se.satd.comment.GroupedComment;
-import edu.rit.se.satd.comment.RepositoryComments;
+import edu.rit.se.satd.comment.model.GroupedComment;
+import edu.rit.se.satd.comment.model.RepositoryComments;
 import edu.rit.se.satd.detector.SATDDetector;
 import edu.rit.se.util.JavaParseUtil;
 import edu.rit.se.util.KnownParserException;
@@ -18,11 +18,14 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Class used to represent a commit inside a git repository
+ * Class used to represent a diff inside a git repository
  */
 @RequiredArgsConstructor
 public class RepositoryCommitReference {
@@ -37,12 +40,12 @@ public class RepositoryCommitReference {
     final private RevCommit commit;
 
     /**
-     * @return A list of the commit's parents
+     * @return A list of the diff's parents
      */
     public List<RepositoryCommitReference> getParentCommitReferences() {
         // Debugging code -- should NOT be included in any releases.
-        // Used to start a search at a specific commit
-//        if( this.commit.getName().equals("d0597fefd54392f640dcc751a328841f052799bf") ) {
+        // Used to start a search at a specific diff
+//        if( this.diff.getName().equals("d0597fefd54392f640dcc751a328841f052799bf") ) {
 //            return new ArrayList<>();
 //        }
         final RevWalk rw = new RevWalk(this.gitInstance.getRepository());
@@ -73,7 +76,7 @@ public class RepositoryCommitReference {
         final TreeWalk thisRepoWalker = GitUtil.getTreeWalker(this.gitInstance, this.commit);
         final Map<String, RepositoryComments> filesToSATDMap = new HashMap<>();
         try {
-            // Walk through each Java file in the repository at the time of the commit
+            // Walk through each Java file in the repository at the time of the diff
             while (thisRepoWalker.next()) {
 
                 final String curFileName = thisRepoWalker.getPathString();

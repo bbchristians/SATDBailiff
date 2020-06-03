@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Utility class for Git operations
+ */
 public class GitUtil {
 
     /**
@@ -31,7 +34,7 @@ public class GitUtil {
     }
 
     /**
-     * @return a TreeWalk instance for the repository at the given commit
+     * @return a TreeWalk instance for the repository at the given diff
      */
     public static TreeWalk getTreeWalker(Git gitInstance, RevCommit commit) {
         TreeWalk treeWalk = new TreeWalk(gitInstance.getRepository());
@@ -40,10 +43,10 @@ public class GitUtil {
             treeWalk.setRecursive(true);
             treeWalk.setFilter(PathSuffixFilter.create(".java"));
         } catch (MissingObjectException | IncorrectObjectTypeException | CorruptObjectException e) {
-            System.err.println("Exception in getting tree walker.");
+            System.err.println("\nException in getting tree walker.");
             e.printStackTrace();
         } catch (IOException e) {
-            System.err.println("IOException in getting tree walker.");
+            System.err.println("\nIOException in getting tree walker.");
             e.printStackTrace();
         }
         return treeWalk;
@@ -58,7 +61,7 @@ public class GitUtil {
      */
     public static List<DiffEntry> getDiffEntries(Git gitInstance, RevCommit commit1, RevCommit commit2) {
         try {
-            TreeWalk tw = new TreeWalk(gitInstance.getRepository());
+            final TreeWalk tw = new TreeWalk(gitInstance.getRepository());
             tw.setRecursive(true);
             if( commit1 != null ) {
                 tw.addTree(commit1.getTree());
@@ -71,18 +74,18 @@ public class GitUtil {
                 tw.addTree(new EmptyTreeIterator());
             }
 
-            RenameDetector rd = new RenameDetector(gitInstance.getRepository());
+            final RenameDetector rd = new RenameDetector(gitInstance.getRepository());
             rd.addAll(DiffEntry.scan(tw));
 
             return rd.compute(tw.getObjectReader(), null);
         } catch (IOException e) {
-            System.err.println("Error diffing trees.");
+            System.err.println("\nError diffing trees.");
         }
         return new ArrayList<>();
     }
 
     /**
-     * Determines if an edit occurs between two line bounds
+     * Determines if an edit occurs between two line bounds in the old file
      * @param edit the edit object
      * @param startLine the start line bound
      * @param endLine the end line bound
@@ -95,6 +98,13 @@ public class GitUtil {
         );
     }
 
+    /**
+     * Determines if an edit occurs between two line bounds in the new file
+     * @param edit the edit object
+     * @param startLine the start line bound
+     * @param endLine the end line bound
+     * @return True if the edit touches any lines between the bounds (inclusive), else False
+     */
     public static boolean editOccursInNewFileBetween(Edit edit, int startLine, int endLine) {
         return JavaParseUtil.isRangeBetweenBounds(
                 new Range(new Position(edit.getBeginB(), 0), new Position(edit.getEndB(), 0)),

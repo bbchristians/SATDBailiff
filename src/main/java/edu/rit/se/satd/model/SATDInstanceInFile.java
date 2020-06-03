@@ -1,6 +1,6 @@
 package edu.rit.se.satd.model;
 
-import edu.rit.se.satd.comment.GroupedComment;
+import edu.rit.se.satd.comment.model.GroupedComment;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;

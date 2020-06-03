@@ -1,10 +1,15 @@
-package edu.rit.se.satd.comment;
+package edu.rit.se.satd.comment.model;
 
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
+/**
+ * A mapping of old comments to new comments
+ * Essentially just a comment object with a reference to its file,
+ * and a boolean of whether it is mapped already or not
+ */
 @RequiredArgsConstructor
 public class OldToNewCommentMapping {
 

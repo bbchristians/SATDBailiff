@@ -5,8 +5,8 @@ import com.github.javaparser.ParseResult;
 import com.github.javaparser.Position;
 import com.github.javaparser.Range;
 import com.github.javaparser.ast.comments.CommentsCollection;
-import edu.rit.se.satd.comment.GroupedComment;
 import edu.rit.se.satd.comment.IgnorableWords;
+import edu.rit.se.satd.comment.model.GroupedComment;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import static edu.rit.se.satd.comment.GroupedComment.TYPE_COMMENTED_SOURCE;
+import static edu.rit.se.satd.comment.model.GroupedComment.TYPE_COMMENTED_SOURCE;
 
 public class JavaParseUtil {
 
@@ -36,7 +36,7 @@ public class JavaParseUtil {
                         .getComments()
                         .stream()
                         .filter(comment -> !comment.isJavadocComment())
-                        .map(GroupedComment::new)
+                        .map(GroupedComment::fromJavaParserComment)
                         .filter(comment -> !comment.getCommentType().equals(TYPE_COMMENTED_SOURCE))
                         .filter(comment -> IgnorableWords.getIgnorableWords().stream()
                                 .noneMatch(word -> comment.getComment().contains(word)))
@@ -72,16 +72,10 @@ public class JavaParseUtil {
      * @param range The range of the edit
      * @param start the starting bound
      * @param end the ending bound
-     * @return True if the range overlaps with the start and end boundaries, else False
+     * @return True if the ranges overlap, else False
      */
     public static boolean isRangeBetweenBounds(Range range, int start, int end) {
-        return
-                // Starts before the start and ends after the start
-                (range.begin.line <= start && range.end.line >= start ) ||
-                        // Starts before the end, and ends after the end
-                        (range.begin.line <= end && range.end.line >= end) ||
-                        // Starts after the start and ends before the end
-                        (range.begin.line >= start && range.end.line <= end);
+        return Math.max(range.begin.line, start) <= Math.min(range.end.line, end);
     }
 
 }

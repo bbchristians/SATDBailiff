@@ -1,4 +1,4 @@
-package edu.rit.se.satd.mining;
+package edu.rit.se.satd.mining.ui;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;

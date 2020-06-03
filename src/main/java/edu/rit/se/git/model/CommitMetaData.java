@@ -1,4 +1,4 @@
-package edu.rit.se.git.commit;
+package edu.rit.se.git.model;
 
 import lombok.Getter;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -8,7 +8,7 @@ import java.util.Date;
 import static org.eclipse.jgit.diff.DiffEntry.DEV_NULL;
 
 /**
- * Data class for commit metadata
+ * Data class for diff metadata
  */
 public class CommitMetaData {
 
@@ -29,9 +29,11 @@ public class CommitMetaData {
     @Getter
     private Date commitDate;
 
-    // For inheritance
-    CommitMetaData() {}
-
+    /**
+     * Constructor to generate a CommitMetaData object from a
+     * JGit RevCommit object
+     * @param commit a JGit RevCommit object
+     */
     public CommitMetaData(RevCommit commit) {
         if( commit != null ) {
             this.hash = commit.getName();

@@ -1,4 +1,4 @@
-package edu.rit.se.satd.comment;
+package edu.rit.se.satd.comment.model;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -6,6 +6,9 @@ import lombok.NoArgsConstructor;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A list of comments, also containing possible errors (from parsing)
+ */
 @NoArgsConstructor
 public class RepositoryComments {
 

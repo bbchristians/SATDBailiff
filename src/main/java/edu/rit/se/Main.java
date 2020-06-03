@@ -3,7 +3,7 @@ package edu.rit.se;
 import edu.rit.se.satd.SATDMiner;
 import edu.rit.se.satd.comment.IgnorableWords;
 import edu.rit.se.satd.detector.SATDDetectorImpl;
-import edu.rit.se.satd.mining.commit.CommitToCommitDiff;
+import edu.rit.se.satd.mining.diff.CommitToCommitDiff;
 import edu.rit.se.satd.writer.MySQLOutputWriter;
 import edu.rit.se.satd.writer.OutputWriter;
 import edu.rit.se.util.SimilarityUtil;

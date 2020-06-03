@@ -13,8 +13,8 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * A class that, given a git repository, collects references to all tags in that repository
- * and supplies a list of those references for further processing.
+ * Initializes a Git Repository. This includes cloning it locally and
+ * locating unknown commits within it.
  */
 public class RepositoryInitializer {
 
@@ -90,6 +90,11 @@ public class RepositoryInitializer {
         return this.gitDidInit;
     }
 
+    /**
+     * Gets a diff reference for the most recent diff or the one at the given head
+     * @param head a string representing a hash or tag to use as a head
+     * @return A reference to the most recent diff or the one at the given head
+     */
     public RepositoryCommitReference getMostRecentCommit(String head) {
         final RevWalk revWalk = new RevWalk(this.repoRef.getRepository());
         try {
@@ -101,7 +106,7 @@ public class RepositoryInitializer {
                             head != null ? head : Constants.HEAD))
             );
         } catch (IOException e) {
-            System.err.println("\nCould not parse the supplied commit for the repository: " + head);
+            System.err.println("\nCould not parse the supplied diff for the repository: " + head);
         }
         return null;
     }

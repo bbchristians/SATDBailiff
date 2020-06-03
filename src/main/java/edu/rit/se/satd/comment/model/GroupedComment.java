@@ -1,4 +1,4 @@
-package edu.rit.se.satd.comment;
+package edu.rit.se.satd.comment.model;
 
 import com.github.javaparser.Range;
 import com.github.javaparser.ast.Node;
@@ -7,8 +7,9 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.comments.Comment;
 import edu.rit.se.util.JavaParseUtil;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -16,31 +17,35 @@ import java.util.stream.Collectors;
 
 import static edu.rit.se.util.JavaParseUtil.NULL_RANGE;
 
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE) // For internal use only
+/**
+ * A model used to represent a single comment
+ */
+@NoArgsConstructor(access = AccessLevel.PRIVATE) // For internal use only
+@AllArgsConstructor(access = AccessLevel.PROTECTED) // For internal use only
 public class GroupedComment implements Comparable {
 
     private static final String UNKNOWN = "None";
 
     @Getter
-    final private int startLine;
+    private int startLine = -1;
     @Getter
-    final private int endLine;
+    private int endLine = -1;
     @Getter
-    final private String comment;
+    private String comment = UNKNOWN;
     @Getter
-    final private String commentType;
+    private String commentType = UNKNOWN;
     @Getter
-    final private String containingClass;
+    private String containingClass = UNKNOWN;
     @Getter
-    final private int containingClassDeclarationLineStart;
+    private int containingClassDeclarationLineStart = -1;
     @Getter
-    final private int containingClassDeclarationLineEnd;
+    private int containingClassDeclarationLineEnd = -1;
     @Getter
-    final private String containingMethod;
+    private String containingMethod = UNKNOWN;
     @Getter
-    final private int containingMethodDeclarationLineStart;
+    private int containingMethodDeclarationLineStart = -1;
     @Getter
-    final private int containingMethodDeclarationLineEnd;
+    private int containingMethodDeclarationLineEnd = -1;
 
     public static final String TYPE_COMMENTED_SOURCE = "CommentedSource";
     public static final String TYPE_BLOCK = "Block";
@@ -48,69 +53,6 @@ public class GroupedComment implements Comparable {
     public static final String TYPE_ORPHAN = "Orphan";
     public static final String TYPE_JAVADOC = "JavaDoc";
     public static final String TYPE_UNKNOWN = "Unknown";
-
-    public GroupedComment(Comment oldComment) {
-        if( !oldComment.getRange().isPresent() ) {
-            System.err.println("Comment line numbers could not be found.");
-            this.startLine = -1;
-            this.endLine = -1;
-        } else {
-            this.startLine = oldComment.getRange().get().begin.line;
-            this.endLine = oldComment.getRange().get().end.line;
-        }
-        // Clean up comment
-        this.comment = Arrays.stream(oldComment.getContent().trim().split("\n"))
-                .map(GroupedComment::cleanCommentLine)
-                .collect(Collectors.joining("\n"));
-        this.commentType = this.comment.contains("{") || this.comment.contains(";") ? TYPE_COMMENTED_SOURCE
-                : oldComment.isBlockComment() ? TYPE_BLOCK
-                : oldComment.isLineComment() ? TYPE_LINE
-                : oldComment.isOrphan() ? TYPE_ORPHAN
-                : oldComment.isJavadocComment() ? TYPE_JAVADOC
-                : TYPE_UNKNOWN;
-
-        // Get containing class and method data if found
-        final Optional<ClassOrInterfaceDeclaration> classRoot = oldComment.findRootNode().findAll(ClassOrInterfaceDeclaration.class).stream()
-                .filter(dec -> dec.getRange().isPresent())
-                .filter(dec -> JavaParseUtil.isRangeBetweenBounds(dec.getRange().get(), this.startLine, this.endLine))
-                .findFirst();
-        if( classRoot.isPresent() ) {
-            // Class Data
-            this.containingClass = classRoot
-                    .map(ClassOrInterfaceDeclaration::getFullyQualifiedName)
-                    .map(opt -> opt.orElse(UNKNOWN))
-                    .get();
-            final Range classRange = classRoot
-                    .map(ClassOrInterfaceDeclaration::getName)
-                    .map(Node::getRange)
-                    .get()
-                    .orElse(NULL_RANGE);
-            this.containingClassDeclarationLineStart = classRange.begin.line;
-            this.containingClassDeclarationLineEnd = classRange.end.line;
-
-            // Method Data
-            final Optional<MethodDeclaration> thisMethod = classRoot.get().findAll(MethodDeclaration.class).stream()
-                    .filter(dec -> dec.getRange().isPresent())
-                    .filter(dec -> JavaParseUtil.isRangeBetweenBounds(dec.getRange().get(), this.startLine, this.endLine))
-                    .findFirst();
-            this.containingMethod = thisMethod
-                    .map(asd -> asd.getDeclarationAsString(false, false, false))
-                    .orElse(UNKNOWN);
-            final Range methodRange = thisMethod
-                    .map(Node::getRange)
-                    .orElse(Optional.of(NULL_RANGE))
-                    .orElse(NULL_RANGE);
-            this.containingMethodDeclarationLineStart = methodRange.begin.line;
-            this.containingMethodDeclarationLineEnd = methodRange.end.line;
-        } else {
-            this.containingMethod = UNKNOWN;
-            this.containingMethodDeclarationLineStart = -1;
-            this.containingMethodDeclarationLineEnd = -1;
-            this.containingClass = UNKNOWN;
-            this.containingClassDeclarationLineStart = -1;
-            this.containingClassDeclarationLineEnd = -1;
-        }
-    }
 
     /**
      * Merges this comment with another comment
@@ -189,5 +131,65 @@ public class GroupedComment implements Comparable {
     @Override
     public int hashCode() {
         return (this.comment + this.containingMethod + this.containingClass + this.commentType).hashCode();
+    }
+
+    public static GroupedComment fromJavaParserComment(Comment oldComment) {
+        final GroupedComment newComment = new GroupedComment();
+        // Line numbers
+        if( oldComment.getRange().isPresent() ) {
+            newComment.startLine = oldComment.getRange().get().begin.line;
+            newComment.endLine = oldComment.getRange().get().end.line;
+        }
+        // Clean up and set comment
+        newComment.comment = Arrays.stream(oldComment.getContent().trim().split("\n"))
+                .map(GroupedComment::cleanCommentLine)
+                .collect(Collectors.joining("\n"));
+        newComment.commentType = newComment.comment.contains("{") || newComment.comment.contains(";") ? TYPE_COMMENTED_SOURCE
+                : oldComment.isBlockComment() ? TYPE_BLOCK
+                : oldComment.isLineComment() ? TYPE_LINE
+                : oldComment.isOrphan() ? TYPE_ORPHAN
+                : oldComment.isJavadocComment() ? TYPE_JAVADOC
+                : TYPE_UNKNOWN;
+
+        // Get containing class and method data if found
+        final Optional<ClassOrInterfaceDeclaration> classRoot = oldComment.findRootNode()
+                .findAll(ClassOrInterfaceDeclaration.class)
+                .stream()
+                .filter(dec -> dec.getRange().isPresent())
+                .filter(dec ->
+                        JavaParseUtil.isRangeBetweenBounds(
+                                dec.getRange().get(), newComment.startLine, newComment.endLine))
+                .findFirst();
+        if( classRoot.isPresent() ) {
+            // Class Data
+            newComment.containingClass = classRoot
+                    .map(ClassOrInterfaceDeclaration::getFullyQualifiedName)
+                    .map(opt -> opt.orElse(UNKNOWN))
+                    .get();
+            final Range classRange = classRoot
+                    .map(ClassOrInterfaceDeclaration::getName)
+                    .map(Node::getRange)
+                    .get()
+                    .orElse(NULL_RANGE);
+            newComment.containingClassDeclarationLineStart = classRange.begin.line;
+            newComment.containingClassDeclarationLineEnd = classRange.end.line;
+
+            // Method Data
+            final Optional<MethodDeclaration> thisMethod = classRoot.get().findAll(MethodDeclaration.class).stream()
+                    .filter(dec -> dec.getRange().isPresent())
+                    .filter(dec -> JavaParseUtil.isRangeBetweenBounds(
+                            dec.getRange().get(), newComment.startLine, newComment.endLine))
+                    .findFirst();
+            newComment.containingMethod = thisMethod
+                    .map(asd -> asd.getDeclarationAsString(false, false, false))
+                    .orElse(UNKNOWN);
+            final Range methodRange = thisMethod
+                    .map(Node::getRange)
+                    .orElse(Optional.of(NULL_RANGE))
+                    .orElse(NULL_RANGE);
+            newComment.containingMethodDeclarationLineStart = methodRange.begin.line;
+            newComment.containingMethodDeclarationLineEnd = methodRange.end.line;
+        }
+        return newComment;
     }
 }

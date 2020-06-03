@@ -1,10 +1,10 @@
 package edu.rit.se.satd.mining;
 
 import edu.rit.se.git.RepositoryCommitReference;
-import edu.rit.se.satd.comment.OldToNewCommentMapping;
-import edu.rit.se.satd.comment.RepositoryComments;
+import edu.rit.se.satd.comment.model.OldToNewCommentMapping;
+import edu.rit.se.satd.comment.model.RepositoryComments;
 import edu.rit.se.satd.detector.SATDDetector;
-import edu.rit.se.satd.mining.commit.CommitToCommitDiff;
+import edu.rit.se.satd.mining.diff.CommitToCommitDiff;
 import edu.rit.se.satd.model.SATDDifference;
 import edu.rit.se.satd.model.SATDInstance;
 import lombok.Getter;

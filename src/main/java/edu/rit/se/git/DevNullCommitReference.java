@@ -1,7 +1,7 @@
 package edu.rit.se.git;
 
 
-import edu.rit.se.satd.comment.RepositoryComments;
+import edu.rit.se.satd.comment.model.RepositoryComments;
 import edu.rit.se.satd.detector.SATDDetector;
 
 import java.util.ArrayList;
@@ -11,6 +11,10 @@ import java.util.Map;
 
 import static org.eclipse.jgit.diff.DiffEntry.DEV_NULL;
 
+/**
+ * A null diff reference used for representing the diff in a repository
+ * that does not have any commits
+ */
 public class DevNullCommitReference extends RepositoryCommitReference {
 
     public DevNullCommitReference() {

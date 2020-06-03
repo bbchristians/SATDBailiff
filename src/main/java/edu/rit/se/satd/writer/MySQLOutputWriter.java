@@ -1,7 +1,7 @@
 package edu.rit.se.satd.writer;
 
-import edu.rit.se.git.commit.CommitMetaData;
-import edu.rit.se.satd.comment.GroupedComment;
+import edu.rit.se.git.model.CommitMetaData;
+import edu.rit.se.satd.comment.model.GroupedComment;
 import edu.rit.se.satd.model.SATDDifference;
 import edu.rit.se.satd.model.SATDInstance;
 
@@ -145,7 +145,7 @@ public class MySQLOutputWriter implements OutputWriter {
      * Gets the ID for the SATD file instance, and inserts it into the appropriate table
      * if it is not present
      * @param conn The DB Connection
-     * @param satdInstance The SATD instance to draw commit from
+     * @param satdInstance The SATD instance to draw diff from
      * @param useOld True if the old file info in the SATDInstance should be used, else False
      * @return The ID for the SATD file instance
      * @throws SQLException Thrown if any SQL exceptions are encountered.
@@ -236,9 +236,9 @@ public class MySQLOutputWriter implements OutputWriter {
     }
 
     /**
-     * Stores commit data while avoid duplicate insertions
+     * Stores diff data while avoid duplicate insertions
      * @param conn The DB Connection
-     * @param commitMetaData the MetaData of the commit to store
+     * @param commitMetaData the MetaData of the diff to store
      * @throws SQLException thrown if any errors are encountered while interfacing
      *      with the DB
      */
@@ -251,7 +251,7 @@ public class MySQLOutputWriter implements OutputWriter {
             queryStmt.setString(1, commitMetaData.getHash()); // commit_hash
             final ResultSet res = queryStmt.executeQuery();
             if (!res.next()) {
-                // Add the commit data if it is not found
+                // Add the diff data if it is not found
                 final PreparedStatement updateStmt = conn.prepareStatement(
                         "INSERT INTO Commits(commit_hash, author_name, author_email, " +
                                 "committer_name, committer_email, author_date, commit_date, p_id) " +
@@ -275,7 +275,7 @@ public class MySQLOutputWriter implements OutputWriter {
                 updateStmt.executeUpdate();
             }
         } catch (SQLException e) {
-            System.err.println("SQL Error encountered when storing commit metadata.");
+            System.err.println("SQL Error encountered when storing diff metadata.");
             throw e;
         }
         return commitMetaData.getHash();
