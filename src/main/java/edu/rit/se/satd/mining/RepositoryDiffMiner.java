@@ -1,6 +1,7 @@
 package edu.rit.se.satd.mining;
 
 import edu.rit.se.git.RepositoryCommitReference;
+import edu.rit.se.satd.comment.GroupedComment;
 import edu.rit.se.satd.comment.OldToNewCommentMapping;
 import edu.rit.se.satd.comment.RepositoryComments;
 import edu.rit.se.satd.detector.SATDDetector;
@@ -49,50 +50,38 @@ public class RepositoryDiffMiner {
                 this.firstRepo, this.secondRepo, this.satdDetector);
 
         // Get the SATD occurrences for each repo
-        final Map<String, RepositoryComments> newerSATD = this.secondRepo.getFilesToSATDOccurrences(
-                this.satdDetector, cToCDiff.getModifiedFilesNew());
         final Map<String, RepositoryComments> olderSATD = this.firstRepo.getFilesToSATDOccurrences(
                 this.satdDetector, cToCDiff.getModifiedFilesOld());
+        final Map<String, RepositoryComments> newerSATD = this.secondRepo.getFilesToSATDOccurrences(
+                this.satdDetector, cToCDiff.getModifiedFilesNew());
 
-        // Get a list of all SATD instances as a mappable instance
-        final List<OldToNewCommentMapping> oldSATDMappings = olderSATD.keySet().stream()
-                .flatMap(oldFile -> olderSATD.get(oldFile).getComments().stream()
-                    .map(comment -> new OldToNewCommentMapping(comment, oldFile)))
-                .collect(Collectors.toList());
-        populateDuplicationIds(oldSATDMappings);
-        final List<OldToNewCommentMapping> newSATDMappings = newerSATD.keySet().stream()
-                .flatMap(newFile -> newerSATD.get(newFile).getComments().stream()
-                        .map(comment -> new OldToNewCommentMapping(comment, newFile)))
-                .collect(Collectors.toList());
-        populateDuplicationIds(newSATDMappings);
-        final List<String> erroredFiles = new ArrayList<>();
-        // Add errored files to known errors
-        erroredFiles.addAll(newerSATD.values().stream()
-                .map(RepositoryComments::getParseErrorFiles)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList()));
-        erroredFiles.addAll(olderSATD.values().stream()
-                .map(RepositoryComments::getParseErrorFiles)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList()));
+        final Map<String, RepositoryComments> impactedNewSATD = newerSATD.entrySet().stream()
+                .map(entry -> {
+                    final String fileName = entry.getKey();
+                    final RepositoryComments comments = entry.getValue();
+                    final List<GroupedComment> impactedComments = comments.getComments().stream()
+                            .filter(comment -> cToCDiff.commentWasImpactedInNewRepo(fileName, comment))
+                            .collect(Collectors.toList());
+                    return new HashMap.SimpleEntry<>(fileName, comments.withNewComments(impactedComments));
+                })
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        // Map the new to old and then old to new, so we can determine which SATD instances
-        // may have changed
-        alignMappingLists(oldSATDMappings, newSATDMappings, erroredFiles);
+        if( impactedNewSATD.values().stream().anyMatch(asd -> asd.getComments().size() > 0 ) ) {
+            System.err.println("HERE:");
+        }
 
-        // Get all instances that can be mined from the old repository's mapping data
-        final List<SATDInstance> oldInstances = mineDiffsFromMappedSATDInstances(cToCDiff, oldSATDMappings, true);
-        // Use the new instance to avoid double-detecting instances that may not have
-        // been mapped on the first pass through
-        alignMappingLists(newSATDMappings, oldInstances.stream()
-                .map(SATDInstance::getNewInstance)
-                .map(ni -> new OldToNewCommentMapping(ni.getComment(), ni.getFileName()))
-                .collect(Collectors.toList()), erroredFiles);
-        // Add SATD instances that were in the NEW repo, but couldn't be mapped to the OLD repo
-        final List<SATDInstance> newInstances = mineDiffsFromMappedSATDInstances(cToCDiff, newSATDMappings, false);
 
-        diff.addSATDInstances(oldInstances);
-        diff.addSATDInstances(newInstances);
+//        final List<String> erroredFiles = new ArrayList<>();
+//        // Add errored files to known errors
+//        erroredFiles.addAll(newerSATD.values().stream()
+//                .map(RepositoryComments::getParseErrorFiles)
+//                .flatMap(Collection::stream)
+//                .collect(Collectors.toList()));
+//        erroredFiles.addAll(olderSATD.values().stream()
+//                .map(RepositoryComments::getParseErrorFiles)
+//                .flatMap(Collection::stream)
+//                .collect(Collectors.toList()));
+
 
 
         return diff;

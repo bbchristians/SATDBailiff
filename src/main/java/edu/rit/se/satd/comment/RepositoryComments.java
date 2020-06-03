@@ -10,7 +10,7 @@ import java.util.List;
 public class RepositoryComments {
 
     @Getter
-    private final List<GroupedComment> comments = new ArrayList<>();
+    private List<GroupedComment> comments = new ArrayList<>();
     @Getter
     private final List<String> parseErrorFiles = new ArrayList<>();
 
@@ -20,5 +20,10 @@ public class RepositoryComments {
 
     public void addComments(List<GroupedComment> comments) {
         this.comments.addAll(comments);
+    }
+
+    public RepositoryComments withNewComments(List<GroupedComment> newComments) {
+        this.comments = newComments;
+        return this;
     }
 }

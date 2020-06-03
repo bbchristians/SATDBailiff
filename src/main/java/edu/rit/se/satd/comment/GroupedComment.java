@@ -1,5 +1,6 @@
 package edu.rit.se.satd.comment;
 
+import com.github.javaparser.Position;
 import com.github.javaparser.Range;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -22,9 +23,9 @@ public class GroupedComment implements Comparable {
     private static final String UNKNOWN = "None";
 
     @Getter
-    final private int startLine;
+    final private Position start;
     @Getter
-    final private int endLine;
+    final private Position end;
     @Getter
     final private String comment;
     @Getter
@@ -32,15 +33,15 @@ public class GroupedComment implements Comparable {
     @Getter
     final private String containingClass;
     @Getter
-    final private int containingClassDeclarationLineStart;
+    final private Position containingClassDeclarationStart;
     @Getter
-    final private int containingClassDeclarationLineEnd;
+    final private Position containingClassDeclarationEnd;
     @Getter
     final private String containingMethod;
     @Getter
-    final private int containingMethodDeclarationLineStart;
+    final private Position containingMethodDeclarationStart;
     @Getter
-    final private int containingMethodDeclarationLineEnd;
+    final private Position containingMethodDeclarationEnd;
 
     public static final String TYPE_COMMENTED_SOURCE = "CommentedSource";
     public static final String TYPE_BLOCK = "Block";
@@ -52,11 +53,11 @@ public class GroupedComment implements Comparable {
     public GroupedComment(Comment oldComment) {
         if( !oldComment.getRange().isPresent() ) {
             System.err.println("Comment line numbers could not be found.");
-            this.startLine = -1;
-            this.endLine = -1;
+            this.start = NullGroupedComment.NULL_POSITION_FIELD;
+            this.end = NullGroupedComment.NULL_POSITION_FIELD;
         } else {
-            this.startLine = oldComment.getRange().get().begin.line;
-            this.endLine = oldComment.getRange().get().end.line;
+            this.start = oldComment.getRange().get().begin;
+            this.end = oldComment.getRange().get().end;
         }
         // Clean up comment
         this.comment = Arrays.stream(oldComment.getContent().trim().split("\n"))
@@ -72,7 +73,7 @@ public class GroupedComment implements Comparable {
         // Get containing class and method data if found
         final Optional<ClassOrInterfaceDeclaration> classRoot = oldComment.findRootNode().findAll(ClassOrInterfaceDeclaration.class).stream()
                 .filter(dec -> dec.getRange().isPresent())
-                .filter(dec -> JavaParseUtil.isRangeBetweenBounds(dec.getRange().get(), this.startLine, this.endLine))
+                .filter(dec -> JavaParseUtil.isRangeBetweenBounds(dec.getRange().get(), this.start.line, this.end.line))
                 .findFirst();
         if( classRoot.isPresent() ) {
             // Class Data
@@ -85,13 +86,13 @@ public class GroupedComment implements Comparable {
                     .map(Node::getRange)
                     .get()
                     .orElse(NULL_RANGE);
-            this.containingClassDeclarationLineStart = classRange.begin.line;
-            this.containingClassDeclarationLineEnd = classRange.end.line;
+            this.containingClassDeclarationStart = classRange.begin;
+            this.containingClassDeclarationEnd = classRange.end;
 
             // Method Data
             final Optional<MethodDeclaration> thisMethod = classRoot.get().findAll(MethodDeclaration.class).stream()
                     .filter(dec -> dec.getRange().isPresent())
-                    .filter(dec -> JavaParseUtil.isRangeBetweenBounds(dec.getRange().get(), this.startLine, this.endLine))
+                    .filter(dec -> JavaParseUtil.isRangeBetweenBounds(dec.getRange().get(), this.start.line, this.end.line))
                     .findFirst();
             this.containingMethod = thisMethod
                     .map(asd -> asd.getDeclarationAsString(false, false, false))
@@ -100,15 +101,15 @@ public class GroupedComment implements Comparable {
                     .map(Node::getRange)
                     .orElse(Optional.of(NULL_RANGE))
                     .orElse(NULL_RANGE);
-            this.containingMethodDeclarationLineStart = methodRange.begin.line;
-            this.containingMethodDeclarationLineEnd = methodRange.end.line;
+            this.containingMethodDeclarationStart = methodRange.begin;
+            this.containingMethodDeclarationEnd = methodRange.end;
         } else {
             this.containingMethod = UNKNOWN;
-            this.containingMethodDeclarationLineStart = -1;
-            this.containingMethodDeclarationLineEnd = -1;
+            this.containingMethodDeclarationStart = NullGroupedComment.NULL_POSITION_FIELD;
+            this.containingMethodDeclarationEnd = NullGroupedComment.NULL_POSITION_FIELD;
             this.containingClass = UNKNOWN;
-            this.containingClassDeclarationLineStart = -1;
-            this.containingClassDeclarationLineEnd = -1;
+            this.containingClassDeclarationStart = NullGroupedComment.NULL_POSITION_FIELD;
+            this.containingClassDeclarationEnd = NullGroupedComment.NULL_POSITION_FIELD;
         }
     }
 
@@ -120,18 +121,18 @@ public class GroupedComment implements Comparable {
      */
     public GroupedComment joinWith(GroupedComment other) {
         return new GroupedComment(
-                Integer.min(this.startLine, other.startLine),
-                Integer.max(this.endLine, other.endLine),
-                this.startLine < other.startLine ?
+                this.start.isBefore(other.start) ? this.start : other.start,
+                this.end.isAfter(other.end) ? this.end : other.end,
+                this.end.isBefore(other.start) ?
                         String.join("\n", this.comment, other.comment) :
                         String.join("\n", other.comment, this.comment),
                 this.commentType,
                 this.containingClass,
-                this.containingClassDeclarationLineStart,
-                this.containingClassDeclarationLineEnd,
+                this.containingClassDeclarationStart,
+                this.containingClassDeclarationEnd,
                 this.containingMethod,
-                this.containingMethodDeclarationLineStart,
-                this.containingMethodDeclarationLineEnd);
+                this.containingMethodDeclarationStart,
+                this.containingMethodDeclarationEnd);
     }
 
     /**
@@ -142,11 +143,11 @@ public class GroupedComment implements Comparable {
     public boolean precedesDirectly(GroupedComment other) {
         return this.containingClass.equals(other.containingClass) &&
                 (this.commentType.equals(other.commentType) || this.commentType.equals(TYPE_COMMENTED_SOURCE))  &&
-                this.endLine + 1 == other.startLine;
+                this.end.line + 1 == other.start.line;
     }
 
     public int numLines() {
-        return 1 + this.endLine - this.startLine;
+        return 1 + this.end.line - this.start.line;
     }
 
     /**
@@ -165,9 +166,9 @@ public class GroupedComment implements Comparable {
     @Override
     public int compareTo(Object o) {
         if( o instanceof GroupedComment ) {
-            if( this.startLine > ((GroupedComment) o).startLine ) {
+            if( this.start.isAfter(((GroupedComment) o).end) ) {
                 return 1;
-            } else if( this.startLine < ((GroupedComment) o).startLine ) {
+            } else if( this.end.isBefore(((GroupedComment) o).start) ) {
                 return -1;
             }
             return 0;
@@ -179,10 +180,9 @@ public class GroupedComment implements Comparable {
     public boolean equals(Object obj) {
         if( obj instanceof  GroupedComment ) {
             return this.comment.equals(((GroupedComment) obj).getComment()) &&
-                    this.startLine == ((GroupedComment) obj).startLine &&
-                    this.endLine == ((GroupedComment) obj).endLine;
+                    this.start.equals(((GroupedComment) obj).start) &&
+                    this.end.equals(((GroupedComment) obj).end);
         }
-
         return super.equals(obj);
     }
 

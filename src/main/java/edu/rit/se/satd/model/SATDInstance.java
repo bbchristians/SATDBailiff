@@ -32,19 +32,19 @@ public class SATDInstance {
     private int duplicationId = 0;
 
     public int getStartLineNumberOldFile() {
-        return this.oldInstance.getComment().getStartLine();
+        return this.oldInstance.getComment().getStart().line;
     }
 
     public int getEndLineNumberOldFile() {
-        return this.oldInstance.getComment().getEndLine();
+        return this.oldInstance.getComment().getEnd().line;
     }
 
     public int getStartLineNumberNewFile() {
-        return this.newInstance.getComment().getStartLine();
+        return this.newInstance.getComment().getStart().line;
     }
 
     public int getEndLineNumberNewFile() {
-        return this.newInstance.getComment().getEndLine();
+        return this.newInstance.getComment().getEnd().line;
     }
 
     public enum SATDResolution {

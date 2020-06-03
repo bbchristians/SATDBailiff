@@ -1,5 +1,7 @@
 package edu.rit.se;
 
+import com.github.gumtreediff.client.Run;
+import com.github.gumtreediff.gen.Generators;
 import edu.rit.se.satd.SATDMiner;
 import edu.rit.se.satd.comment.IgnorableWords;
 import edu.rit.se.satd.detector.SATDDetectorImpl;

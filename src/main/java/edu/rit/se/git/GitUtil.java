@@ -10,11 +10,15 @@ import org.eclipse.jgit.diff.RenameDetector;
 import org.eclipse.jgit.errors.CorruptObjectException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.MissingObjectException;
+import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.treewalk.EmptyTreeIterator;
 import org.eclipse.jgit.treewalk.TreeWalk;
+import org.eclipse.jgit.treewalk.filter.PathFilter;
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -100,5 +104,39 @@ public class GitUtil {
                 new Range(new Position(edit.getBeginB(), 0), new Position(edit.getEndB(), 0)),
                 startLine, endLine
         );
+    }
+
+    public static File getTempReferenceToFile(Git gitInstance, RevCommit commit, String filePath) {
+        if( commit == null || filePath.equals("/dev/null") ) {
+            File devNullFile = new File("tmp/dev/null/null.java");
+            if( devNullFile.exists() ) {
+                return devNullFile;
+            }
+            devNullFile.getParentFile().mkdirs();
+            try {
+                FileOutputStream fOut = new FileOutputStream(devNullFile);
+                fOut.write(new byte[0]);
+                fOut.close();
+                return devNullFile;
+            } catch (IOException e) {
+                return null;
+            }
+        }
+        TreeWalk walker = getTreeWalker(gitInstance, commit);
+        walker.setFilter(PathFilter.create(filePath));
+        try {
+            if (walker.next()) {
+                File tempFile = new File(String.format("tmp/%s/%s", commit.getName(), filePath));
+                tempFile.getParentFile().mkdirs();
+                ObjectLoader loader = gitInstance.getRepository().open(walker.getObjectId(0));
+                FileOutputStream out = new FileOutputStream(tempFile);
+                out.write(loader.getBytes());
+                out.close();
+                return tempFile;
+            }
+        } catch (IOException e) {
+            System.err.println("Error parsing git for file.");
+        }
+        return null;
     }
 }

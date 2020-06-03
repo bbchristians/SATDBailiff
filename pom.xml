@@ -55,6 +55,15 @@
             <systemPath>${project.basedir}/lib/satd_detector.jar</systemPath>
         </dependency>
 
+        <!-- Local SATD Detector Implementation from jar -->
+        <dependency>
+            <groupId>com.github.kusumotolab</groupId>
+            <artifactId>lgmatcher</artifactId>
+            <version>1.0.0-alpha</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/LGMatcher-1.0.0-alpha-all.jar</systemPath>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/org.eclipse.jgit/org.eclipse.jgit -->
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
@@ -109,6 +118,33 @@
             <version>1.18.12</version>
             <scope>provided</scope>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.github.gumtreediff/core -->
+        <dependency>
+            <groupId>com.github.gumtreediff</groupId>
+            <artifactId>core</artifactId>
+            <version>2.1.2</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.github.gumtreediff/core -->
+        <dependency>
+            <groupId>com.github.gumtreediff</groupId>
+            <artifactId>client</artifactId>
+            <version>2.1.2</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.github.gumtreediff/core -->
+        <dependency>
+            <groupId>com.github.gumtreediff</groupId>
+            <artifactId>client.diff</artifactId>
+            <version>2.1.2</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.github.gumtreediff/core -->
+        <dependency>
+            <groupId>com.github.gumtreediff</groupId>
+            <artifactId>gen.javaparser</artifactId>
+            <version>2.1.2</version>
+        </dependency>
+
     </dependencies>
 
 </project>
