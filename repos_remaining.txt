@@ -663,7 +663,6 @@ https://github.com/sonarsource/jenkins-sonar-plugin
 https://github.com/sonatype/nexus-maven-plugins
 https://github.com/sonatype/plexus-archiver
 https://github.com/sonatype/sisu-guice
-https://github.com/soundcloud/java-api-wrapper
 https://github.com/sourcepit/b2
 https://github.com/sourcepit/osgifier
 https://github.com/splunk/splunk-library-javalogging
