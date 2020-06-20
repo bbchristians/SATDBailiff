@@ -1,5 +1,4 @@
 https://github.com/3scale/3scale_ws_api_for_java
-https://github.com/3wks/thundr
 https://github.com/99soft/rocoto
 https://github.com/aaberg/sql2o
 https://github.com/aadnk/experiencemod
