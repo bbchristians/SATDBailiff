@@ -6,7 +6,7 @@ github repositories as a single or batch operation.
 
 ### What is SATD?
 
-// TODO
+Self-Admitted Technical Debt is a candid form of technical debt in which the contributor of the debt self-documents the location of the debt. This admission is typically accompanied with a description of a knownor potential defect or a statement detailing what remaining work must be done.  Well-known and frequently used examples of SATD include comments beginning with TODO, FIXME, BUG, XXX, or HACK. SATD can also take other forms of more complex language void of any of the previously mentioned keywords.  Any comment  detailing  a not-quite-right implementation  present  in  the  surrounding  code  can  be  classified  as SATD.
 
 ### Usage
 
