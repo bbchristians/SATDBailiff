@@ -47,21 +47,17 @@ public class CommitToCommitDiff {
                 .collect(Collectors.toList());
     }
 
-    public List<SATDInstance> loadDiffsForOldFile(String oldFile, GroupedComment comment,
-                                                  List<String> allModifiedFiles) {
-        return this.loadDiffsForFile(oldFile, comment, true, allModifiedFiles);
+    public List<SATDInstance> loadDiffsForOldFile(String oldFile, GroupedComment comment) {
+        return this.loadDiffsForFile(oldFile, comment,
+                new OldFileDifferencer(this.gitInstance, this.newCommit, this.detector, this.diffEntries));
 
     }
 
     public List<SATDInstance> loadDiffsForNewFile(String newFile, GroupedComment comment) {
-        return this.loadDiffsForFile(newFile, comment, false, new ArrayList<>());
+        return this.loadDiffsForFile(newFile, comment, new NewFileDifferencer(this.gitInstance));
     }
 
-    private List<SATDInstance> loadDiffsForFile(String file, GroupedComment comment, boolean isOld,
-                                                List<String> allModifiedFiles) {
-        final FileDifferencer differ = isOld ?
-                new OldFileDifferencer(this.gitInstance, this.newCommit, this.detector, allModifiedFiles) :
-                new NewFileDifferencer(this.gitInstance);
+    private List<SATDInstance> loadDiffsForFile(String file, GroupedComment comment, FileDifferencer differ) {
         return this.diffEntries.stream()
                 .filter(entry -> entry.getNewPath().equals(file))
                 .map(diffEntry -> differ.getInstancesFromFile(diffEntry, comment))

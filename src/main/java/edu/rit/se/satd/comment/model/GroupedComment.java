@@ -181,7 +181,10 @@ public class GroupedComment implements Comparable {
                             dec.getRange().get(), newComment.startLine, newComment.endLine))
                     .findFirst();
             newComment.containingMethod = thisMethod
-                    .map(asd -> asd.getDeclarationAsString(false, false, false))
+                    .map(method -> method.getDeclarationAsString(false, false, false))
+                    // Trim return type as it is not important for this study, and only causes problems
+                    // when detecting movement of SATD between files
+                    .map(methodDec -> methodDec.substring(methodDec.indexOf(" ")+1))
                     .orElse(UNKNOWN);
             final Range methodRange = thisMethod
                     .map(Node::getRange)

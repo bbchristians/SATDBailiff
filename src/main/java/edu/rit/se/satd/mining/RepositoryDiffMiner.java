@@ -131,8 +131,7 @@ public class RepositoryDiffMiner {
                         .filter(OldToNewCommentMapping::isNotMapped)
                         .flatMap(mapping -> {
                                     final List<SATDInstance> minedInstances = (isOld ?
-                                            cToCDiff.loadDiffsForOldFile(mapping.getFile(), mapping.getComment(),
-                                                    otherFiles) :
+                                            cToCDiff.loadDiffsForOldFile(mapping.getFile(), mapping.getComment()) :
                                             cToCDiff.loadDiffsForNewFile(mapping.getFile(), mapping.getComment()));
                                     return minedInstances.stream()
                                             .peek(a -> a.setDuplicationId(mapping.getDuplicationId()));

@@ -23,6 +23,7 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static edu.rit.se.satd.comment.model.NullGroupedComment.NULL_FIELD;
 
@@ -32,13 +33,17 @@ public class OldFileDifferencer extends FileDifferencer {
 
     private final SATDDetector detector;
 
-    private final List<String> otherModifiedFiles;
+    private final List<DiffEntry> otherDiffEntries;
 
-    OldFileDifferencer(Git gitInstance, RevCommit newCommit, SATDDetector detector, List<String> otherModifiedFiles) {
+    OldFileDifferencer(Git gitInstance, RevCommit newCommit, SATDDetector detector, List<DiffEntry> otherDiffEntries) {
         super(gitInstance);
         this.newCommit = newCommit;
         this.detector = detector;
-        this.otherModifiedFiles = otherModifiedFiles;
+        // Remove all entries that detail removed files --
+        //   We won't need to look through these
+        this.otherDiffEntries = otherDiffEntries.stream()
+                .filter(de -> !de.getNewPath().equals("/dev/null"))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -90,15 +95,8 @@ public class OldFileDifferencer extends FileDifferencer {
                 // If changes were made to the SATD comment, and now the comment is missing
                 if( updatedComments.isEmpty() && !editsToSATDComment.isEmpty()) {
                     // Check to see if the SATD was moved to any other files
-                    final List<SATDInstanceInFile> identicalCommentsInOtherFiles = this.otherModifiedFiles.stream()
-                            .map(file -> new Pair(file, this.getCommentsInFileInNewRepository(file)))
-                            .flatMap(pair ->
-                                    ((RepositoryComments)pair.getValue()).getComments().stream()
-                                            .filter(comm -> oldComment.getComment().equals(comm.getComment()))
-                                            .map(comm -> new SATDInstanceInFile(
-                                                    pair.getKey().toString(), comm
-                                            )))
-                            .collect(Collectors.toList());
+                    final List<SATDInstanceInFile> identicalCommentsInOtherFiles =
+                            this.getOtherInstancesInCommitFiles(oldComment, diffEntry.getOldPath());
                     // No identical instances found, so we can assume the SATD was removed
                     if(identicalCommentsInOtherFiles.isEmpty()) {
                         satd.add(
@@ -198,9 +196,11 @@ public class OldFileDifferencer extends FileDifferencer {
     }
 
     private InputStream getFileContents(String fileName) throws IOException {
-        return this.gitInstance.getRepository().open(
-                TreeWalk.forPath(this.gitInstance.getRepository(), fileName, this.newCommit.getTree()).getObjectId(0)
-        ).openStream();
+        final TreeWalk walker = TreeWalk.forPath(this.gitInstance.getRepository(), fileName, this.newCommit.getTree());
+        if( walker == null ) {
+            System.err.println("Yikes");
+        }
+        return this.gitInstance.getRepository().open(walker.getObjectId(0)).openStream();
     }
 
     private boolean editImpactedComment(Edit edit, GroupedComment comment, int boundIncrease, boolean isOld) {
@@ -235,5 +235,37 @@ public class OldFileDifferencer extends FileDifferencer {
                 : GitUtil.editOccursInNewFileBetween(edit,
                 comment.getContainingClassDeclarationLineStart(),
                 comment.getContainingClassDeclarationLineEnd());
+    }
+
+    private List<SATDInstanceInFile> getOtherInstancesInCommitFiles(GroupedComment commentToMatch, String curPath) {
+        final List<SATDInstanceInFile> allInstances = this.otherDiffEntries.stream()
+                .filter(diffEntry -> !diffEntry.getOldPath().equals(curPath))
+                .map(diffEntry -> new Pair(diffEntry, this.getCommentsInFileInNewRepository(diffEntry.getNewPath())))
+                .flatMap(pair ->
+                        ((RepositoryComments)pair.getValue()).getComments().stream()
+                                // Only comments that match this comment
+                                // TODO - can we apply the same thresholding logic here?
+                                .filter(comm -> commentToMatch.getComment().equals(comm.getComment()))
+                                // Only comments that were impacted by edits in this commit
+                                .filter(comment -> this.getEdits((DiffEntry)pair.getKey()).stream()
+                                        .anyMatch(edit -> editImpactedComment(edit, comment, 0, false)))
+                                .map(comm -> new SATDInstanceInFile(
+                                        ((DiffEntry)pair.getKey()).getNewPath(), comm
+                                )))
+                .collect(Collectors.toList());
+        final List<SATDInstanceInFile> instancesWithSameMethod =
+                allInstances.stream()
+                        .filter(instanceInFile ->
+                            instanceInFile.getComment()
+                                    .getContainingMethod()
+                                    .equals(commentToMatch.getContainingMethod())
+                        ).collect(Collectors.toList());
+        // Check if there exists an instance w/ the same method
+        if( instancesWithSameMethod.isEmpty() ) {
+            // if not, return all instances
+            return allInstances;
+        }
+        // If there is, then return only those instances
+        return instancesWithSameMethod;
     }
 }
