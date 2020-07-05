@@ -216,8 +216,8 @@ public class MySQLOutputWriter implements OutputWriter {
             // Otherwise, add it and then return the newly generated key
             final PreparedStatement updateStmt = conn.prepareStatement(
                     "INSERT INTO SATD(first_commit, second_commit, first_file, second_file, " +
-                            "resolution, satd_instance_id, p_id) " +
-                            "VALUES (?,?,?,?,?,?,?)",
+                            "resolution, satd_instance_id, p_id, parent_instance_id) " +
+                            "VALUES (?,?,?,?,?,?,?,?)",
                     Statement.RETURN_GENERATED_KEYS);
             updateStmt.setString(1, oldCommitHash); // first_commit
             updateStmt.setString(2, newCommitHash); // second_commit
@@ -226,6 +226,7 @@ public class MySQLOutputWriter implements OutputWriter {
             updateStmt.setString(5, satdInstance.getResolution().name()); // resolution
             updateStmt.setInt(6, satdInstance.getId()); // satd_instance_id
             updateStmt.setInt(7, projectId); // p_id
+            updateStmt.setInt(8, satdInstance.getParentId()); // parent_instance_id
             updateStmt.executeUpdate();
             final ResultSet updateRes = updateStmt.getGeneratedKeys();
             if (updateRes.next()) {

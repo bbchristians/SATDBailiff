@@ -10,6 +10,7 @@ import org.eclipse.jgit.diff.DiffAlgorithm;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.revwalk.RevCommit;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,18 +47,20 @@ public class CommitToCommitDiff {
                 .collect(Collectors.toList());
     }
 
-    public List<SATDInstance> loadDiffsForOldFile(String oldFile, GroupedComment comment) {
-        return this.loadDiffsForFile(oldFile, comment, true);
+    public List<SATDInstance> loadDiffsForOldFile(String oldFile, GroupedComment comment,
+                                                  List<String> allModifiedFiles) {
+        return this.loadDiffsForFile(oldFile, comment, true, allModifiedFiles);
 
     }
 
     public List<SATDInstance> loadDiffsForNewFile(String newFile, GroupedComment comment) {
-        return this.loadDiffsForFile(newFile, comment, false);
+        return this.loadDiffsForFile(newFile, comment, false, new ArrayList<>());
     }
 
-    private List<SATDInstance> loadDiffsForFile(String file, GroupedComment comment, boolean isOld) {
+    private List<SATDInstance> loadDiffsForFile(String file, GroupedComment comment, boolean isOld,
+                                                List<String> allModifiedFiles) {
         final FileDifferencer differ = isOld ?
-                new OldFileDifferencer(this.gitInstance, this.newCommit, this.detector) :
+                new OldFileDifferencer(this.gitInstance, this.newCommit, this.detector, allModifiedFiles) :
                 new NewFileDifferencer(this.gitInstance);
         return this.diffEntries.stream()
                 .filter(entry -> entry.getNewPath().equals(file))

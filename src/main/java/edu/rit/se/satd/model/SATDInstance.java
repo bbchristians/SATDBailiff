@@ -25,6 +25,12 @@ public class SATDInstance {
     @Getter
     @Setter
     private int id = -1;
+    // SATD ID to associate with a parent instance
+    // This is used in the case where one SATD instance may proliferate into multiple new instances
+    // in different files.
+    @Getter
+    @Setter
+    private int parentId = -1;
     // SATD Duplication ID to differentiate instances if they
     // align in all other ways
     @Getter
@@ -53,7 +59,8 @@ public class SATDInstance {
         SATD_REMOVED,
         SATD_CHANGED,
         SATD_ADDED,
-        CLASS_OR_METHOD_CHANGED
+        CLASS_OR_METHOD_CHANGED,
+        SATD_MOVED_FILE
     }
 
     @Override

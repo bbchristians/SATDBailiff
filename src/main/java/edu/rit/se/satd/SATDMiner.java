@@ -231,7 +231,7 @@ public class SATDMiner {
                 }
                 satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getNewInstance()));
                 break;
-            case SATD_REMOVED: case FILE_REMOVED:
+            case SATD_REMOVED: case FILE_REMOVED: case SATD_MOVED_FILE:
                 // SATD was removed from the project, but the satdInstance still needs to have
                 // its ID set if possible
                 if( !this.satdInstanceMappings.containsKey(satdInstance.getOldInstance()) ) {
@@ -244,9 +244,21 @@ public class SATDMiner {
                     this.status.addErrorEncountered();
                     satdInstance.setId(this.getNewSATDId());
                 } else {
-                    // Otherwise it exists, so we can propagate it forward
-                    satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getOldInstance()));
-                    this.satdInstanceMappings.remove(satdInstance.getOldInstance());
+                    // A previous instance can be associated and was removed.
+                    // However, it could have been moved to another file.
+                    if( satdInstance.getResolution().equals(SATDInstance.SATDResolution.SATD_MOVED_FILE) ) {
+                        // It was moved to another file, so propagate the new instance forward
+                        // We cannot remove it from the list because it may have propagated multiple times
+                        // FIXME - we should store that the instance was removed and remove it after all
+                        //  cases from this propagation have been processed
+                        satdInstance.setParentId(this.satdInstanceMappings.get(satdInstance.getOldInstance()));
+                        satdInstance.setId(this.getNewSATDId());
+                        this.satdInstanceMappings.put(satdInstance.getNewInstance(), satdInstance.getId());
+                    } else {
+                        // It was not moved to another file, so we can kill the instance here.
+                        satdInstance.setId(this.satdInstanceMappings.get(satdInstance.getOldInstance()));
+                        this.satdInstanceMappings.remove(satdInstance.getOldInstance());
+                    }
                 }
                 break;
         }

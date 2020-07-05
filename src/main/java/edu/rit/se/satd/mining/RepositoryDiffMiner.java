@@ -76,12 +76,19 @@ public class RepositoryDiffMiner {
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList()));
 
-        // Map the new to old and then old to new, so we can determine which SATD instances
+        // Map the new to old and then old to new (done later), so we can determine which SATD instances
         // may have changed
         alignMappingLists(oldSATDMappings, newSATDMappings, erroredFiles);
 
+        // Get a list of all files that have unmapped new instances
+        final List<String> unmappedNewComments = newSATDMappings.stream()
+                .filter(OldToNewCommentMapping::isNotMapped)
+                .map(OldToNewCommentMapping::getFile)
+                .collect(Collectors.toList());
+
         // Get all instances that can be mined from the old repository's mapping data
-        final List<SATDInstance> oldInstances = mineDiffsFromMappedSATDInstances(cToCDiff, oldSATDMappings, true);
+        final List<SATDInstance> oldInstances =
+                mineDiffsFromMappedSATDInstances(cToCDiff, oldSATDMappings, true, unmappedNewComments);
         // Use the new instance to avoid double-detecting instances that may not have
         // been mapped on the first pass through
         alignMappingLists(newSATDMappings, oldInstances.stream()
@@ -89,7 +96,8 @@ public class RepositoryDiffMiner {
                 .map(ni -> new OldToNewCommentMapping(ni.getComment(), ni.getFileName()))
                 .collect(Collectors.toList()), erroredFiles);
         // Add SATD instances that were in the NEW repo, but couldn't be mapped to the OLD repo
-        final List<SATDInstance> newInstances = mineDiffsFromMappedSATDInstances(cToCDiff, newSATDMappings, false);
+        final List<SATDInstance> newInstances =
+                mineDiffsFromMappedSATDInstances(cToCDiff, newSATDMappings, false, new ArrayList<>());
 
         diff.addSATDInstances(oldInstances);
         diff.addSATDInstances(newInstances);
@@ -117,12 +125,14 @@ public class RepositoryDiffMiner {
 
     private static List<SATDInstance> mineDiffsFromMappedSATDInstances(CommitToCommitDiff cToCDiff,
                                                                        List<OldToNewCommentMapping> mappings,
-                                                                       boolean isOld) {
+                                                                       boolean isOld,
+                                                                       List<String> otherFiles) {
         return mappings.stream()
                         .filter(OldToNewCommentMapping::isNotMapped)
                         .flatMap(mapping -> {
                                     final List<SATDInstance> minedInstances = (isOld ?
-                                            cToCDiff.loadDiffsForOldFile(mapping.getFile(), mapping.getComment()) :
+                                            cToCDiff.loadDiffsForOldFile(mapping.getFile(), mapping.getComment(),
+                                                    otherFiles) :
                                             cToCDiff.loadDiffsForNewFile(mapping.getFile(), mapping.getComment()));
                                     return minedInstances.stream()
                                             .peek(a -> a.setDuplicationId(mapping.getDuplicationId()));

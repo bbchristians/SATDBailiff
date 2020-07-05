@@ -10,6 +10,7 @@ import edu.rit.se.satd.model.SATDInstanceInFile;
 import edu.rit.se.util.JavaParseUtil;
 import edu.rit.se.util.KnownParserException;
 import edu.rit.se.util.SimilarityUtil;
+import javafx.util.Pair;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.Edit;
@@ -27,14 +28,17 @@ import static edu.rit.se.satd.comment.model.NullGroupedComment.NULL_FIELD;
 
 public class OldFileDifferencer extends FileDifferencer {
 
-    private RevCommit newCommit;
+    private final RevCommit newCommit;
 
-    private SATDDetector detector;
+    private final SATDDetector detector;
 
-    OldFileDifferencer(Git gitInstance, RevCommit newCommit, SATDDetector detector) {
+    private final List<String> otherModifiedFiles;
+
+    OldFileDifferencer(Git gitInstance, RevCommit newCommit, SATDDetector detector, List<String> otherModifiedFiles) {
         super(gitInstance);
         this.newCommit = newCommit;
         this.detector = detector;
+        this.otherModifiedFiles = otherModifiedFiles;
     }
 
     @Override
@@ -85,13 +89,35 @@ public class OldFileDifferencer extends FileDifferencer {
                         .collect(Collectors.toList());
                 // If changes were made to the SATD comment, and now the comment is missing
                 if( updatedComments.isEmpty() && !editsToSATDComment.isEmpty()) {
-                    satd.add(
-                            new SATDInstance(
-                                    new SATDInstanceInFile(diffEntry.getOldPath(), oldComment),
-                                    new SATDInstanceInFile(diffEntry.getNewPath(), new NullGroupedComment()),
-                                    SATDInstance.SATDResolution.SATD_REMOVED
-                            )
-                    );
+                    // Check to see if the SATD was moved to any other files
+                    final List<SATDInstanceInFile> identicalCommentsInOtherFiles = this.otherModifiedFiles.stream()
+                            .map(file -> new Pair(file, this.getCommentsInFileInNewRepository(file)))
+                            .flatMap(pair ->
+                                    ((RepositoryComments)pair.getValue()).getComments().stream()
+                                            .filter(comm -> oldComment.getComment().equals(comm.getComment()))
+                                            .map(comm -> new SATDInstanceInFile(
+                                                    pair.getKey().toString(), comm
+                                            )))
+                            .collect(Collectors.toList());
+                    // No identical instances found, so we can assume the SATD was removed
+                    if(identicalCommentsInOtherFiles.isEmpty()) {
+                        satd.add(
+                                new SATDInstance(
+                                        new SATDInstanceInFile(diffEntry.getOldPath(), oldComment),
+                                        new SATDInstanceInFile(diffEntry.getNewPath(), new NullGroupedComment()),
+                                        SATDInstance.SATDResolution.SATD_REMOVED
+                                )
+                        );
+                    }
+                    // We found an instance in another modified file, so it may have been moved here.
+                    else {
+                        identicalCommentsInOtherFiles.stream()
+                                .map(newInstance -> new SATDInstance(
+                                        new SATDInstanceInFile(diffEntry.getOldPath(), oldComment),
+                                        newInstance,
+                                        SATDInstance.SATDResolution.SATD_MOVED_FILE
+                                )).forEach(satd::add);
+                    }
                 }
                 // If an updated comment was found, and it is not identical to the old comment
                 if( !updatedComments.isEmpty() &&
