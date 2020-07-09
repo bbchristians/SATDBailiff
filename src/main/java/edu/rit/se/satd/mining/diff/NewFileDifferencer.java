@@ -20,6 +20,11 @@ public class NewFileDifferencer extends FileDifferencer {
     }
 
     @Override
+    public String getPertinentFilePath(DiffEntry entry) {
+        return entry.getNewPath();
+    }
+
+    @Override
     public List<SATDInstance> getInstancesFromFile(DiffEntry diffEntry, GroupedComment newComment) {
         final List<SATDInstance> satd = new ArrayList<>();
 

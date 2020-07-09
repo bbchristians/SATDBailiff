@@ -59,11 +59,10 @@ public class CommitToCommitDiff {
 
     private List<SATDInstance> loadDiffsForFile(String file, GroupedComment comment, FileDifferencer differ) {
         return this.diffEntries.stream()
-                .filter(entry -> entry.getNewPath().equals(file))
+                .filter(entry -> differ.getPertinentFilePath(entry).equals(file))
                 .map(diffEntry -> differ.getInstancesFromFile(diffEntry, comment))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
     }
-
 
 }

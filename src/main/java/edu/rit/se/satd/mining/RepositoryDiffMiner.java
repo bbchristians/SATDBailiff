@@ -80,15 +80,9 @@ public class RepositoryDiffMiner {
         // may have changed
         alignMappingLists(oldSATDMappings, newSATDMappings, erroredFiles);
 
-        // Get a list of all files that have unmapped new instances
-        final List<String> unmappedNewComments = newSATDMappings.stream()
-                .filter(OldToNewCommentMapping::isNotMapped)
-                .map(OldToNewCommentMapping::getFile)
-                .collect(Collectors.toList());
-
         // Get all instances that can be mined from the old repository's mapping data
         final List<SATDInstance> oldInstances =
-                mineDiffsFromMappedSATDInstances(cToCDiff, oldSATDMappings, true, unmappedNewComments);
+                mineDiffsFromMappedSATDInstances(cToCDiff, oldSATDMappings, true);
         // Use the new instance to avoid double-detecting instances that may not have
         // been mapped on the first pass through
         alignMappingLists(newSATDMappings, oldInstances.stream()
@@ -97,7 +91,7 @@ public class RepositoryDiffMiner {
                 .collect(Collectors.toList()), erroredFiles);
         // Add SATD instances that were in the NEW repo, but couldn't be mapped to the OLD repo
         final List<SATDInstance> newInstances =
-                mineDiffsFromMappedSATDInstances(cToCDiff, newSATDMappings, false, new ArrayList<>());
+                mineDiffsFromMappedSATDInstances(cToCDiff, newSATDMappings, false);
 
         diff.addSATDInstances(oldInstances);
         diff.addSATDInstances(newInstances);
@@ -125,8 +119,7 @@ public class RepositoryDiffMiner {
 
     private static List<SATDInstance> mineDiffsFromMappedSATDInstances(CommitToCommitDiff cToCDiff,
                                                                        List<OldToNewCommentMapping> mappings,
-                                                                       boolean isOld,
-                                                                       List<String> otherFiles) {
+                                                                       boolean isOld) {
         return mappings.stream()
                         .filter(OldToNewCommentMapping::isNotMapped)
                         .flatMap(mapping -> {

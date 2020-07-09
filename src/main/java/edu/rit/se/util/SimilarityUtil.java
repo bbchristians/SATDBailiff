@@ -25,6 +25,9 @@ public class SimilarityUtil {
         if( comment1.getComment().isEmpty() && comment2.getComment().isEmpty() ) {
             return true;
         }
+        if(comment1.getComment().contains(comment2.getComment()) || comment2.getComment().contains(comment1.getComment())) {
+            return true;
+        }
         return LEVENSHTEIN_DISTANCE_MIN >= new LevenshteinDistance()
                 .apply(comment1.getComment(), comment2.getComment()) /
                     (double)Integer.max(comment1.getComment().length(), comment2.getComment().length());

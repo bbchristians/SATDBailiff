@@ -40,10 +40,15 @@ public class OldFileDifferencer extends FileDifferencer {
         this.newCommit = newCommit;
         this.detector = detector;
         // Remove all entries that detail removed files --
-        //   We won't need to look through these
+        //   We won't need to look through these for changed comments
         this.otherDiffEntries = otherDiffEntries.stream()
                 .filter(de -> !de.getNewPath().equals("/dev/null"))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public String getPertinentFilePath(DiffEntry entry) {
+        return entry.getOldPath();
     }
 
     @Override
@@ -90,7 +95,8 @@ public class OldFileDifferencer extends FileDifferencer {
                 // Find the comments created by deleting
                 final List<GroupedComment> updatedComments = editsToSATDComment.stream()
                         .flatMap( edit -> commentsInNewRepository.getComments().stream()
-                                .filter( c -> editImpactedComment(edit, c, Math.max(0, oldComment.numLines() - c.numLines()), false)))
+                                .filter( c -> editImpactedComment(edit, c,
+                                        Math.max(0, oldComment.numLines() - c.numLines()), false)))
                         .collect(Collectors.toList());
                 // If changes were made to the SATD comment, and now the comment is missing
                 if( updatedComments.isEmpty() && !editsToSATDComment.isEmpty()) {
@@ -197,9 +203,6 @@ public class OldFileDifferencer extends FileDifferencer {
 
     private InputStream getFileContents(String fileName) throws IOException {
         final TreeWalk walker = TreeWalk.forPath(this.gitInstance.getRepository(), fileName, this.newCommit.getTree());
-        if( walker == null ) {
-            System.err.println("Yikes");
-        }
         return this.gitInstance.getRepository().open(walker.getObjectId(0)).openStream();
     }
 

@@ -35,4 +35,6 @@ public abstract class FileDifferencer {
             throw new UncheckedIOException(e);
         }
     }
+
+    public abstract String getPertinentFilePath(DiffEntry entry);
 }
