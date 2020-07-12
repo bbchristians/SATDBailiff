@@ -1,10 +1,13 @@
 package edu.rit.se.satd.comment.model;
 
+import com.github.javaparser.Position;
 import com.github.javaparser.Range;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.comments.Comment;
+import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import edu.rit.se.util.JavaParseUtil;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -12,6 +15,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -175,23 +180,50 @@ public class GroupedComment implements Comparable {
             newComment.containingClassDeclarationLineEnd = classRange.end.line;
 
             // Method Data
-            final Optional<MethodDeclaration> thisMethod = classRoot.get().findAll(MethodDeclaration.class).stream()
+            // We need to check for all comments between the end of the last comment
+            // and the end of the current comment. This is done to associate comments that
+            // are not inside the contents of a method with the method that they pertain to.
+
+            // Get all class variables
+            // TODO fix issue where class variables are defined after a method
+            final List<VariableDeclarator> variables = classRoot.get().findAll(VariableDeclarator.class).stream()
+                    .filter(varDec -> varDec.getParentNode().isPresent() &&
+                            varDec.getParentNode().get().getParentNode().isPresent() &&
+                            varDec.getParentNode().get().getParentNode().get() instanceof ClassOrInterfaceDeclaration)
+                    .collect(Collectors.toList());
+            final List<MethodDeclaration> allMethods = classRoot.get().findAll(MethodDeclaration.class).stream()
                     .filter(dec -> dec.getRange().isPresent())
-                    .filter(dec -> JavaParseUtil.isRangeBetweenBounds(
-                            dec.getRange().get(), newComment.startLine, newComment.endLine))
-                    .findFirst();
-            newComment.containingMethod = thisMethod
-                    .map(method -> method.getDeclarationAsString(false, false, false))
-                    // Trim return type as it is not important for this study, and only causes problems
-                    // when detecting movement of SATD between files
-                    .map(methodDec -> methodDec.substring(methodDec.indexOf(" ")+1))
-                    .orElse(UNKNOWN);
-            final Range methodRange = thisMethod
-                    .map(Node::getRange)
-                    .orElse(Optional.of(NULL_RANGE))
-                    .orElse(NULL_RANGE);
-            newComment.containingMethodDeclarationLineStart = methodRange.begin.line;
-            newComment.containingMethodDeclarationLineEnd = methodRange.end.line;
+                    .sorted(Comparator.comparingInt(x -> x.getRange().get().begin.line))
+                    .collect(Collectors.toList());
+
+            // The first method in the class can be assumed to begin after all class variables have
+            // been defined, so we start our bounds for the first method we search at the end of the
+            // final variable declaration
+            int lastMethodEnd = variables.stream()
+                    .filter(var -> var.getRange().isPresent())
+                    .map(var -> var.getRange().get().end.line)
+                    .max(Comparator.comparingInt(x -> x))
+                    .orElse(-1);
+            for (final MethodDeclaration curMethod : allMethods) {
+                final Range methodRangeIncludingProceeding = new Range(
+                        new Position(lastMethodEnd, 0),
+                        new Position(curMethod.getRange().get().end.line, 0));
+                // If the comment is within the bounds, then we can assume it related to this method
+                if (JavaParseUtil.isRangeBetweenBounds(
+                        methodRangeIncludingProceeding, newComment.startLine, newComment.endLine)) {
+                    newComment.containingMethod = curMethod
+                            .getDeclarationAsString(false, false, false);
+                    newComment.containingMethod = newComment.containingMethod
+                            .substring(newComment.containingMethod.indexOf(" ") + 1);
+                    newComment.containingMethodDeclarationLineStart = curMethod.asMethodDeclaration()
+                            .getRange().get().begin.line;
+                    newComment.containingMethodDeclarationLineEnd = curMethod.asMethodDeclaration()
+                            .getRange().get().end.line;
+                    break;
+                }
+                lastMethodEnd = curMethod.getRange().get().end.line;
+            }
+
         }
         return newComment;
     }

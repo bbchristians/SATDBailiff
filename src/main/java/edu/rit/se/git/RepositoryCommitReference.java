@@ -18,10 +18,7 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -45,7 +42,7 @@ public class RepositoryCommitReference {
     public List<RepositoryCommitReference> getParentCommitReferences() {
         // Debugging code -- should NOT be included in any releases.
         // Used to start a search at a specific diff
-//        if( this.diff.getName().equals("d0597fefd54392f640dcc751a328841f052799bf") ) {
+//        if( this.commit.getName().equals("e394516307697ad4ace3d0c0b1155362eeefa2d6") ) {
 //            return new ArrayList<>();
 //        }
         final RevWalk rw = new RevWalk(this.gitInstance.getRepository());
