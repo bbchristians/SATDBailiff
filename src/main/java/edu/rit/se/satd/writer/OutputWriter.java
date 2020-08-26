@@ -3,6 +3,9 @@ package edu.rit.se.satd.writer;
 import edu.rit.se.satd.model.SATDDifference;
 
 import java.io.IOException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Map;
 
 public interface OutputWriter {
 
@@ -18,4 +21,19 @@ public interface OutputWriter {
      */
     void close();
 
+    /**
+     * Gets comments of removed satd
+     * @param projectName - The name of the project
+     * @param projectURL -  The url of the project
+     * @return - key, value pair list of comments,ids
+     * @throws SQLException
+     */
+    Map<String,String> getRemovedSATD(String projectName, String projectURL) throws SQLException;;
+
+    /**
+     * Saves Azure classifications in the db
+     * @param predictions - list of key value pairs comments, ids
+     * @throws SQLException
+     */
+    void writePredictionResults(Map<String, String> predictions ) throws SQLException;
 }

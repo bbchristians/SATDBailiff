@@ -7,3 +7,5 @@ satd_analyzer.iml
 repos.txt
 *.txt
 sql/*.csv
+/my_api_keys.CSV
+/mySQL_personal.properties

@@ -107,6 +107,83 @@ public class MySQLOutputWriter implements OutputWriter {
     }
 
     /**
+     * Returns list of key value pairs containing removed satd comments
+     * @param projectName -  The name of the project
+     * @param projectURL - The url of the project
+     * @return - Hashmap
+     * @throws SQLException
+     */
+   public Map<String,String> getRemovedSATD(String projectName, String projectURL) throws SQLException {
+       HashMap<String,String> satd = new HashMap<>();
+       Connection conn = null;
+       try{
+        //Connect to db
+        conn = DriverManager.getConnection(this.dbURI, this.user, this.pass);
+        String projectID = "" + getProjectId(conn, projectName, projectURL);
+        //Prepare sql statement
+        final PreparedStatement queryStmt = conn.prepareStatement(
+                "SELECT SATDInFile.f_comment,SATDInFile.f_id\n" +
+                        "FROM SATD\n" +
+                        "INNER JOIN SATDInFile ON SATDInFile.f_id = SATD.first_file\n" +
+                        "INNER JOIN Projects ON Projects.p_id = SATD.p_id\n" +
+                        "WHERE SATD.resolution = ? AND Projects.p_id = ?;");
+        queryStmt.setString(1, "SATD_REMOVED");
+        queryStmt.setString(2, projectID);
+        //Execute query
+        final ResultSet res = queryStmt.executeQuery();
+
+        //Save results in hashmap
+        while(res.next()) {
+            satd.put(res.getString(2),res.getString(1) );
+        }
+       } catch(SQLException e){
+           System.err.println("SQL Error encountered while fetching removed SATD");
+           throw e;
+       } finally{
+           try {
+               conn.close();
+           } catch (SQLException e) {
+               System.err.println("Error closing SQL connection");
+               throw e;
+           }
+       }
+       return satd;
+   }
+
+    /**
+     * Saves Azure classifications in the db
+     * @param predictions
+     * @throws SQLException
+     */
+   public void writePredictionResults(Map<String, String> predictions) throws SQLException{
+       Connection conn = null;
+       try {
+           //Connect to db
+           conn = DriverManager.getConnection(this.dbURI, this.user, this.pass);
+           //Write each prediction to db
+           for (String id : predictions.keySet()) {
+               String type = predictions.get(id);
+
+               PreparedStatement query = conn.prepareStatement("UPDATE SATDInFile SET type = ? WHERE f_id = ?");
+               query.setString(1, type);
+               query.setString(2, id);
+               query.executeUpdate();
+           }
+       } catch(SQLException e){
+           System.err.println("SQL Error encountered while saving satd type classification");
+           throw e;
+       }finally{
+           try{
+               conn.close();
+           }catch(SQLException e){
+               System.err.println("Error closing SQL connection");
+               throw e;
+           }
+       }
+   }
+
+
+    /**
      * Gets the ID for the project and adds the project to the database if it is not present.
      * @param conn The DB Connection
      * @param projectName The name of the project to be saved to the DB
