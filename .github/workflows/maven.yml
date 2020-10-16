@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-
+    name: Test SATDBailiff runs
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
@@ -19,14 +19,11 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 11
-    - name: Install openjfx
-      run: |
-        java -version
     - name: Acquiring Satd Detector
       run: |
         sudo mkdir lib
         sudo chmod +x ./lib
         sudo wget -N https://github.com/Tbabm/SATDDetector-Core/releases/download/v0.1/satd_detector.jar 
         sudo mv satd_detector.jar /home/runner/work/SATDBailiff/SATDBailiff/lib
-    - name: Build with Maven
+    - name: Build tool
       run: mvn -B package --file pom.xml
