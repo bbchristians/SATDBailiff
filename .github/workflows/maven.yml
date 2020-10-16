@@ -33,8 +33,8 @@ jobs:
     - name: Verify MySQL Database is set correctly
       run: |
         sudo apt-get install -y mysql-client
-        mysql --host 127.0.0.1 --port 3306 --user=user --password=root -e satd < sql/satd.sql
-        mysql --host 127.0.0.1 --port 3306 --user=user --password=root -e "SHOW DATABASES"
+        mysql --user=user --password=root satd < sql/satd.sql
+        SHOW DATABASES
     - name: Acquiring Satd Detector
       run: |
         sudo mkdir lib
