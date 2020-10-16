@@ -26,13 +26,8 @@ jobs:
         sudo chmod +x ./lib
     - name: Download Satd Detector to Lib
       run: |
-        pwd
-        ls
-        cd lib
-        pwd
-        ls
         sudo curl -H "Accept: application/zip" https://github.com/Tbabm/SATDDetector-Core/releases/download/v0.1/satd_detector.jar > satd_detector.jar
-        sudo chmod 755 satd_detector.jar
-        ls
+        sudo chmod +x satd_detector.jar
+        mv satd_detector.jar /lib
     - name: Build with Maven
       run: mvn -B package --file pom.xml
