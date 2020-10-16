@@ -15,18 +15,13 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
-    - name: Set up JDK 11
+    - name: Set up OpenJDK 8
       uses: actions/setup-java@v1
       with:
-        java-version: 11
+        java-version: 1.8
     - name: Install javajfx
       run: |
-        wget https://download2.gluonhq.com/openjfx/11.0.2/openjfx-11.0.2_linux-x64_bin-sdk.zip
-        sudo apt-get install unzip
-        unzip openjfx-11.0.2_linux-x64_bin-sdk.zip -d openjfx-11.0.2
-        cd openjfx-11.0.2/javafx-sdk-11.0.2
-        ls
-        sudo cp -arf lib/* ${JAVA_HOME}/lib/
+        apt-get update && apt-get install -y --no-install-recommends openjfx && rm -rf /var/lib/apt/lists/*
     - name: Acquiring Satd Detector
       run: |
         sudo mkdir lib
