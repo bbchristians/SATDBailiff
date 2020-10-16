@@ -121,7 +121,13 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>4.5.12</version>
-        </dependency>             
+        </dependency>    
+        <dependency> 
+                 <groupId>com.zenjava</groupId> 
+                 <artifactId>javafx-maven-plugin</artifactId> 
+                 <version>8.1.2</version> 
+        </dependency> 
+
     </dependencies>
 
 </project>
