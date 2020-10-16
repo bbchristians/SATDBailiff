@@ -18,9 +18,9 @@ jobs:
         image: mysql:5.7
         env:
           MYSQL_USER: user
-          MYSQL_PASSWORD: password
+          MYSQL_PASSWORD: root
           MYSQL_DATABASE: satd
-          MYSQL_ROOT_PASSWORD: password
+          MYSQL_ROOT_PASSWORD: root
         ports:
         - 3306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
@@ -30,10 +30,11 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 11
-    - name: Verify MySQL connection from host
+    - name: Verify MySQL Database is set correctly
       run: |
         sudo apt-get install -y mysql-client
-        mysql --host 127.0.0.1 --port 3306 -uroot -ppassword -e "SHOW DATABASES"
+        mysql satd < sql/satd.sql
+        mysql --host 127.0.0.1 --port 3306 -uroot -ppassword -e "USE satd; SHOW TABLES"
     - name: Acquiring Satd Detector
       run: |
         sudo mkdir lib
