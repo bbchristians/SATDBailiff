@@ -23,10 +23,12 @@ jobs:
     - name: Create Lib Directory
       run: |
         sudo mkdir lib
+        sudo chmod a+rwx /lib
         pwd
         ls
     - name: Download Satd Detector to Lib
       run: |
+         cd lib
          curl -H "Accept: application/zip" https://github.com/Tbabm/SATDDetector-Core/releases/download/v0.1/satd_detector.jar > satd_detector.jar
          ls
     - name: Build with Maven
