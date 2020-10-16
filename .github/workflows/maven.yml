@@ -21,7 +21,7 @@ jobs:
         java-version: 1.8
     - name: Install javajfx
       run: |
-       apt-get update \
+       sudo apt-get update \
        && apt-get install --no-install-recommends -y openjfx \
        && apt-get clean \
        && rm -f /var/lib/apt/lists
