@@ -19,10 +19,10 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 1.8
-        javafx: true
     - name: Create Lib Directory
       run: |
         sudo apt-get install openjfx
+        echo installed
         sudo mkdir lib
         sudo chmod +x ./lib
     - name: Download Satd Detector to Lib
