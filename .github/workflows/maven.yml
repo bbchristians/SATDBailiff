@@ -21,7 +21,8 @@ jobs:
         java-version: 1.8
     - name: Install javajfx
       run: |
-       sudo apt-get install openjfx    
+       sudo apt update
+       sudo apt install openjfx  
     - name: Acquiring Satd Detector
       run: |
         sudo mkdir lib
