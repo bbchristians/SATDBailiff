@@ -25,7 +25,7 @@ jobs:
         sudo apt-get install unzip
         unzip openjfx-11.0.2_linux-x64_bin-sdk.zip -d openjfx-11.0.2
         cd openjfx-11.0.2
-        sudo cp -arf lib/* ${JAVA_HOME}/lib/
+        sudo cp -arf lib/ ${JAVA_HOME}/lib/
     - name: Acquiring Satd Detector
       run: |
         sudo mkdir lib
