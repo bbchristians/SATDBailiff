@@ -109,6 +109,12 @@
             <version>1.18.12</version>
             <scope>provided</scope>
         </dependency>
-    </dependencies>
 
+        <!-- https://mvnrepository.com/artifact/org.openjfx/javafx-base- FOR OPENJDK -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-base</artifactId>
+            <version>11</version>
+        </dependency>
+    </dependencies>
 </project>
