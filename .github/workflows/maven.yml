@@ -21,6 +21,9 @@ jobs:
         java-version: 1.8
     - name: Install javajfx
       run: |
+        pwd
+        ls
+        echo !!change!!
         cd ./lib
         ls
         pwd
