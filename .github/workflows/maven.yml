@@ -35,7 +35,7 @@ jobs:
         sudo apt-get install -y mysql-client
         ls
         cd sql
-        mysql --host 127.0.0.1 --port 3306 --user=user --password=root -se "satd < satd.sql"
+        mysql --user=user --database=satd --port 3306 --password=root < sql/satd.sql
     - name: Acquiring Satd Detector
       run: |
         sudo mkdir lib
