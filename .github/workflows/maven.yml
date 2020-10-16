@@ -20,12 +20,10 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 1.8
-    - name: Run a multi-line script
+    - name: Create Lib Directory
       run: |
         sudo mkdir lib
-        curl -H "Accept: application/zip" https://github.com/Tbabm/SATDDetector-Core/releases/download/v0.1/satd_detector.jar > satd_detector.jar
         pwd
         ls
-      working-directory: /lib
     - name: Build with Maven
       run: mvn -B package --file pom.xml
