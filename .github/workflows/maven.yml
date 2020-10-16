@@ -6,8 +6,14 @@ name: SATDBailiff CI
 on:
   push:
     branches: [ master ]
+    paths-ignore: 
+    - readme.md
+    - LICENSE.txt
   pull_request:
     branches: [ master ]
+    paths-ignore: 
+    - readme.md
+    - LICENSE.txt
 
 jobs:
   build:
@@ -42,5 +48,5 @@ jobs:
         sudo chmod +x ./lib
         sudo wget -N https://github.com/Tbabm/SATDDetector-Core/releases/download/v0.1/satd_detector.jar 
         sudo mv satd_detector.jar /home/runner/work/SATDBailiff/SATDBailiff/lib
-    - name: Build tool
-      run: mvn -B package --file pom.xml
+    - name: Build and package SATDBailiff
+      run: mvn clean package
