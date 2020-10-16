@@ -78,4 +78,4 @@ this project to run. It should be noted, that the SATD classification model incl
 in that repository's released binaries differs from the model released with
 this project's binaries. To use a different model in your own implementation,
 follow the instructions in the aforementioned repository's readme,
-and include the model files in `lib/models/`
+and include the model files in `lib/models/`.
