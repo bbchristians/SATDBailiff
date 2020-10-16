@@ -23,6 +23,9 @@ jobs:
     - name: Create Lib Directory
       run: |
         sudo mkdir lib
+        ls -ld lib
+        chmod +x lib
+        ls -ld lib
         pwd
         ls
     - name: Download Satd Detector to Lib
