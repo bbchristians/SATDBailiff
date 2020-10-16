@@ -12,7 +12,7 @@ on:
 jobs:
   build:
     name: Test SATDBailiff Runs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
     - name: Set up JDK 8
@@ -21,13 +21,8 @@ jobs:
         java-version: 1.8
     - name: Install javajfx
       run: |
-        pwd
-        ls
-        echo !!change!!
-        cd ./lib
-        ls
-        pwd
-        
+        sudo apt-get update -y
+        sudo apt-get install -y openjfx
     - name: Acquiring Satd Detector
       run: |
         sudo mkdir lib
