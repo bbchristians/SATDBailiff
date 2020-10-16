@@ -27,8 +27,7 @@ jobs:
         ls
     - name: Download Satd Detector to Lib
       run: |
-         cd lib
-         sudo curl -H "Accept: application/zip" https://github.com/Tbabm/SATDDetector-Core/releases/download/v0.1/satd_detector.jar > satd_detector.jar
-         cd ..
+         curl -H "Accept: application/zip" https://github.com/Tbabm/SATDDetector-Core/releases/download/v0.1/satd_detector.jar > satd_detector.jar
+         ls
     - name: Build with Maven
       run: mvn -B package --file pom.xml
