@@ -30,9 +30,9 @@ jobs:
         sudo chmod +x satd_detector.jar
         pwd
         ls
-        sudo mv satd_detector.jar /lib
+        sudo mv satd_detector.jar /home/runner/work/SATDBailiff/SATDBailiff/lib
         echo moved
-        cd /lib
+        cd /home/runner/work/SATDBailiff/SATDBailiff/lib
         ls
     - name: Build with Maven
       run: mvn -B package --file pom.xml
