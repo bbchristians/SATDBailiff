@@ -25,20 +25,11 @@ jobs:
         sudo apt purge openjfx
         sudo apt install openjfx=8u161-b12-1ubuntu2 libopenjfx-jni=8u161-b12-1ubuntu2 libopenjfx-java=8u161-b12-1ubuntu2
         sudo apt-mark hold openjfx libopenjfx-jni libopenjfx-java
-    - name: Create Lib Directory
+    - name: Acquiring Satd Detector
       run: |
-        echo installed
         sudo mkdir lib
         sudo chmod +x ./lib
-    - name: Download Satd Detector to Lib
-      run: |
         sudo wget -N https://github.com/Tbabm/SATDDetector-Core/releases/download/v0.1/satd_detector.jar 
-        sudo chmod +x satd_detector.jar
-        pwd
-        ls
         sudo mv satd_detector.jar /home/runner/work/SATDBailiff/SATDBailiff/lib
-        echo moved
-        cd /home/runner/work/SATDBailiff/SATDBailiff/lib
-        ls
     - name: Build with Maven
       run: mvn -B package --file pom.xml
