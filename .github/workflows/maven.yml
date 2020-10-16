@@ -22,6 +22,7 @@ jobs:
         javafx: true
     - name: Create Lib Directory
       run: |
+        sudo apt-get install openjfx
         sudo mkdir lib
         sudo chmod +x ./lib
     - name: Download Satd Detector to Lib
