@@ -10,7 +10,10 @@ on:
     branches: [ master ]
 
 jobs:
-  services:
+  build:
+    name: Test SATDBailiff Runs
+    runs-on: ubuntu-latest
+    services:
       mysql:
         image: mysql:5.7
         env:
@@ -20,11 +23,7 @@ jobs:
           MYSQL_ROOT_PASSWORD: password
         ports:
         - 3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3:
-
-  build:
-    name: Test SATDBailiff Runs
-    runs-on: ubuntu-latest
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
     steps:
     - uses: actions/checkout@v2
     - name: Set up OpenJDK 11
