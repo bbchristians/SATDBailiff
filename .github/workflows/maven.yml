@@ -22,7 +22,8 @@ jobs:
     - name: Install javajfx
       run: |
         cd /lib
-        ls
+        whereis java
+        echo $JAVA_HOME
     - name: Acquiring Satd Detector
       run: |
         sudo mkdir lib
