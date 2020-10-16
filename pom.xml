@@ -123,10 +123,10 @@
             <version>4.5.12</version>
         </dependency>
 
-        <dependency>
+       <dependency>
             <groupId>org.openjfx</groupId>
-            <artifactId>javafx-controls</artifactId>
-            <version>14</version>
+            <artifactId>javafx-base</artifactId>
+            <version>11</version>
         </dependency>
              
     </dependencies>
