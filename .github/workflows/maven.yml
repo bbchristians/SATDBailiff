@@ -21,7 +21,7 @@ jobs:
         java-version: 1.8
     - name: Install javajfx
       run: |
-        cd /home
+        cd /
         ls
     - name: Acquiring Satd Detector
       run: |
