@@ -23,11 +23,7 @@ jobs:
     - name: Create Lib Directory
       run: |
         sudo mkdir lib
-        ls -ld lib
-        sudo chmod 755 lib
-        ls -ld lib
-        pwd
-        ls
+        sudo chmod +x ./lib
     - name: Download Satd Detector to Lib
       run: |
         pwd
