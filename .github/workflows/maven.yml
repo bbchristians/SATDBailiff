@@ -28,6 +28,11 @@ jobs:
       run: |
         sudo curl -H "Accept: application/zip" https://github.com/Tbabm/SATDDetector-Core/releases/download/v0.1/satd_detector.jar > satd_detector.jar
         sudo chmod +x satd_detector.jar
+        ls
         sudo mv satd_detector.jar /lib
+        echo moved
+        ls
+        cd /lib
+        ls
     - name: Build with Maven
       run: mvn -B package --file pom.xml
