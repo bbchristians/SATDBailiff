@@ -122,13 +122,14 @@
             <artifactId>httpclient</artifactId>
             <version>4.5.12</version>
         </dependency>    
-      <!-- https://mvnrepository.com/artifact/org.openjfx/javafx - FOR OPENJDK -->
+
+<!-- https://mvnrepository.com/artifact/org.openjfx/javafx-base- FOR OPENJDK -->
 <dependency>
     <groupId>org.openjfx</groupId>
-    <artifactId>javafx</artifactId>
+    <artifactId>javafx-base</artifactId>
     <version>11</version>
-    <type>pom</type>
 </dependency>
+
 
 
     </dependencies>
