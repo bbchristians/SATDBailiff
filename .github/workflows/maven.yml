@@ -24,7 +24,7 @@ jobs:
       run: |
         sudo mkdir lib
         ls -ld lib
-        chmod +x lib
+        sudo chmod +x lib
         ls -ld lib
         pwd
         ls
