@@ -22,7 +22,7 @@ jobs:
           MYSQL_DATABASE: satd
           MYSQL_ROOT_PASSWORD: password
         ports:
-        - 3306
+        - 3306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
     steps:
     - uses: actions/checkout@v2
@@ -33,7 +33,7 @@ jobs:
     - name: Verify MySQL connection from host
       run: |
         sudo apt-get install -y mysql-client
-        mysql --host 127.0.0.1 --port 32574 -uroot -ppassword -e "SHOW DATABASES"
+        mysql --host 127.0.0.1 --port 3306 -uroot -ppassword -e "SHOW DATABASES"
     - name: Acquiring Satd Detector
       run: |
         sudo mkdir lib
