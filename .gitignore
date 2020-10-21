@@ -8,3 +8,4 @@ repos.txt
 *.txt
 sql/*.csv
 satd-analyzer.iml
+mySQL_personal.properties
