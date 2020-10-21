@@ -17,7 +17,7 @@ on:
 
 jobs:
   build:
-    name: Test SATDBailiff Builds
+    name: Test SATDBailiff
     runs-on: ubuntu-latest
     services:
       mysql:
@@ -49,4 +49,8 @@ jobs:
           sudo mv satd_detector.jar /home/runner/work/SATDBailiff/SATDBailiff/lib
       - name: Build and package SATDBailiff
         run: mvn clean package
+      - name: Run SATDBailiff on test project
+        run: |
+           java -jar target/satd-analyzer-jar-with-all-dependencies.jar -r test_repo.csv -d mySQL.properties
+
 
