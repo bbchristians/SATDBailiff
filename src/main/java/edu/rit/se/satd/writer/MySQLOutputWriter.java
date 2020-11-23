@@ -4,16 +4,15 @@ import edu.rit.se.git.model.CommitMetaData;
 import edu.rit.se.satd.comment.model.GroupedComment;
 import edu.rit.se.satd.model.SATDDifference;
 import edu.rit.se.satd.model.SATDInstance;
+import edu.rit.se.satd.refactoring.model.RefInstance;
+import edu.rit.se.satd.refactoring.model.RefactoringHistory;
+import edu.rit.se.satd.refactoring.model.SatdRemoval;
+import org.checkerframework.checker.units.qual.A;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.io.*;
+
 import java.sql.*;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -107,7 +106,7 @@ public class MySQLOutputWriter implements OutputWriter {
     }
 
     /**
-     * Returns list of key value pairs containing removed satd comments
+     * Returns list of key value pairs containing removed satd comments for a given project
      * @param projectName -  The name of the project
      * @param projectURL - The url of the project
      * @return - Hashmap
@@ -149,6 +148,155 @@ public class MySQLOutputWriter implements OutputWriter {
        }
        return satd;
    }
+
+   public ArrayList<SatdRemoval> getRemovedDesignCommits(String projectName, String projectUrl) throws SQLException {
+       Connection conn = null;
+       ArrayList<SatdRemoval> removals = new ArrayList<>();
+
+       try {
+           //Connect to db
+           conn = DriverManager.getConnection(this.dbURI, this.user, this.pass);
+           int projectID =  getProjectId(conn, projectName, projectUrl);
+           //Prepare sql statement
+           final PreparedStatement queryStmt = conn.prepareStatement(
+                   "SELECT DISTINCT SATD.first_commit, SATD.second_commit, SATDInFile.f_id\n" +
+                           "FROM SATDInFile\n" +
+                           "INNER JOIN SATD ON (SATDInFile.f_id = SATD.first_file)\n" +
+                           "WHERE SATDInFile.type = 'DESIGN' AND SATD.p_id = ?;");
+           queryStmt.setInt(1, projectID);
+           //Execute query
+           final ResultSet res = queryStmt.executeQuery();
+           //Save results in hashmap
+           while(res.next()) {
+               SatdRemoval removal = new SatdRemoval(res.getString(1), res.getString(2), res.getInt(3));
+               removals.add(removal);
+           }
+       } catch(SQLException e){
+           System.err.println("SQL Error encountered while fetching removed design satd.");
+           throw e;
+       }finally{
+           try{
+               conn.close();
+           }catch(SQLException e){
+               System.err.println("Error closing SQL connection");
+               throw e;
+           }
+       }
+       return removals;
+   }
+
+    public void writeCommitRefactorings(ArrayList<RefInstance> refactoringList,String projectName, String projectUrl ) throws SQLException {
+        Connection conn = null;
+        try {
+            //Connect to db
+            conn = DriverManager.getConnection(this.dbURI, this.user, this.pass);
+            int projectID =  getProjectId(conn, projectName, projectUrl);
+            //Write info for each refactoring related to this comment
+            for(RefInstance refactoring : refactoringList){
+                final PreparedStatement sqlQuery = conn.prepareStatement(
+                        "INSERT INTO RefactoringsRmv\n" +
+                                "VALUES (default,?,?,?,?);",
+                        Statement.RETURN_GENERATED_KEYS);
+                sqlQuery.setString(1,  refactoring.getCommitID());
+
+                //project id
+                refactoring.setProjectID(projectID);
+                sqlQuery.setInt(2, projectID);
+
+                sqlQuery.setString(3, refactoring.getRefactoringType());
+                sqlQuery.setString(4, refactoring.getRefactoringDescription());
+                sqlQuery.executeUpdate();
+                final ResultSet res = sqlQuery.getGeneratedKeys();
+                if (res.next()) {
+                    refactoring.setRefactoringID(res.getInt(1));
+                } else{
+                    throw new SQLException("Could not obtain the refactoring ID.");
+                }
+            }
+        }catch(SQLException e){
+            System.err.println(e);
+            throw e;
+        }finally{
+            try{
+                conn.close();
+            }catch(SQLException e){
+                System.err.println("Error closing SQL connection");
+                throw e;
+            }
+        }
+    }
+
+    public void writePreviousRefHistory(ArrayList<RefactoringHistory>  priorHistory, int refactoringID ) throws SQLException {
+        Connection conn = null;
+        try {
+            //Connect to db
+            conn = DriverManager.getConnection(this.dbURI, this.user, this.pass);
+            //Write info for each history related to this refactoring
+            for(RefactoringHistory prior: priorHistory){
+                final PreparedStatement sqlQuery = conn.prepareStatement(
+                        "INSERT INTO BeforeRefactoring\n" +
+                                "VALUES (default,?, ?, ?,?,?,?,?,?);",
+                        Statement.RETURN_GENERATED_KEYS);
+                sqlQuery.setInt(1, refactoringID);
+                sqlQuery.setString(2, prior.getFilePath());
+                sqlQuery.setInt(3, prior.getStartLine());
+                sqlQuery.setInt(4, prior.getEndLine());
+                sqlQuery.setInt(5, prior.getStartColumn());
+                sqlQuery.setInt(6, prior.getEndColumn());
+                sqlQuery.setString(7, prior.getDescription());
+                sqlQuery.setString(8, prior.getCodeElement());
+                sqlQuery.executeUpdate();
+                final ResultSet res = sqlQuery.getGeneratedKeys();
+                if(!res.next())  throw new SQLException("Could not save prior history.");
+            }
+        } catch(SQLException e){
+            System.err.println(e);
+            throw e;
+        }finally {
+            try{
+                conn.close();
+            }catch(SQLException e){
+                System.err.println("Error closing SQL connection");
+                throw e;
+            }
+        }
+    }
+
+    public void writeAfterRefHistory(ArrayList<RefactoringHistory>  afterHistory , int refactoringID ) throws SQLException {
+        Connection conn = null;
+        try {
+            //Connect to db
+            conn = DriverManager.getConnection(this.dbURI, this.user, this.pass);
+            //Write info for each history related to this refactoring
+            for(RefactoringHistory prior: afterHistory){
+                final PreparedStatement sqlQuery = conn.prepareStatement(
+                        "INSERT INTO AfterRefactoring\n" +
+                                "VALUES (default,?, ?, ?,?,?,?,?,?);",
+                        Statement.RETURN_GENERATED_KEYS);
+                sqlQuery.setInt(1, refactoringID);
+                sqlQuery.setString(2, prior.getFilePath());
+                sqlQuery.setInt(3, prior.getStartLine());
+                sqlQuery.setInt(4, prior.getEndLine());
+                sqlQuery.setInt(5, prior.getStartColumn());
+                sqlQuery.setInt(6, prior.getEndColumn());
+                sqlQuery.setString(7, prior.getDescription());
+                sqlQuery.setString(8, prior.getCodeElement());
+                sqlQuery.executeUpdate();
+                final ResultSet res = sqlQuery.getGeneratedKeys();
+                if(!res.next())  throw new SQLException("Could not save after history.");
+            }
+        } catch(SQLException e){
+            System.err.println(e);
+            throw e;
+        }finally {
+            try{
+                conn.close();
+            }catch(SQLException e){
+                System.err.println("Error closing SQL connection");
+                throw e;
+            }
+        }
+    }
 
     /**
      * Saves Azure classifications in the db

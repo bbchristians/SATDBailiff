@@ -1,6 +1,9 @@
 package edu.rit.se.satd.writer;
 
 import edu.rit.se.satd.model.SATDDifference;
+import edu.rit.se.satd.refactoring.model.RefInstance;
+import edu.rit.se.satd.refactoring.model.RefactoringHistory;
+import edu.rit.se.satd.refactoring.model.SatdRemoval;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -28,7 +31,7 @@ public interface OutputWriter {
      * @return - key, value pair list of comments,ids
      * @throws SQLException
      */
-    Map<String,String> getRemovedSATD(String projectName, String projectURL) throws SQLException;;
+    Map<String,String> getRemovedSATD(String projectName, String projectURL) throws SQLException;
 
     /**
      * Saves Azure classifications in the db
@@ -36,4 +39,24 @@ public interface OutputWriter {
      * @throws SQLException
      */
     void writePredictionResults(Map<String, String> predictions ) throws SQLException;
+
+    /**
+     *
+     */
+    ArrayList<SatdRemoval> getRemovedDesignCommits(String projectName, String projectURL) throws SQLException;
+
+    /**
+     *
+     * @param refactoringList
+     * @return
+     * @throws SQLException
+     */
+    void writeCommitRefactorings(ArrayList<RefInstance> refactoringList,String projectName, String projectUrl) throws SQLException ;
+
+    void writePreviousRefHistory(ArrayList<RefactoringHistory> priorHistory, int refactoringID) throws SQLException;
+
+    void writeAfterRefHistory(ArrayList<RefactoringHistory> afterHistory, int refactoringID) throws SQLException;
+
+
+
 }

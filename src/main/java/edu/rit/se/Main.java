@@ -2,6 +2,7 @@ package edu.rit.se;
 
 import edu.rit.se.satd.SATDMiner;
 import edu.rit.se.satd.api.AzureModel;
+import edu.rit.se.satd.refactoring.RefactoringMiner;
 import edu.rit.se.satd.comment.IgnorableWords;
 import edu.rit.se.satd.detector.SATDDetectorImpl;
 import edu.rit.se.satd.mining.diff.CommitToCommitDiff;
@@ -16,7 +17,6 @@ import java.util.*;
 
 
 public class Main {
-
     private static final String ARG_NAME_DB_PROPS = "d";
     private static final String ARG_NAME_REPOS_FILE = "r";
     private static final String ARG_NAME_GH_USERNAME = "u";
@@ -98,10 +98,13 @@ public class Main {
                     if (cmd.hasOption(ARG_NAME_GH_PASSWORD)) {
                         miner.setGithubPassword(cmd.getOptionValue(ARG_NAME_GH_PASSWORD));
                     }
-
                     OutputWriter writer = new MySQLOutputWriter(dbPropsFile);
+
+
                     miner.writeRepoSATD(miner.getBaseCommit(headCommit), writer);
                     AzureModel.classiffySATD(writer, repoEntry[0] );
+                    RefactoringMiner.mineRemovalRefactorings(writer, repoEntry[0] );
+
                     writer.close();
                     miner.cleanRepo();
                 }
