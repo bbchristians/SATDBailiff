@@ -122,6 +122,7 @@
             <artifactId>httpclient</artifactId>
             <version>4.5.12</version>
         </dependency>
+        
         <!-- https://mvnrepository.com/artifact/com.github.tsantalis/refactoring-miner -->
         <dependency>
             <groupId>com.github.tsantalis</groupId>
@@ -134,6 +135,16 @@
                 </exclusion>
             </exclusions>
         </dependency>
+   
+
+        <!-- https://mvnrepository.com/artifact/org.openjfx/javafx-base- FOR OPENJDK -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-base</artifactId>
+            <version>11</version>
+        </dependency>
+
+
 
     </dependencies>
 
