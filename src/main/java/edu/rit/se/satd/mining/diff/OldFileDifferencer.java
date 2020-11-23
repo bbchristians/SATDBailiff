@@ -9,7 +9,6 @@ import edu.rit.se.satd.model.SATDInstance;
 import edu.rit.se.satd.model.SATDInstanceInFile;
 import edu.rit.se.util.JavaParseUtil;
 import edu.rit.se.util.KnownParserException;
-import edu.rit.se.util.SimilarityUtil;
 import javafx.util.Pair;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.diff.DiffEntry;
@@ -23,7 +22,6 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static edu.rit.se.satd.comment.model.NullGroupedComment.NULL_FIELD;
 
@@ -131,32 +129,20 @@ public class OldFileDifferencer extends FileDifferencer {
                     satd.addAll(
                             updatedComments.stream()
                                     .map(nc -> {
-                                        // If the comment that was added is similar enough to the old comment
-                                        // we can infer that the comment was changed
-                                        if( SimilarityUtil.commentsAreSimilar(oldComment, nc) ) {
-                                            // If the new comment is still SATD, then the instance is changed
-                                            if( this.detector.isSATD(nc.getComment()) ) {
-                                                return new SATDInstance(
-                                                        new SATDInstanceInFile(diffEntry.getOldPath(), oldComment),
-                                                        new SATDInstanceInFile(diffEntry.getNewPath(), nc),
-                                                        SATDInstance.SATDResolution.SATD_CHANGED);
-                                            }
-                                            // Otherwise the part of the comment that was making the comment SATD
-                                            // was removed, and so it can be determined that the SATD instance
-                                            // was removed
-                                            else {
-                                                return new SATDInstance(
-                                                        new SATDInstanceInFile(diffEntry.getOldPath(), oldComment),
-                                                        new SATDInstanceInFile(diffEntry.getNewPath(), nc),
-                                                        SATDInstance.SATDResolution.SATD_REMOVED);
-                                            }
-
-                                        } else {
-                                            // We know the comment was removed, and the one that was added
-                                            // was a different comment
+                                        // If the new comment is still SATD, then the instance is changed
+                                        if( this.detector.isSATD(nc.getComment()) ) {
                                             return new SATDInstance(
                                                     new SATDInstanceInFile(diffEntry.getOldPath(), oldComment),
-                                                    new SATDInstanceInFile(diffEntry.getNewPath(), new NullGroupedComment()),
+                                                    new SATDInstanceInFile(diffEntry.getNewPath(), nc),
+                                                    SATDInstance.SATDResolution.SATD_CHANGED);
+                                        }
+                                        // Otherwise the part of the comment that was making the comment SATD
+                                        // was removed, and so it can be determined that the SATD instance
+                                        // was removed
+                                        else {
+                                            return new SATDInstance(
+                                                    new SATDInstanceInFile(diffEntry.getOldPath(), oldComment),
+                                                    new SATDInstanceInFile(diffEntry.getNewPath(), nc),
                                                     SATDInstance.SATDResolution.SATD_REMOVED);
                                         }
                                     })
