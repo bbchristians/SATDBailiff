@@ -1,24 +1,20 @@
 package edu.rit.se.satd.api;
 
 import com.google.gson.Gson;
-import edu.rit.se.satd.api.modelType.request.Satd;
 import edu.rit.se.satd.api.modelType.request.Inputs;
+import edu.rit.se.satd.api.modelType.request.Satd;
 import edu.rit.se.satd.api.modelType.request.SatdTypeRequest;
 import edu.rit.se.satd.api.modelType.response.SatdType;
 import edu.rit.se.satd.writer.OutputWriter;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.*;
-import java.net.*;
-import java.sql.SQLException;
-import java.util.*;
+import org.apache.http.client.fluent.*;
+import org.apache.http.entity.ContentType;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URL;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Map;
 
 public class AzureModel {
     /**
@@ -28,7 +24,7 @@ public class AzureModel {
     public static String apiCredentialsFileName = "my_api_keys.csv";
     public static String apikey = null;
     public static String apiUrl = null;
-
+    private static final Gson gson = new Gson();
     /**
      * Classifies removed satd comments in a repo
      * @param writer
@@ -81,35 +77,24 @@ public class AzureModel {
      * @param satdBody - Satd comments to be classified
      * @return - Type for each comment
      */
-    public static String azurePredictType( String satdBody) {
-        HttpPost post;
-        HttpClient client;
-        StringEntity entity;
+    public static String azurePredictType(String satdBody){
+        String response = "";
         try {
-            // create HttpPost and HttpClient object
-            post = new HttpPost(apiUrl);
-            client = HttpClientBuilder.create().build();
-
-            // setup output message by copying JSON body into
-            // apache StringEntity object along with content type
-            entity = new StringEntity(satdBody);
-            entity.setContentType("text/json");
-
-            // add HTTP headers
-            post.setHeader("Accept", "text/json");
-            post.setHeader("Accept-Charset", "UTF-8");
-
-            // set Authorization header based on the API key
-            post.setHeader("Authorization", ("Bearer " + apikey));
-            post.setEntity(entity);
-
-            // Call AZURE ML API and retrieve response content
-            HttpResponse authResponse = client.execute(post);
-            return EntityUtils.toString(authResponse.getEntity());
+            // Create the request
+            Content content = Request.Post(apiUrl)
+                    .addHeader("Content-Type", "application/json")
+                    // Only needed if using authentication
+                    .addHeader("Authorization", "Bearer " + apikey)
+                    // Set the JSON data as the body
+                    .bodyString(satdBody, ContentType.APPLICATION_JSON)
+                    // Make the request and display the response.
+                    .execute().returnContent();
+            response = content.toString();
         }
         catch (Exception e) {
-            return e.toString();
+            System.out.println(e);
         }
+        return response;
     }
 
     /**

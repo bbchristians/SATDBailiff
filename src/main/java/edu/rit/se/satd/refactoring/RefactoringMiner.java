@@ -25,7 +25,7 @@ public class RefactoringMiner {
             URL aURL = new URL(projectURL);
             String projectName = aURL.getPath().replaceFirst("\\/", "");
 
-            System.out.println("--- Detecting refactorings on removed satd for project: ---");
+            System.out.println("--- Detecting refactorings on removed satd for project: " + projectName + " ---");
             System.out.println("Locating removed SATD...");
             ArrayList<SatdRemoval> removals = writer.getRemovedDesignCommits( projectName, projectURL);
 

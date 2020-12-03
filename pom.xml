@@ -144,7 +144,11 @@
             <version>11</version>
         </dependency>
 
-
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>fluent-hc</artifactId>
+            <version>4.5.13</version>
+        </dependency>
 
     </dependencies>
 

@@ -9,3 +9,4 @@ repos.txt
 sql/*.csv
 /my_api_keys.csv
 /mySQL_personal.properties
+research_short.csv
